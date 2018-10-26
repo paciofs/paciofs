@@ -10,7 +10,9 @@
     </parent>
 
     <artifactId>paciofs-csi</artifactId>
+    <version>0.3.0-SNAPSHOT</version>
     <name>paciofs-csi</name>
+
     <packaging>pom</packaging>
 
     <properties>
@@ -23,6 +25,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
+                    <!-- Install dependencies under vendor/ -->
                     <execution>
                         <id>get-csi-dependencies</id>
                         <phase>generate-sources</phase>
@@ -33,14 +36,17 @@
                             <environmentVariables>
                                 <GOPATH>${gopath}</GOPATH>
                             </environmentVariables>
-                            <executable>go</executable>
+                            <workingDirectory>
+                                ${project.basedir}/src/github.com/paciofs/paciofs/paciofs-csi
+                            </workingDirectory>
+                            <executable>dep</executable>
                             <arguments>
-                                <argument>get</argument>
-                                <argument>github.com/paciofs/paciofs/paciofs-csi</argument>
+                                <argument>ensure</argument>
                             </arguments>
                         </configuration>
                     </execution>
 
+                    <!-- Build the thing using the vendor/ dependencies -->
                     <execution>
                         <id>install-csi</id>
                         <phase>install</phase>
@@ -66,13 +72,14 @@
                 </executions>
             </plugin>
 
+            <!-- Clean binaries only, not the dependencies that have been fetched -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>${gopath}/bin</directory>
+                            <directory>${project.basedir}/bin</directory>
                         </fileset>
                     </filesets>
                 </configuration>

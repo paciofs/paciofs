@@ -8,11 +8,15 @@
 package pfs
 
 import (
-	// "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 )
 
-type driver struct{}
+type driver struct {
+	identity   csi.IdentityServer
+	controller csi.ControllerServer
+	node       csi.NodeServer
+}
 
 const (
 	driverName = "paciofs-csi"

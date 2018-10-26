@@ -1,8 +1,7 @@
 bin/
 
+# dep has the dependency revisions here
+pkg/
+
 # dependencies that have been fetched
-src/github.com/container-storage-interface/
-src/github.com/golang/
-src/github.com/spf13/
-src/golang.org/
-src/google.golang.org/
+src/github.com/paciofs/paciofs/paciofs-csi/vendor

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>paciofs-server</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <name>paciofs-server</name>
 
     <packaging>jar</packaging>

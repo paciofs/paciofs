@@ -6,4 +6,5 @@ if [ -z "$DIR" ]; then
   exit 1
 fi
 
-find "$DIR/src/github.com/paciofs/paciofs/paciofs-csi" -name '*.go' | xargs gofmt -w
+# no need to format the dependencies
+find "$DIR/src/github.com/paciofs/paciofs/paciofs-csi" -name '*.go' | grep --invert-match "vendor" | xargs gofmt -w

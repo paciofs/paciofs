@@ -1,0 +1,78 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.zib.paciofs</groupId>
+        <artifactId>paciofs-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>..</relativePath>
+    </parent>
+
+    <artifactId>paciofs-csi</artifactId>
+    <name>paciofs-csi</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <gopath>${project.basedir}</gopath>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>get-csi-dependencies</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <environmentVariables>
+                                <GOPATH>${gopath}</GOPATH>
+                            </environmentVariables>
+                            <executable>go</executable>
+                            <arguments>
+                                <argument>get</argument>
+                                <argument>github.com/paciofs/paciofs/paciofs-csi</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>install-csi</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <environmentVariables>
+                                <GOPATH>${gopath}</GOPATH>
+                            </environmentVariables>
+                            <executable>go</executable>
+                            <arguments>
+                                <argument>install</argument>
+                                <argument>github.com/paciofs/paciofs/paciofs-csi</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${gopath}/bin</directory>
+                            <directory>${gopath}/pkg</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

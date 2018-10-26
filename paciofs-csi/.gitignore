@@ -1,8 +1,8 @@
 bin/
-pkg/
 
 # dependencies that have been fetched
 src/github.com/container-storage-interface/
 src/github.com/golang/
+src/github.com/spf13/
 src/golang.org/
 src/google.golang.org/

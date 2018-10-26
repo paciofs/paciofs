@@ -25,7 +25,7 @@
                 <executions>
                     <execution>
                         <id>get-csi-dependencies</id>
-                        <phase>process-sources</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -50,10 +50,15 @@
                         <configuration>
                             <environmentVariables>
                                 <GOPATH>${gopath}</GOPATH>
+                                <CGO_ENABLED>0</CGO_ENABLED>
+                                <GOOS>linux</GOOS>
                             </environmentVariables>
                             <executable>go</executable>
                             <arguments>
                                 <argument>install</argument>
+                                <argument>-a</argument>
+                                <argument>-ldflags</argument>
+                                <argument>-extldflags '-static'</argument>
                                 <argument>github.com/paciofs/paciofs/paciofs-csi</argument>
                             </arguments>
                         </configuration>
@@ -68,7 +73,6 @@
                     <filesets>
                         <fileset>
                             <directory>${gopath}/bin</directory>
-                            <directory>${gopath}/pkg</directory>
                         </fileset>
                     </filesets>
                 </configuration>

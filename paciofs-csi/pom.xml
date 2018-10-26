@@ -62,7 +62,6 @@
                             <executable>go</executable>
                             <arguments>
                                 <argument>install</argument>
-                                <argument>-a</argument>
                                 <argument>-ldflags</argument>
                                 <argument>-extldflags '-static'</argument>
                                 <argument>github.com/paciofs/paciofs/paciofs-csi</argument>

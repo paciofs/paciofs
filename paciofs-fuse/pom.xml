@@ -9,63 +9,64 @@
         <relativePath>..</relativePath>
     </parent>
 
-    <artifactId>paciofs-csi</artifactId>
-    <!-- Version numbering according to CSI specification version number -->
-    <version>0.3.0-SNAPSHOT</version>
-    <name>paciofs-csi</name>
+    <artifactId>paciofs-fuse</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>paciofs-fuse</name>
 
     <packaging>pom</packaging>
-
-    <properties>
-        <gopath>${project.basedir}</gopath>
-    </properties>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-build-folder</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.basedir}/build" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
-                    <!-- Install dependencies under vendor/ -->
                     <execution>
-                        <id>get-csi-dependencies</id>
-                        <phase>generate-sources</phase>
+                        <id>generate-makefile</id>
+                        <phase>compile</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <environmentVariables>
-                                <GOPATH>${gopath}</GOPATH>
-                            </environmentVariables>
-                            <workingDirectory>
-                                ${project.basedir}/src/github.com/paciofs/paciofs/paciofs-csi
-                            </workingDirectory>
-                            <executable>dep</executable>
+                            <workingDirectory>${project.basedir}/build</workingDirectory>
+                            <executable>cmake</executable>
                             <arguments>
-                                <argument>ensure</argument>
+                                <argument>-DCMAKE_BUILD_TYPE=Release</argument>
+                                <argument>..</argument>
                             </arguments>
                         </configuration>
                     </execution>
 
-                    <!-- Build the thing using the vendor/ dependencies -->
                     <execution>
-                        <id>install-csi</id>
-                        <phase>install</phase>
+                        <id>compile-fuse</id>
+                        <phase>compile</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <environmentVariables>
-                                <GOPATH>${gopath}</GOPATH>
-                                <CGO_ENABLED>0</CGO_ENABLED>
-                                <GOOS>linux</GOOS>
-                            </environmentVariables>
-                            <executable>go</executable>
+                            <workingDirectory>${project.basedir}/build</workingDirectory>
+                            <executable>make</executable>
                             <arguments>
-                                <argument>install</argument>
-                                <argument>-ldflags</argument>
-                                <argument>-extldflags '-static'</argument>
-                                <argument>github.com/paciofs/paciofs/paciofs-csi</argument>
+                                <argument>-j4</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -79,7 +80,7 @@
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>${project.basedir}/bin</directory>
+                            <directory>${project.basedir}/build</directory>
                         </fileset>
                     </filesets>
                 </configuration>

@@ -43,7 +43,8 @@ func main() {
 	cmd.PersistentFlags().StringVar(&nodeID, "nodeid", "", "Node ID")
 	cmd.MarkPersistentFlagRequired("nodeid")
 
-	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "", "CSI endpoint")
+	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///var/lib/kubelet/plugins/paciofs-csi/csi.sock",
+		"CSI endpoint")
 	cmd.MarkPersistentFlagRequired("endpoint")
 
 	cmd.ParseFlags(os.Args[1:])

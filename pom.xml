@@ -37,12 +37,26 @@
         <java.target.version>1.8</java.target.version>
         <scala.version>2.12</scala.version>
 
+        <format-sources.skip>false</format-sources.skip>
+
         <!-- Plugin configurations -->
         <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <format-sources.skip>true</format-sources.skip>
+            </properties>
+        </profile>
+    </profiles>
 
     <build>
         <pluginManagement>
@@ -98,6 +112,7 @@
                             <arguments>
                                 <argument>${project.basedir}</argument>
                             </arguments>
+                            <skip>${format-sources.skip}</skip>
                         </configuration>
                     </execution>
                 </executions>

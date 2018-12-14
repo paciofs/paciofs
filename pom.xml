@@ -44,6 +44,7 @@
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     </properties>
 
     <profiles>
@@ -92,6 +93,12 @@
                             <arg>-Xlint</arg>
                         </compilerArgs>
                     </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

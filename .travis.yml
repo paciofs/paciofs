@@ -14,4 +14,5 @@ services:
   - docker
 
 script:
+  # build the docker image
   - docker build --tag paciofs/paciofs paciofs-docker

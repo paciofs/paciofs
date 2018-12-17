@@ -6,13 +6,32 @@ jdk: openjdk8
 addons:
   apt:
     packages:
-      - build-essential
       - cmake
       - libfuse-dev
 
 services:
   - docker
 
+before_install:
+  # install go
+  - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.3.linux-amd64.tar.gz
+  - sudo tar --directory /usr/local --extract --file go.tar.gz
+  - rm go.tar.gz
+  - export GOPATH="${HOME}/go"
+  - export GOBIN="${GOPATH}/bin"
+  - export PATH="${PATH}:/usr/local/go/bin:${GOBIN}"
+
+  # install dep
+  - mkdir -p ${GOBIN}
+  - export DEP_RELEASE_TAG="v0.5.0"
+  - curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+install:
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version
+
 script:
+  # run tests
+  - mvn test --batch-mode
+  
   # build the docker image
   - docker build --tag paciofs/paciofs paciofs-docker

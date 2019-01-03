@@ -17,20 +17,45 @@
 
     <properties>
         <akka.grpc.version>0.4.1</akka.grpc.version>
+        <akka.http.version>10.1.5</akka.http.version>
+        <akka.management.version>0.20.0</akka.management.version>
         <akka.version>2.5.17</akka.version>
         <grpc.version>1.14.0</grpc.version>
     </properties>
 
     <dependencies>
         <dependency>
+            <groupId>com.lightbend.akka.discovery</groupId>
+            <artifactId>akka-discovery-kubernetes-api_${scala.version}</artifactId>
+            <version>${akka.management.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.lightbend.akka.grpc</groupId>
             <artifactId>akka-grpc-runtime_${scala.version}</artifactId>
             <version>${akka.grpc.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.lightbend.akka.management</groupId>
+            <artifactId>akka-management-cluster-bootstrap_${scala.version}</artifactId>
+            <version>${akka.management.version}</version>
+        </dependency>
+        <!-- explicitly depend on akka-management-cluster-http to have cluster health routes included in reference.conf -->
+        <dependency>
+            <groupId>com.lightbend.akka.management</groupId>
+            <artifactId>akka-management-cluster-http_${scala.version}</artifactId>
+            <version>${akka.management.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-cluster_${scala.version}</artifactId>
             <version>${akka.version}</version>
+        </dependency>
+        <!-- explicitly depend on akka-http to have decode.max-size included in reference.conf -->
+        <!-- see: https://discuss.lightbend.com/t/no-configuration-setting-found-for-key-decode-max-size/2738 -->
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-http_${scala.version}</artifactId>
+            <version>${akka.http.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -80,7 +105,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>akka.Main</Main-Class>
+                                        <Main-Class>de.zib.paciofs.PacioFS</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>

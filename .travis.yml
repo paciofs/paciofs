@@ -32,6 +32,6 @@ install:
 script:
   # run tests
   - mvn test --batch-mode
-  
+
   # build the docker image
-  - docker build --tag paciofs/paciofs paciofs-docker
+  - docker-compose --file ./paciofs-docker/docker-compose.yaml build

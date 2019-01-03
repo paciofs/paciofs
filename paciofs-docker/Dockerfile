@@ -17,6 +17,7 @@ RUN apt-get --quiet --yes install \
 RUN apt-get --quiet --yes install \
   build-essential \
   cmake \
+  git \
   libfuse-dev \
   maven \
   openjdk-8-jdk

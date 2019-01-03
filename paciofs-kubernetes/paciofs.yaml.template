@@ -49,14 +49,14 @@ spec:
         image: paciofs/paciofs
         imagePullPolicy: $IMAGE_PULL_POLICY
         ports:
-        - name: remoting
-          containerPort: 2552
+        - name: http
+          containerPort: 8080
         # akka-management bootstrap
         # must match up with contact-point-discovery.port-name for bootstrap
         - name: management
-          containerPort: 8558
-        - name: http
-          containerPort: 8080
+          containerPort: 30558
+        - name: remoting
+          containerPort: 30552
         resources: {}
         # probes provided by Akka management
         readinessProbe:

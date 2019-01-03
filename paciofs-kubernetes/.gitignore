@@ -1,1 +1,3 @@
 kube-config
+paciofs-kubernetes.yaml
+paciofs-minikube.yaml

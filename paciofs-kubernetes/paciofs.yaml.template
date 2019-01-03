@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pacio
+  labels:
+    app: pacio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paciofs
+  namespace: pacio
+  labels:
+    app: pacio
+    component: paciofs
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http # must correspond to a containerPort name below
+  selector: # Route service traffic to pods with label keys and values matching this selector.
+    app: pacio
+    component: paciofs
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paciofs
+  namespace: pacio
+  labels:
+    app: pacio
+    component: paciofs
+spec:
+  replicas: 3
+  strategy: {}
+  selector:
+    matchLabels:
+      app: pacio
+      component: paciofs
+  template: # Template describes the pods that will be created.
+    metadata:
+      labels:
+        app: pacio
+        component: paciofs
+    spec:
+      containers:
+      - name: paciofs
+        image: paciofs/paciofs
+        imagePullPolicy: $IMAGE_PULL_POLICY
+        ports:
+        - name: remoting
+          containerPort: 2552
+        # akka-management bootstrap
+        # must match up with contact-point-discovery.port-name for bootstrap
+        - name: management
+          containerPort: 8558
+        - name: http
+          containerPort: 8080
+        resources: {}
+        # probes provided by Akka management
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: management
+        livenessProbe:
+          httpGet:
+            path: /alive
+            port: management
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pod-reader
+  namespace: pacio
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-pods
+  namespace: pacio
+subjects:
+  # Create the default user for the akka-bootstrap namespace
+- kind: User
+  name: system:serviceaccount:pacio:default
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io

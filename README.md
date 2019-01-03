@@ -1,5 +1,7 @@
 # paciofs
 
+[![Build Status](https://travis-ci.org/paciofs/paciofs.svg?branch=master)](https://travis-ci.org/paciofs/paciofs)
+
 ## Building and running locally on minikube
 ```bash
 $ git clone https://github.com/paciofs/paciofs.git && cd ./paciofs

@@ -8,6 +8,6 @@ services:
       dockerfile: paciofs-docker/Dockerfile
     image: paciofs/paciofs:latest
     ports:
-      - "2552:2552"
       - "8080:8080"
-      - "8558:8558"
+      - "30552:30552"
+      - "30558:30558"

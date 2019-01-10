@@ -7,4 +7,11 @@
 
 #include "paciofs_fuse.h"
 
-int main() { return 0; }
+#include <sys/stat.h>
+
+static struct fuse_operations paciofs_fuse_operations = {};
+
+int main(int argc, char *argv[]) {
+  umask(0);
+  return fuse_main(argc, argv, &paciofs_fuse_operations, NULL);
+}

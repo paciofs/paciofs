@@ -26,8 +26,17 @@ before_install:
   - export DEP_RELEASE_TAG="v0.5.0"
   - curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
+  # install protoc and headers
+  - export PROTOBUF_VERSION=3.6.1
+  - wget --output-document protobuf.tar.gz --quiet https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-all-${PROTOBUF_VERSION}.tar.gz
+  - tar xf protobuf.tar.gz
+  - rm protobuf.tar.gz
+  - wget --output-document protoc.zip --quiet https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protoc-${PROTOBUF_VERSION}-linux-x86_64.zip
+  - unzip protoc.zip -d protobuf-${PROTOBUF_VERSION} bin/protoc
+  - rm protoc.zip
+
 install:
-  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dprotobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc -Dprotobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode --show-version
 
 script:
   # run tests

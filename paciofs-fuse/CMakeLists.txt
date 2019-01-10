@@ -5,7 +5,6 @@ set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/cmake/modules
 
 find_package (FUSE REQUIRED)
 include_directories ("${FUSE_INCLUDE_DIRS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FILE_OFFSET_BITS=64")
 
 include_directories (
   "${CMAKE_SOURCE_DIR}/include"

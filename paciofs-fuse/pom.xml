@@ -21,15 +21,16 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
+                    <!-- create build and build/grpc folders -->
                     <execution>
                         <id>make-build-folder</id>
-                        <phase>compile</phase>
+                        <phase>initialize</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/build" />
+                                <mkdir dir="${project.basedir}/build/grpc"/>
                             </target>
                         </configuration>
                     </execution>
@@ -41,8 +42,25 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>generate-grpc</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>${protobuf.protoc}</executable>
+                            <arguments>
+                                <argument>--proto_path=${project.basedir}/../paciofs-server/src/main/proto</argument>
+                                <argument>--cpp_out=${project.basedir}/build/grpc</argument>
+                                <argument>io.proto</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
                         <id>generate-makefile</id>
-                        <phase>compile</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -50,6 +68,7 @@
                             <workingDirectory>${project.basedir}/build</workingDirectory>
                             <executable>cmake</executable>
                             <arguments>
+                                <argument>-DPROTOBUF_INCLUDE_DIRS=${protobuf.include.dirs}</argument>
                                 <argument>-DCMAKE_BUILD_TYPE=Release</argument>
                                 <argument>..</argument>
                             </arguments>

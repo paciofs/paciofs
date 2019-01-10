@@ -40,7 +40,11 @@
 
         <format-sources.skip>false</format-sources.skip>
 
+        <protobuf.protoc>protoc</protobuf.protoc>
+        <protobuf.include.dirs>/usr/local/include</protobuf.include.dirs>
+
         <!-- Plugin configurations -->
+        <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
         <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
@@ -63,6 +67,12 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
+                </plugin>
+
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>

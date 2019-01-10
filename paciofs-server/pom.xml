@@ -16,11 +16,11 @@
     <packaging>jar</packaging>
 
     <properties>
-        <akka.grpc.version>0.4.1</akka.grpc.version>
+        <akka.grpc.version>0.4.2</akka.grpc.version>
         <akka.http.version>10.1.5</akka.http.version>
         <akka.management.version>0.20.0</akka.management.version>
-        <akka.version>2.5.17</akka.version>
-        <grpc.version>1.14.0</grpc.version>
+        <akka.version>2.5.19</akka.version>
+        <grpc.version>1.17.1</grpc.version>
     </properties>
 
     <dependencies>
@@ -66,16 +66,64 @@
 
     <build>
         <plugins>
-            <!-- Generates services and messages from the .proto files -->
             <plugin>
-                <groupId>com.lightbend.akka.grpc</groupId>
-                <artifactId>akka-grpc-maven-plugin</artifactId>
-                <version>${akka.grpc.version}</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <!-- create target/generated-sources/grpc folders -->
+                    <execution>
+                        <id>make-target-folder</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/generated-sources/grpc"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>add-grpc-sources</id>
+                        <phase>generate-sources</phase>
                         <goals>
-                            <goal>generate</goal>
+                            <goal>add-source</goal>
                         </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/grpc</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-grpc</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>${protobuf.protoc}</executable>
+                            <arguments>
+                                <argument>--proto_path=${project.basedir}/src/main/proto</argument>
+                                <argument>--java_out=${project.build.directory}/generated-sources/grpc</argument>
+                                <argument>io.proto</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

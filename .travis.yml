@@ -40,7 +40,7 @@ install:
 
 script:
   # run tests
-  - mvn test --batch-mode
+  - mvn test -Dprotobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc -Dprotobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode
 
   # build the docker image
   - docker-compose --file ./paciofs-docker/docker-compose.yaml build

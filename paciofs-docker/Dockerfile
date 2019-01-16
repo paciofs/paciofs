@@ -49,6 +49,13 @@ RUN wget --output-document protoc.zip --quiet https://github.com/protocolbuffers
   && unzip protoc.zip -d ${PROTOBUF_PATH} bin/protoc \
   && rm protoc.zip
 
+# install MultiChain
+ENV MULTICHAIN_VERSION="2.0-beta-1"
+RUN wget --output-document multichain.tar.gz --quiet https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz \
+  && tar --directory /usr/local --extract --file multichain.tar.gz \
+  && rm multichain.tar.gz
+ENV MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"
+
 # install PacioFS dependencies
 WORKDIR /paciofs
 COPY ./pom.xml ./pom.xml

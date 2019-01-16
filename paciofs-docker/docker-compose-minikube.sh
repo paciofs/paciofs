@@ -1,5 +1,26 @@
 #!/bin/bash
 
+usage() {
+  echo "Usage: $0 [options]"
+  echo "Options:"
+  echo "  --no-clean (default: not specified)"
+}
+
+BUILD_OPTIONS=""
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    --no-cache)
+      BUILD_OPTIONS="${BUILD_OPTIONS} --no-cache"
+      ;;
+    *)
+      echo "Invalid argument detected."
+      usage
+      exit 1
+  esac
+  shift
+done
+
 # figure out current directory
 OS=$(uname)
 if [[ "$OS" == "Linux" ]]; then
@@ -21,4 +42,4 @@ eval $(minikube docker-env)
 docker-compose --host "${DOCKER_HOST}" \
   --tls --tlscacert "${DOCKER_CERT_PATH}/ca.pem" --tlscert "${DOCKER_CERT_PATH}/cert.pem" --tlskey "${DOCKER_CERT_PATH}/key.pem" --tlsverify \
   --file "${DIR}/docker-compose.yaml" \
-  build
+  build ${BUILD_OPTIONS}

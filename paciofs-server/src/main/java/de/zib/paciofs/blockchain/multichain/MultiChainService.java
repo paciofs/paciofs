@@ -12,8 +12,15 @@ import de.zib.paciofs.blockchain.BlockchainService;
 
 public class MultiChainService implements BlockchainService {
 
+  private static final String MULTICHAIN_CONFIG_KEY =
+      "paciofs.blockchain-service.multichain";
+
+  private Config config;
+
   @Override
-  public void configure(Config config) {}
+  public void configure(Config config) {
+    this.config = config.getConfig(MULTICHAIN_CONFIG_KEY);
+  }
 
   @Override
   public void start() {}

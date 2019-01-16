@@ -14,12 +14,12 @@ import akka.event.LoggingAdapter;
 import com.typesafe.config.Config;
 
 public class PFSBlockchain extends AbstractActor {
+  private static final String PACIOFS_BLOCKCHAIN_SERVICE_CLASS_KEY =
+      "paciofs.blockchain-service.class";
+
   private final LoggingAdapter log;
 
   private final BlockchainService service;
-
-  private static final String PACIOFS_BLOCKCHAIN_SERVICE_KEY =
-      "paciofs.blockchain-service";
 
   private PFSBlockchain() {
     this.log = Logging.getLogger(this.getContext().system(), this);
@@ -28,7 +28,7 @@ public class PFSBlockchain extends AbstractActor {
 
     // may throw if key is empty or null
     final String blockchainServiceClassName =
-        config.getString(PACIOFS_BLOCKCHAIN_SERVICE_KEY);
+        config.getString(PACIOFS_BLOCKCHAIN_SERVICE_CLASS_KEY);
 
     // find the class implementing the blockchain service
     final Class<BlockchainService> blockchainServiceClass;
@@ -58,12 +58,12 @@ public class PFSBlockchain extends AbstractActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    service.start();
+    this.service.start();
   }
 
   @Override
   public void postStop() throws Exception {
-    service.stop();
+    this.service.stop();
     super.postStop();
   }
 

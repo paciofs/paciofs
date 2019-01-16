@@ -23,9 +23,11 @@ RUN apt-get --quiet --yes install \
   maven \
   openjdk-8-jdk
 
-# install go
 WORKDIR /tmp
-RUN wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.3.linux-amd64.tar.gz \
+
+# install go
+ENV GO_VERSION="1.11.4"
+RUN wget --output-document go.tar.gz --quiet https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz \
   && tar --directory /usr/local --extract --file go.tar.gz \
   && rm go.tar.gz
 ENV GOPATH="/go"

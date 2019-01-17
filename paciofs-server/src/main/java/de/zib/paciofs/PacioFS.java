@@ -18,24 +18,24 @@ import akka.stream.ActorMaterializer;
 import akka.stream.Materializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import de.zib.paciofs.blockchain.BlockchainService;
 import de.zib.paciofs.blockchain.PFSBlockchain;
-import de.zib.paciofs.blockchain.multichain.MultiChainService;
 import de.zib.paciofs.cluster.PFSCluster;
 import org.apache.commons.cli.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class PacioFS {
 
   public static void main(String[] args) {
     final CommandLine cmd = parseCommandLine(args);
+    final boolean skipBootstrap = cmd.hasOption("skip-bootstrap");
 
     // parses application.conf from the classpath
     // exclude bootstrapping configuration if requested (e.g. if we are not
     // running in kubernetes)
-    final Config config = cmd.hasOption("skip-bootstrap")
+    final Config config = skipBootstrap
                               ? ConfigFactory.load().withoutPath(
                                     "akka.management.cluster.bootstrap")
                               : ConfigFactory.load();
@@ -50,7 +50,7 @@ public class PacioFS {
                        cluster.selfAddress() + ")");
 
     // again, skip bootstrapping if requested
-    if (!cmd.hasOption("skip-bootstrap")) {
+    if (!skipBootstrap) {
       // hosts HTTP routes used by bootstrap
       AkkaManagement.get(paciofs).start();
 
@@ -79,7 +79,7 @@ public class PacioFS {
 
   private static CommandLine parseCommandLine(String[] args) {
     final Options options = new Options();
-    options.addOption("h", "help", false, "print this message");
+    options.addOption("h", "help", false, "print this message and exit");
 
     options.addOption(
         "s", "skip-bootstrap", false,
@@ -87,20 +87,31 @@ public class PacioFS {
 
     final CommandLineParser parser = new DefaultParser();
     CommandLine cmd = null;
-    final HelpFormatter formatter = new HelpFormatter();
 
-    boolean printUsageAndExit;
+    // 0 on help option, 1 on error, -1 otherwise
+    int exitCode;
     try {
       cmd = parser.parse(options, args, false);
-      printUsageAndExit = cmd.hasOption("help");
+
+      // exit on unrecognized arguments or help option
+      List<String> argList = cmd.getArgList();
+      if (argList.size() > 0) {
+        System.err.println("Unrecognized argument(s): " +
+                           String.join(" ", argList));
+        exitCode = 1;
+      } else {
+        exitCode = cmd.hasOption("help") ? 0 : -1;
+      }
     } catch (ParseException e) {
+      // exit on parsing error
       System.err.println(e.getMessage());
-      printUsageAndExit = true;
+      exitCode = 1;
     }
 
-    if (printUsageAndExit) {
+    if (exitCode >= 0) {
+      final HelpFormatter formatter = new HelpFormatter();
       formatter.printHelp("PacioFS", options);
-      System.exit(0);
+      System.exit(exitCode);
     }
 
     return cmd;

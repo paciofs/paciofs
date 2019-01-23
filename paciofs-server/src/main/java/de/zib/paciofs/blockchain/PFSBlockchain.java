@@ -46,7 +46,7 @@ public class PFSBlockchain extends AbstractActor {
     }
 
     // finally configure the service
-    this.service.configure(config);
+    this.service.configure(config, this.log);
   }
 
   public static Props props() {

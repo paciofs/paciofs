@@ -163,7 +163,7 @@
                             <systemProperties>
                                 <!-- assume MultiChain has been built next to us -->
                                 <systemProperty>
-                                    <key>MULTICHAIN_PATH</key>
+                                    <key>multichain.path</key>
                                     <value>${project.basedir}/../../multichain</value>
                                 </systemProperty>
                             </systemProperties>

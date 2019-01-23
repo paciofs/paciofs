@@ -57,3 +57,6 @@ script:
   - MVN_PID=$!
   - sleep 10s
   - kill ${MVN_PID}
+
+  # exits with exit code of mvn
+  - wait ${MVN_PID}

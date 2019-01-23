@@ -53,7 +53,7 @@ script:
   - docker-compose --file ./paciofs-docker/docker-compose.yaml build
 
   # start and stop PacioFS
-  - mvn exec:java@run-server &
+  - mvn --projects paciofs-server exec:java@run-server &
   - MVN_PID=$!
-  - sleep 5s
+  - sleep 10s
   - kill ${MVN_PID}

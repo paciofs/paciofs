@@ -20,14 +20,17 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.zib.paciofs.blockchain.PFSBlockchain;
 import de.zib.paciofs.cluster.PFSCluster;
-import org.apache.commons.cli.*;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 public class PacioFS {
-
   public static void main(String[] args) {
     final CommandLine cmd = parseCommandLine(args);
     final boolean skipBootstrap = cmd.hasOption("skip-bootstrap");
@@ -36,18 +39,16 @@ public class PacioFS {
     // exclude bootstrapping configuration if requested (e.g. if we are not
     // running in kubernetes)
     final Config config = skipBootstrap
-                              ? ConfigFactory.load().withoutPath(
-                                    "akka.management.cluster.bootstrap")
-                              : ConfigFactory.load();
+        ? ConfigFactory.load().withoutPath("akka.management.cluster.bootstrap")
+        : ConfigFactory.load();
 
     // create the actor system
     final ActorSystem paciofs = ActorSystem.create("paciofs", config);
 
-    Materializer mat = ActorMaterializer.create(paciofs);
     Cluster cluster = Cluster.get(paciofs);
 
-    paciofs.log().info("Started [" + paciofs + "], cluster.selfAddress = " +
-                       cluster.selfAddress() + ")");
+    paciofs.log().info(
+        "Started [" + paciofs + "], cluster.selfAddress = " + cluster.selfAddress() + ")");
 
     // again, skip bootstrapping if requested
     if (!skipBootstrap) {
@@ -72,6 +73,7 @@ public class PacioFS {
       hostAddress = "<unknown host>";
     }
 
+    Materializer mat = ActorMaterializer.create(paciofs);
     Http.get(paciofs).bindAndHandle(
         Directives.complete("paciofs@" + hostAddress).flow(paciofs, mat),
         ConnectHttp.toHost("0.0.0.0", 8080), mat);
@@ -81,8 +83,7 @@ public class PacioFS {
     final Options options = new Options();
     options.addOption("h", "help", false, "print this message and exit");
 
-    options.addOption(
-        "s", "skip-bootstrap", false,
+    options.addOption("s", "skip-bootstrap", false,
         "whether to skip bootstrapping (e.g. when outside kubernetes)");
 
     final CommandLineParser parser = new DefaultParser();
@@ -96,8 +97,7 @@ public class PacioFS {
       // exit on unrecognized arguments or help option
       List<String> argList = cmd.getArgList();
       if (argList.size() > 0) {
-        System.err.println("Unrecognized argument(s): " +
-                           String.join(" ", argList));
+        System.err.println("Unrecognized argument(s): " + String.join(" ", argList));
         exitCode = 1;
       } else {
         exitCode = cmd.hasOption("help") ? 0 : -1;

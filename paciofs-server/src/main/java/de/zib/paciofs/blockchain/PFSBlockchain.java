@@ -33,8 +33,7 @@ public class PFSBlockchain extends AbstractActor {
     // find the class implementing the blockchain service
     final Class<BlockchainService> blockchainServiceClass;
     try {
-      blockchainServiceClass =
-          (Class<BlockchainService>)Class.forName(blockchainServiceClassName);
+      blockchainServiceClass = (Class<BlockchainService>) Class.forName(blockchainServiceClassName);
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(blockchainServiceClassName + " not found", e);
     }
@@ -43,8 +42,7 @@ public class PFSBlockchain extends AbstractActor {
     try {
       this.service = blockchainServiceClass.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(
-          "Could not instantiate " + blockchainServiceClassName, e);
+      throw new RuntimeException("Could not instantiate " + blockchainServiceClassName, e);
     }
 
     // finally configure the service

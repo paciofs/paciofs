@@ -116,6 +116,19 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>format-sources</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>${project.basedir}/format-sources.sh</executable>
+                            <skip>${format-sources.skip}</skip>
+                        </configuration>
+                    </execution>
+
+                    <execution>
                         <id>generate-grpc</id>
                         <phase>generate-sources</phase>
                         <goals>
@@ -148,6 +161,30 @@
                                 <!-- bootstrapping is useful in kubernetes only -->
                                 <argument>--skip-bootstrap</argument>
                             </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- run after formatting the sources -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <configLocation>google_checks.xml</configLocation>
+                            <encoding>UTF-8</encoding>
+                            <consoleOutput>true</consoleOutput>
+                            <sourceDirectories>
+                                <!-- so the generated code does not get checked -->
+                                <directory>${project.build.sourceDirectory}</directory>
+                            </sourceDirectories>
                         </configuration>
                     </execution>
                 </executions>

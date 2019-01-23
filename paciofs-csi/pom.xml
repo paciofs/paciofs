@@ -26,6 +26,19 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <id>format-sources</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>${project.basedir}/format-sources.sh</executable>
+                            <skip>${format-sources.skip}</skip>
+                        </configuration>
+                    </execution>
+
                     <!-- Install dependencies under vendor/ -->
                     <execution>
                         <id>get-csi-dependencies</id>

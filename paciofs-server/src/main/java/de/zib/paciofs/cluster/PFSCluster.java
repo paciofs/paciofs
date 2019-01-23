@@ -34,11 +34,9 @@ public class PFSCluster extends AbstractActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    this.cluster.subscribe(
-        this.self(),
+    this.cluster.subscribe(this.self(),
         ClusterEvent.initialStateAsEvents(), // replays current state as events
-        ClusterEvent.MemberEvent
-            .class, // entails Member[Exited|Joined|Left|Removed|Up|WeaklyUp]
+        ClusterEvent.MemberEvent.class, // entails Member[Exited|Joined|Left|Removed|Up|WeaklyUp]
         ClusterEvent.UnreachableMember.class);
   }
 
@@ -51,17 +49,16 @@ public class PFSCluster extends AbstractActor {
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-        .match(ClusterEvent.MemberUp.class,
-               m -> { this.log.info("Member up: {}", m.member()); })
+        .match(ClusterEvent.MemberUp.class, m -> { this.log.info("Member up: {}", m.member()); })
         .match(ClusterEvent.MemberRemoved.class,
-               m -> { this.log.info("Member removed: {}", m.member()); })
+            m -> { this.log.info("Member removed: {}", m.member()); })
         .match(ClusterEvent.UnreachableMember.class,
-               m -> { this.log.info("Member unreachable: {}", m.member()); })
+            m -> { this.log.info("Member unreachable: {}", m.member()); })
         .match(ClusterEvent.MemberEvent.class,
-               m
-               -> {
-                   // catch all
-               })
+            m
+            -> {
+                // catch all
+            })
         .build();
   }
 }

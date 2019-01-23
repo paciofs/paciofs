@@ -145,19 +145,23 @@
                         </configuration>
                     </execution>
 
-                    <!-- invoke like this: mvn exec:exec@run-server -->
+                    <!-- invoke like this: mvn exec:java@run-server -->
                     <execution>
                         <id>run-server</id>
                         <phase>none</phase>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>java</goal>
                         </goals>
                         <configuration>
-                            <workingDirectory>${project.build.directory}</workingDirectory>
-                            <executable>${java.home}/bin/java</executable>
+                            <mainClass>de.zib.paciofs.PacioFS</mainClass>
+                            <systemProperties>
+                                <!-- assume MultiChain has been built next to us -->
+                                <systemProperty>
+                                    <key>MULTICHAIN_PATH</key>
+                                    <value>${project.basedir}/../../multichain</value>
+                                </systemProperty>
+                            </systemProperties>
                             <arguments>
-                                <argument>-jar</argument>
-                                <argument>paciofs-server-${project.version}-allinone.jar</argument>
                                 <!-- bootstrapping is useful in kubernetes only -->
                                 <argument>--skip-bootstrap</argument>
                             </arguments>

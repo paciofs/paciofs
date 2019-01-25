@@ -7,8 +7,7 @@
 
 package de.zib.paciofs.blockchain.multichain;
 
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
+import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
 import java.io.File;
@@ -17,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
@@ -25,18 +25,20 @@ import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultiChaind {
+  private static final Logger LOG = LoggerFactory.getLogger(MultiChaind.class);
+
   private final Config config;
-  private final LoggingAdapter log;
 
   private ExecuteWatchdog watchdog;
   private DefaultExecuteResultHandler executeResultHandler;
 
-  public MultiChaind(Config config, LoggingAdapter log) {
+  public MultiChaind(Config config) {
     this.config = config;
-    this.log = log;
-    this.log.debug("Configation: {}", this.config.toString());
+    this.LOG.debug("Configuration: {}", this.config.toString());
   }
 
   public void start() {
@@ -62,7 +64,7 @@ public class MultiChaind {
       switch (key) {
         case "daemon":
           // we are running multichaind in the background anyway
-          this.log.debug("Ignoring -{} multichaind option", key);
+          this.LOG.debug("Ignoring -{} multichaind option", key);
           break;
         case "datadir":
           // add substitution and replace value with placeholder for
@@ -81,12 +83,17 @@ public class MultiChaind {
     initializeBlockchain();
 
     // the executor we use to run multichaind in
-    final Executor executor = new DefaultExecutor();
+    final Executor executor = new DefaultExecutor() {
+      @Override
+      protected Thread createThread(Runnable runnable, String name) {
+        return super.createThread(runnable, "multichaind.executor");
+      }
+    };
 
     // redirect stdout and stderr to our LOG
-    executor.setStreamHandler(
-        new MultiChainPumpStreamHandler(new AkkaLoggingOutputStream(this.log, Logging.DebugLevel()),
-            new AkkaLoggingOutputStream(this.log, Logging.DebugLevel())));
+    executor.setStreamHandler(new MultiChainPumpStreamHandler(
+        new RedirectingOutputStream(this.LOG::debug, Level.INFO.levelInt),
+        new RedirectingOutputStream(this.LOG::debug, Level.ERROR.levelInt)));
 
     // apparently 141 is a pipe error which occurs during normal shutdown as well, so accept it
     executor.setExitValues(new int[] {0, 141});
@@ -95,13 +102,13 @@ public class MultiChaind {
     this.executeResultHandler = new DefaultExecuteResultHandler() {
       @Override
       public synchronized void onProcessComplete(int exitValue) {
-        MultiChaind.this.log.debug("multichaind completed with exit code: {}", exitValue);
+        MultiChaind.this.LOG.debug("multichaind completed with exit code: {}", exitValue);
         super.onProcessComplete(exitValue);
       }
 
       @Override
       public synchronized void onProcessFailed(ExecuteException e) {
-        MultiChaind.this.log.debug(
+        MultiChaind.this.LOG.debug(
             "multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
         super.onProcessFailed(e);
       }
@@ -112,7 +119,7 @@ public class MultiChaind {
     this.watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
     executor.setWatchdog(watchdog);
 
-    this.log.debug("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
+    this.LOG.debug("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
     try {
       // asynchronous execution to simulate -daemon behavior
       executor.execute(cmd, this.executeResultHandler);
@@ -122,14 +129,14 @@ public class MultiChaind {
   }
 
   public void terminate() {
-    this.log.debug("Stopping multichaind");
+    this.LOG.debug("Stopping multichaind");
 
     // sends SIGTERM
     this.watchdog.destroyProcess();
     try {
       this.executeResultHandler.waitFor();
     } catch (InterruptedException e) {
-      this.log.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
+      this.LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
     }
 
     this.watchdog = null;
@@ -146,7 +153,7 @@ public class MultiChaind {
     // data directory needs to exist before creating the chain
     final File datadir = new File(options.getString("datadir"));
     if (!datadir.exists()) {
-      this.log.debug("Creating multichaind -datadir: {}", datadir.toString());
+      this.LOG.debug("Creating multichaind -datadir: {}", datadir.toString());
       if (!datadir.mkdirs()) {
         throw new RuntimeException("Could not create multichaind -datadir"
             + ": " + datadir.toString());
@@ -183,30 +190,35 @@ public class MultiChaind {
       }
       cmd.setSubstitutionMap(substitutions);
 
-      final Executor executor = new DefaultExecutor();
+      final Executor executor = new DefaultExecutor() {
+        @Override
+        protected Thread createThread(Runnable runnable, String name) {
+          return super.createThread(runnable, "multichain-util.executor");
+        }
+      };
 
-      this.log.debug("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
+      this.LOG.debug("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
       try {
         // synchronous execution
         final int exitValue = executor.execute(cmd);
-        this.log.debug("multichain-util completed with exit code: {}", exitValue);
+        this.LOG.debug("multichain-util completed with exit code: {}", exitValue);
       } catch (IOException e) {
         throw new RuntimeException("multichain-util failed", e);
       }
     }
   }
 
-  private static class AkkaLoggingOutputStream extends LogOutputStream {
-    private final LoggingAdapter log;
+  private static class RedirectingOutputStream extends LogOutputStream {
+    private final Consumer<String> log;
 
-    private AkkaLoggingOutputStream(final LoggingAdapter log, final int level) {
+    private RedirectingOutputStream(final Consumer<String> log, final int level) {
       super(level);
       this.log = log;
     }
 
     @Override
     protected void processLine(final String line, final int level) {
-      this.log.log(level, line);
+      this.log.accept(line);
     }
   }
 

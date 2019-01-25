@@ -45,15 +45,14 @@ public class Bitcoind extends AbstractActor {
     // obtain an instance from the two argument constructor
     final Constructor<BitcoindRpcClient> constructor;
     try {
-      constructor = bitcoindClientClass.getDeclaredConstructor(Config.class, LoggingAdapter.class);
+      constructor = bitcoindClientClass.getDeclaredConstructor(Config.class);
     } catch (NoSuchMethodException e) {
       throw new RuntimeException("Could not find constructor with single argument of type "
           + Config.class.getName() + " in " + bitcoindClientClassName);
     }
 
     try {
-      this.client =
-          constructor.newInstance(config.getConfig(PACIOFS_BITCOIND_CLIENT_KEY), this.log);
+      this.client = constructor.newInstance(config.getConfig(PACIOFS_BITCOIND_CLIENT_KEY));
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException("Could not instantiate " + bitcoindClientClassName, e);
     }

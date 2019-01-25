@@ -7,10 +7,11 @@
 
 package de.zib.paciofs.blockchain.multichain;
 
-import akka.event.LoggingAdapter;
 import com.typesafe.config.Config;
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCError;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
@@ -24,25 +25,24 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     STOPPING;
   }
 
-  private final Config config;
+  private static final Logger LOG = LoggerFactory.getLogger(MultiChainClient.class);
 
-  private final LoggingAdapter log;
+  private final Config config;
 
   private final MultiChaind multiChaind;
 
   private State state;
 
-  public MultiChainClient(Config config, LoggingAdapter log) throws MalformedURLException {
+  public MultiChainClient(Config config) throws MalformedURLException {
     super(new URL("http://" + config.getString(MultiChainOptions.RPC_USER_KEY) + ":"
         + config.getString(MultiChainOptions.RPC_PASSWORD_KEY) + "@"
         + config.getString(MultiChainOptions.RPC_CONNECT_KEY) + ":"
         + config.getInt(MultiChainOptions.RPC_PORT_KEY)));
     this.config = config;
-    this.log = log;
 
     // start MultiChain locally if localhost is the target connect
     if ("localhost".equals(this.config.getString(MultiChainOptions.RPC_CONNECT_KEY))) {
-      this.multiChaind = new MultiChaind(this.config, this.log);
+      this.multiChaind = new MultiChaind(this.config);
       this.state = State.STOPPED;
     } else {
       // assume all is well if we connect to a remote MultiChain
@@ -115,18 +115,19 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     // wait at most backoff * (2^maxRetries - 1) milliseconds
     // e.g. 50 * (2^10 -1) = 51150 milliseconds
     long backoff = 50;
-    int retries = 0, maxRetries = 10;
+    int maxRetries = 10;
+    int retries = 0;
     for (retries = 0; retries < maxRetries; ++retries) {
       try {
         BlockChainInfo bci = this.getBlockChainInfo();
-        this.log.debug("Connected to chain {}", bci.chain());
+        this.LOG.debug("Connected to chain {}", bci.chain());
         break;
       } catch (BitcoinRPCException rpcException) {
         BitcoinRPCError rpcError = rpcException.getRPCError();
 
         // check MultiChain source code at src/rpc/rpcprotocol.h
         if (rpcError != null && rpcError.getCode() == -28) {
-          this.log.debug(
+          this.LOG.debug(
               "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());
 
           // keep waiting, multichaind is at work and will be with us soon
@@ -137,7 +138,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
             this.state = State.STOPPED;
             throw new RuntimeException("multichaind stopped running");
           } else {
-            this.log.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
+            this.LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
                 rpcException.getMessage());
           }
         }
@@ -147,16 +148,16 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
           Thread.sleep(backoff);
           backoff *= 2;
         } catch (InterruptedException e1) {
-          this.log.debug("Interrupted while waiting for multichaind to start");
+          this.LOG.debug("Interrupted while waiting for multichaind to start");
         }
       }
     }
 
     if (retries == maxRetries) {
-      this.log.debug("multichaind not up after {} ms", System.currentTimeMillis() - startWait);
+      this.LOG.debug("multichaind not up after {} ms", System.currentTimeMillis() - startWait);
       throw new RuntimeException("multichaind did not start");
     } else {
-      this.log.debug("multichaind up after {} ms", System.currentTimeMillis() - startWait);
+      this.LOG.debug("multichaind up after {} ms", System.currentTimeMillis() - startWait);
     }
 
     // done

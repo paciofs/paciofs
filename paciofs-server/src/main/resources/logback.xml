@@ -1,0 +1,27 @@
+<configuration>
+    <define name="multiChainLogLevel" class="de.zib.paciofs.logging.LogbackPropertyDefiners$EnvVarWithDefaultValue">
+        <envVar>PACIOFS_MULTICHAIN_LOG_LEVEL</envVar>
+        <defaultValue>INFO</defaultValue>
+    </define>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%level] [%date] [%thread] [%logger] %message %n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="async-stdout" class="ch.qos.logback.classic.AsyncAppender" level="INFO">
+        <appender-ref ref="stdout" />
+    </appender>
+
+    <logger name="de.zib.paciofs.blockchain.multichain.MultiChainClient" level="${multiChainLogLevel}" additivity="false">
+        <appender-ref ref="async-stdout" />
+    </logger>
+    <logger name="de.zib.paciofs.blockchain.multichain.MultiChaind" level="${multiChainLogLevel}" additivity="false">
+        <appender-ref ref="async-stdout" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="async-stdout" />
+    </root>
+</configuration>

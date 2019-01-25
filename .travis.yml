@@ -54,11 +54,11 @@ before_install:
 
 
 install:
-  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dprotobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc -Dprotobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode --show-version
+  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc --define protobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode --show-version
 
 script:
   # run tests
-  - mvn test -Dprotobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc -Dprotobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode
+  - mvn test --define protobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc --define protobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode
 
   # build the docker image
   - docker-compose --file ./paciofs-docker/docker-compose.yaml build

@@ -76,6 +76,7 @@ script:
   - kill ${MVN_PID}
   - wait ${MVN_PID}
   - MVN_EXIT=$?
+  - echo "Maven exit status ${MVN_EXIT}"
 
   # JVM return code when sent SIGTERM
   - test "143" -eq "${MVN_EXIT}"

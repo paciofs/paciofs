@@ -66,7 +66,7 @@ script:
   # start and stop PacioFS
   - mvn --projects paciofs-server exec:java@run-server &
   - MVN_PID=$!
-  - sleep 10s
+  - sleep 60s
   - kill ${MVN_PID}
 
   # exits with exit code of mvn

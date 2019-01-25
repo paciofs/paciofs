@@ -17,18 +17,18 @@ import akka.event.LoggingAdapter;
 /**
  * Listens to cluster events.
  */
-public class PFSCluster extends AbstractActor {
+public class ClusterEventListener extends AbstractActor {
   private final LoggingAdapter log;
 
   private final Cluster cluster;
 
-  private PFSCluster() {
+  private ClusterEventListener() {
     this.log = Logging.getLogger(this.getContext().system(), this);
     this.cluster = Cluster.get(this.getContext().system());
   }
 
   public static Props props() {
-    return Props.create(PFSCluster.class, PFSCluster::new);
+    return Props.create(ClusterEventListener.class, ClusterEventListener::new);
   }
 
   @Override

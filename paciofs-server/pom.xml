@@ -20,6 +20,7 @@
         <akka.http.version>10.1.5</akka.http.version>
         <akka.management.version>0.20.0</akka.management.version>
         <akka.version>2.5.19</akka.version>
+        <bitcoin-rpc-client.version>1.1.0</bitcoin-rpc-client.version>
         <commons-cli.version>1.4</commons-cli.version>
         <!-- need unreleased version that fixes [EXEC-71] -->
         <!-- https://github.com/apache/commons-exec/commit/42eb77c321f7dc17aaff45e45ac1179256517005 -->
@@ -75,6 +76,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
             <version>${commons-exec.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>wf.bitcoin</groupId>
+            <artifactId>bitcoin-rpc-client</artifactId>
+            <version>${bitcoin-rpc-client.version}</version>
         </dependency>
     </dependencies>
 

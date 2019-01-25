@@ -18,8 +18,8 @@ import akka.stream.ActorMaterializer;
 import akka.stream.Materializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import de.zib.paciofs.blockchain.PFSBlockchain;
-import de.zib.paciofs.cluster.PFSCluster;
+import de.zib.paciofs.blockchain.Bitcoind;
+import de.zib.paciofs.cluster.ClusterEventListener;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -60,10 +60,10 @@ public class PacioFS {
     }
 
     // listens to cluster events
-    paciofs.actorOf(PFSCluster.props(), "pfsCluster");
+    paciofs.actorOf(ClusterEventListener.props(), "cluster");
 
     // actor for the blockchain
-    paciofs.actorOf(PFSBlockchain.props(), "pfsBlockchain");
+    paciofs.actorOf(Bitcoind.props(), "bitcoind");
 
     // figure out where we are
     String hostAddress;

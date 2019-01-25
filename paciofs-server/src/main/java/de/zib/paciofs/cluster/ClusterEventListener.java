@@ -48,7 +48,7 @@ public class ClusterEventListener extends AbstractActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
+    return this.receiveBuilder()
         .match(ClusterEvent.MemberUp.class, m -> { this.log.info("Member up: {}", m.member()); })
         .match(ClusterEvent.MemberRemoved.class,
             m -> { this.log.info("Member removed: {}", m.member()); })

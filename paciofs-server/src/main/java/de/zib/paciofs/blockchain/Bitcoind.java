@@ -78,6 +78,6 @@ public class Bitcoind extends AbstractActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().build();
+    return this.receiveBuilder().build();
   }
 }

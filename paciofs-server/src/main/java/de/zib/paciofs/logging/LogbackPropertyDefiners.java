@@ -24,7 +24,7 @@ public class LogbackPropertyDefiners {
 
     @Override
     public String getPropertyValue() {
-      if (this.envVar == null || "".equals(envVar)) {
+      if (this.envVar == null || "".equals(this.envVar)) {
         return this.defaultValue;
       } else {
         String envValue = System.getenv(this.envVar);

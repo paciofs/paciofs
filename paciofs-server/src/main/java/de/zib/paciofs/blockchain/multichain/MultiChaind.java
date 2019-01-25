@@ -38,7 +38,7 @@ public class MultiChaind {
 
   public MultiChaind(Config config) {
     this.config = config;
-    this.LOG.debug("Configuration: {}", this.config.toString());
+    LOG.debug("Configuration: {}", this.config.toString());
   }
 
   public void start() {
@@ -64,7 +64,7 @@ public class MultiChaind {
       switch (key) {
         case "daemon":
           // we are running multichaind in the background anyway
-          this.LOG.debug("Ignoring -{} multichaind option", key);
+          LOG.debug("Ignoring -{} multichaind option", key);
           break;
         case "datadir":
           // add substitution and replace value with placeholder for
@@ -80,7 +80,7 @@ public class MultiChaind {
     cmd.setSubstitutionMap(substitutions);
 
     // make sure all directories and configuration files exist
-    initializeBlockchain();
+    this.initializeBlockchain();
 
     // the executor we use to run multichaind in
     final Executor executor = new DefaultExecutor() {
@@ -92,8 +92,8 @@ public class MultiChaind {
 
     // redirect stdout and stderr to our LOG
     executor.setStreamHandler(new MultiChainPumpStreamHandler(
-        new RedirectingOutputStream(this.LOG::debug, Level.INFO.levelInt),
-        new RedirectingOutputStream(this.LOG::debug, Level.ERROR.levelInt)));
+        new RedirectingOutputStream(LOG::debug, Level.INFO.levelInt),
+        new RedirectingOutputStream(LOG::debug, Level.ERROR.levelInt)));
 
     // apparently 141 is a pipe error which occurs during normal shutdown as well, so accept it
     executor.setExitValues(new int[] {0, 141});
@@ -102,14 +102,13 @@ public class MultiChaind {
     this.executeResultHandler = new DefaultExecuteResultHandler() {
       @Override
       public synchronized void onProcessComplete(int exitValue) {
-        MultiChaind.this.LOG.debug("multichaind completed with exit code: {}", exitValue);
+        LOG.debug("multichaind completed with exit code: {}", exitValue);
         super.onProcessComplete(exitValue);
       }
 
       @Override
       public synchronized void onProcessFailed(ExecuteException e) {
-        MultiChaind.this.LOG.debug(
-            "multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
+        LOG.debug("multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
         super.onProcessFailed(e);
       }
     };
@@ -117,9 +116,9 @@ public class MultiChaind {
     // watchdog used only for killing the process, so set the timeout to
     // infinity
     this.watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
-    executor.setWatchdog(watchdog);
+    executor.setWatchdog(this.watchdog);
 
-    this.LOG.debug("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
+    LOG.debug("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
     try {
       // asynchronous execution to simulate -daemon behavior
       executor.execute(cmd, this.executeResultHandler);
@@ -129,14 +128,14 @@ public class MultiChaind {
   }
 
   public void terminate() {
-    this.LOG.debug("Stopping multichaind");
+    LOG.debug("Stopping multichaind");
 
     // sends SIGTERM
     this.watchdog.destroyProcess();
     try {
       this.executeResultHandler.waitFor();
     } catch (InterruptedException e) {
-      this.LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
+      LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
     }
 
     this.watchdog = null;
@@ -144,7 +143,7 @@ public class MultiChaind {
   }
 
   public boolean isRunning() {
-    return this.watchdog != null ? this.watchdog.isWatching() : false;
+    return this.watchdog != null && this.watchdog.isWatching();
   }
 
   private void initializeBlockchain() {
@@ -153,7 +152,7 @@ public class MultiChaind {
     // data directory needs to exist before creating the chain
     final File datadir = new File(options.getString("datadir"));
     if (!datadir.exists()) {
-      this.LOG.debug("Creating multichaind -datadir: {}", datadir.toString());
+      LOG.debug("Creating multichaind -datadir: {}", datadir.toString());
       if (!datadir.mkdirs()) {
         throw new RuntimeException("Could not create multichaind -datadir"
             + ": " + datadir.toString());
@@ -197,11 +196,11 @@ public class MultiChaind {
         }
       };
 
-      this.LOG.debug("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
+      LOG.debug("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
       try {
         // synchronous execution
         final int exitValue = executor.execute(cmd);
-        this.LOG.debug("multichain-util completed with exit code: {}", exitValue);
+        LOG.debug("multichain-util completed with exit code: {}", exitValue);
       } catch (IOException e) {
         throw new RuntimeException("multichain-util failed", e);
       }

@@ -18,12 +18,7 @@ import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
 public class MultiChainClient extends BitcoinJSONRPCClient {
-  private static enum State {
-    STOPPED,
-    STARTING,
-    RUNNING,
-    STOPPING;
-  }
+  private enum State { STOPPED, STARTING, RUNNING, STOPPING }
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainClient.class);
 
@@ -53,7 +48,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
 
   @Override
   public Object query(String method, Object... o) throws GenericRpcException {
-    ensureRunning();
+    this.ensureRunning();
     return super.query(method, o);
   }
 
@@ -68,7 +63,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     }
 
     // have exactly one thread to the stopping
-    synchronized (this.state) {
+    synchronized (this) {
       if (this.state == State.RUNNING) {
         this.state = State.STOPPING;
       } else {
@@ -99,7 +94,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     }
 
     // have exactly one thread do the starting
-    synchronized (this.state) {
+    synchronized (this) {
       if (this.state == State.STOPPED) {
         this.state = State.STARTING;
       } else {
@@ -117,17 +112,18 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     long backoff = 50;
     int maxRetries = 10;
     int retries = 0;
-    for (retries = 0; retries < maxRetries; ++retries) {
+    BitcoinRPCException lastCaught = null;
+    for (; retries < maxRetries; ++retries) {
       try {
         BlockChainInfo bci = this.getBlockChainInfo();
-        this.LOG.debug("Connected to chain {}", bci.chain());
+        LOG.debug("Connected to chain {}", bci.chain());
         break;
       } catch (BitcoinRPCException rpcException) {
         BitcoinRPCError rpcError = rpcException.getRPCError();
 
         // check MultiChain source code at src/rpc/rpcprotocol.h
         if (rpcError != null && rpcError.getCode() == -28) {
-          this.LOG.debug(
+          LOG.debug(
               "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());
 
           // keep waiting, multichaind is at work and will be with us soon
@@ -138,8 +134,10 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
             this.state = State.STOPPED;
             throw new RuntimeException("multichaind stopped running");
           } else {
-            this.LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
+            lastCaught = rpcException;
+            LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
                 rpcException.getMessage());
+            LOG.trace(rpcException.getMessage(), rpcException);
           }
         }
 
@@ -148,16 +146,16 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
           Thread.sleep(backoff);
           backoff *= 2;
         } catch (InterruptedException e1) {
-          this.LOG.debug("Interrupted while waiting for multichaind to start");
+          LOG.debug("Interrupted while waiting for multichaind to start");
         }
       }
     }
 
     if (retries == maxRetries) {
-      this.LOG.debug("multichaind not up after {} ms", System.currentTimeMillis() - startWait);
-      throw new RuntimeException("multichaind did not start");
+      LOG.debug("multichaind not up after {} ms", System.currentTimeMillis() - startWait);
+      throw new RuntimeException("multichaind did not start", lastCaught);
     } else {
-      this.LOG.debug("multichaind up after {} ms", System.currentTimeMillis() - startWait);
+      LOG.debug("multichaind up after {} ms", System.currentTimeMillis() - startWait);
     }
 
     // done

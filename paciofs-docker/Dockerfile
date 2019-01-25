@@ -62,7 +62,7 @@ RUN wget --output-document commons-exec.zip --quiet https://github.com/apache/co
    && unzip commons-exec.zip \
    && rm commons-exec.zip
 RUN cd commons-exec-${COMMONS_EXEC_VERSION} \
-  && mvn install --define skipTests=true --define maven.javadoc.skip=true --batch-mode \
+  && mvn install --define maven.compiler.source=1.8 --define maven.compiler.target=1.8 --define skipTests=true --define maven.javadoc.skip=true --batch-mode \
   && cd .. \
   && rm -rf commons-exec-${COMMONS_EXEC_VERSION}
 

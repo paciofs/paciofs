@@ -66,8 +66,19 @@ script:
   # start and stop PacioFS
   - mvn --projects paciofs-server exec:java@run-server &
   - MVN_PID=$!
-  - sleep 60s
-  - kill ${MVN_PID}
+  - sleep 15s
 
-  # exits with exit code of mvn
+  # simple query with default parameters
+  - ./multichain-cli paciofs -rpcuser=rpcuser -rpcpassword=rpcpassword -rpconnect=localhost -rpcport=8332 getblockchaininfo
+  - CLI_EXIT=$?
+
+  # wait for everyting to shut down
+  - kill ${MVN_PID}
   - wait ${MVN_PID}
+  - MVN_EXIT=$?
+
+  # JVM return code when sent SIGTERM
+  - test "143" -eq "${MVN_EXIT}"
+
+  # exit with the multichain-cli exit code
+  - exit ${CLI_EXIT}

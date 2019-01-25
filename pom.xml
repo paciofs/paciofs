@@ -62,6 +62,7 @@
             </activation>
             <properties>
                 <format-sources.skip>true</format-sources.skip>
+                <checkstyle.skip>true</checkstyle.skip>
             </properties>
         </profile>
     </profiles>

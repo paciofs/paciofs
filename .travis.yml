@@ -9,6 +9,22 @@ addons:
       - cmake
       - libfuse-dev
 
+  coverity_scan:
+    project:
+      name: ${TRAVIS_REPO_SLUG}
+      version: 1.0
+      description: PacioFS
+
+    notification_email: paciofs-dev@googlegroups.com
+
+    # generate all necessary sources and resources
+    build_command_prepend: mvn --activate-profiles docker --projects paciofs-server clean process-resources
+
+    # only run the compilation
+    build_command: mvn --projects paciofs-server compiler:compile
+
+    branch_pattern: coverity_scan
+
 services:
   - docker
 
@@ -57,6 +73,9 @@ install:
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc --define protobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode --show-version
 
 script:
+  # bail out when doing Coverity Scan code analysis
+  - if [ "${COVERITY_SCAN_BRANCH}" -eq "1" ]; then exit 0; fi
+
   # run tests
   - mvn test --define protobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc --define protobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode
 

@@ -116,9 +116,9 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
       // e.g. 50 * (2^10 -1) = 51150 milliseconds
       long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS);
       final int maxRetries = this.config.getInt(MultiChainOptions.BACKOFF_RETRIES);
-      int retries = 0;
+      int failedRetries = 0;
       BitcoinRPCException lastCaught = null;
-      for (; retries < maxRetries; ++retries) {
+      for (; failedRetries < maxRetries; ++failedRetries) {
         try {
           final BlockChainInfo bci = this.getBlockChainInfo();
           LOG.debug("Connected to chain {}", bci.chain());
@@ -131,7 +131,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
                 "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());
 
             // keep waiting, multichaind is at work and will be with us soon
-            --retries;
+            --failedRetries;
           } else {
             // multichaind might have crashed
             if (!this.multiChaind.isRunning()) {
@@ -155,7 +155,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
         }
       }
 
-      if (retries == maxRetries) {
+      if (failedRetries == maxRetries) {
         LOG.debug("multichaind not up after {} ms", System.currentTimeMillis() - startWait);
         throw new RuntimeException("multichaind did not start", lastCaught);
       } else {

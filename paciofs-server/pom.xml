@@ -209,7 +209,8 @@
                         <configuration>
                             <configLocation>${project.basedir}/src/main/resources/checkstyle.xml</configLocation>
                             <encoding>UTF-8</encoding>
-                            <consoleOutput>true</consoleOutput>
+                            <violationSeverity>warning</violationSeverity>
+                            <failOnViolation>false</failOnViolation>
                             <sourceDirectories>
                                 <!-- so the generated code does not get checked -->
                                 <directory>${project.build.sourceDirectory}</directory>

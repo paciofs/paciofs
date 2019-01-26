@@ -27,12 +27,17 @@ import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.Signal;
 
 public class MultiChaind {
   private static final String OPTION_DAEMON = "daemon";
   private static final String OPTION_DATADIR = "datadir";
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChaind.class);
+
+  // exit code 128 means error, the signal number is added
+  private static final int EXIT_SIGPIPE = 128 + new Signal("PIPE").getNumber();
+  private static final int EXIT_SIGTERM = 128 + new Signal("TERM").getNumber();
 
   private final Config config;
 
@@ -101,8 +106,10 @@ public class MultiChaind {
         new RedirectingOutputStream(LOG::debug, Level.INFO.levelInt),
         new RedirectingOutputStream(LOG::debug, Level.ERROR.levelInt)));
 
-    // apparently 141 is a pipe error which occurs during normal shutdown as well, so accept it
-    executor.setExitValues(new int[] {0, 141});
+    // when killing the thread that multichaind is running in, the pipe reading from multichaind's
+    // stdout and stderr is closed, which is why multichaind may exit with SIGPIPE, even though
+    // SIGTERM was sent
+    executor.setExitValues(new int[] {0, EXIT_SIGPIPE, EXIT_SIGTERM});
 
     // invoked when the process is done, we use it to wait on the process before termination
     this.executeResultHandler = new DefaultExecuteResultHandler() {

@@ -9,4 +9,6 @@ package de.zib.paciofs.blockchain.multichain;
 
 import wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient;
 
-public class MultiChainJSONRPCClient extends BitcoinJSONRPCClient {}
+public class MultiChainJsonRpcClient extends BitcoinJSONRPCClient {
+  public MultiChainJsonRpcClient() {}
+}

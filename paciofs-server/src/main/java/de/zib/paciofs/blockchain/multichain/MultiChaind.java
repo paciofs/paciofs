@@ -29,6 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MultiChaind {
+  private static final String OPTION_DAEMON = "daemon";
+  private static final String OPTION_DATADIR = "datadir";
+
   private static final Logger LOG = LoggerFactory.getLogger(MultiChaind.class);
 
   private final Config config;
@@ -41,6 +44,9 @@ public class MultiChaind {
     LOG.debug("Configuration: {}", this.config.toString());
   }
 
+  /**
+   * Starts the MultiChain daemon in the background.
+   */
   public void start() {
     // see multichaind -?
     final CommandLine cmd =
@@ -62,18 +68,18 @@ public class MultiChaind {
       String value = entry.getValue().unwrapped().toString();
 
       switch (key) {
-        case "daemon":
+        case OPTION_DAEMON:
           // we are running multichaind in the background anyway
           LOG.debug("Ignoring -{} multichaind option", key);
           break;
-        case "datadir":
+        case OPTION_DATADIR:
           // add substitution and replace value with placeholder for
           // substitution
           substitutions.put(key, new File(value));
-          value = "${" + key + "}";
+          value = buildCommandLineSubstitution(key);
           // fall-through
         default:
-          cmd.addArgument("-" + key + (!"".equals(value) ? "=" + value : ""));
+          cmd.addArgument(buildCommandLineOption(key, value));
           break;
       }
     }
@@ -127,6 +133,9 @@ public class MultiChaind {
     }
   }
 
+  /**
+   * Terminates the MultiChain daemon via SIGTERM.
+   */
   public void terminate() {
     LOG.debug("Stopping multichaind");
 
@@ -150,12 +159,12 @@ public class MultiChaind {
     final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
 
     // data directory needs to exist before creating the chain
-    final File datadir = new File(options.getString("datadir"));
+    final File datadir = new File(options.getString(OPTION_DATADIR));
     if (!datadir.exists()) {
       LOG.debug("Creating multichaind -datadir: {}", datadir.toString());
       if (!datadir.mkdirs()) {
-        throw new RuntimeException("Could not create multichaind -datadir"
-            + ": " + datadir.toString());
+        throw new RuntimeException(
+            "Could not create multichaind -" + OPTION_DATADIR + ": " + datadir.toString());
       }
     }
 
@@ -178,12 +187,12 @@ public class MultiChaind {
         String value = entry.getValue().unwrapped().toString();
 
         switch (key) {
-          case "datadir":
+          case OPTION_DATADIR:
             substitutions.put(key, datadir);
-            value = "${" + key + "}";
+            value = buildCommandLineSubstitution(key);
             // fall-through
           default:
-            cmd.addArgument("-" + key + "=" + value);
+            cmd.addArgument(buildCommandLineOption(key, value));
             break;
         }
       }
@@ -205,6 +214,14 @@ public class MultiChaind {
         throw new RuntimeException("multichain-util failed", e);
       }
     }
+  }
+
+  private static String buildCommandLineOption(String option, String argument) {
+    return "-" + option + (!"".equals(argument) ? "=" + argument : "");
+  }
+
+  private static String buildCommandLineSubstitution(String argument) {
+    return "${" + argument + "}";
   }
 
   private static class RedirectingOutputStream extends LogOutputStream {

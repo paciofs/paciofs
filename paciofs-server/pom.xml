@@ -207,7 +207,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <configLocation>google_checks.xml</configLocation>
+                            <configLocation>${project.basedir}/src/main/resources/checkstyle.xml</configLocation>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <sourceDirectories>
@@ -236,6 +236,14 @@
                                     <include>*:*</include>
                                 </includes>
                             </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>${project.groupId}:${project.artifactId}</artifact>
+                                    <excludes>
+                                        <exclude>**/checkstyle.xml</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">

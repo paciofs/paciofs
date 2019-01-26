@@ -49,16 +49,13 @@ public class ClusterEventListener extends AbstractActor {
   @Override
   public Receive createReceive() {
     return this.receiveBuilder()
-        .match(ClusterEvent.MemberUp.class, m -> { this.log.info("Member up: {}", m.member()); })
-        .match(ClusterEvent.MemberRemoved.class,
-            m -> { this.log.info("Member removed: {}", m.member()); })
+        .match(ClusterEvent.MemberUp.class, m -> this.log.info("Member up: {}", m.member()))
+        .match(
+            ClusterEvent.MemberRemoved.class, m -> this.log.info("Member removed: {}", m.member()))
         .match(ClusterEvent.UnreachableMember.class,
-            m -> { this.log.info("Member unreachable: {}", m.member()); })
-        .match(ClusterEvent.MemberEvent.class,
-            m
-            -> {
-                // catch all
-            })
+            m -> this.log.info("Member unreachable: {}", m.member()))
+        .match(
+            ClusterEvent.MemberEvent.class, m -> this.log.debug("Member event: {}", m.toString()))
         .build();
   }
 }

@@ -31,9 +31,20 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public class PacioFS {
+  private static final String OPTION_SKIP_BOOTSTRAP = "skip-bootstrap";
+  private static final String OPTION_SKIP_BOOTSTRAP_SHORT = "s";
+  private static final String OPTION_HELP = "help";
+  private static final String OPTION_HELP_SHORT = "h";
+
+  private PacioFS() {}
+
+  /**
+   * Starts PacioFS and waits for shutdown.
+   * @param args the command line arguments
+   */
   public static void main(String[] args) {
     final CommandLine cmd = parseCommandLine(args);
-    final boolean skipBootstrap = cmd.hasOption("skip-bootstrap");
+    final boolean skipBootstrap = cmd.hasOption(OPTION_SKIP_BOOTSTRAP);
 
     // parses application.conf from the classpath
     // exclude bootstrapping configuration if requested (e.g. if we are not
@@ -45,7 +56,7 @@ public class PacioFS {
     // create the actor system
     final ActorSystem paciofs = ActorSystem.create("paciofs", config);
 
-    Cluster cluster = Cluster.get(paciofs);
+    final Cluster cluster = Cluster.get(paciofs);
 
     paciofs.log().info(
         "Started [" + paciofs + "], cluster.selfAddress = " + cluster.selfAddress() + ")");
@@ -73,7 +84,7 @@ public class PacioFS {
       hostAddress = "<unknown host>";
     }
 
-    Materializer mat = ActorMaterializer.create(paciofs);
+    final Materializer mat = ActorMaterializer.create(paciofs);
     Http.get(paciofs).bindAndHandle(
         Directives.complete("paciofs@" + hostAddress).flow(paciofs, mat),
         ConnectHttp.toHost("0.0.0.0", 8080), mat);
@@ -81,9 +92,9 @@ public class PacioFS {
 
   private static CommandLine parseCommandLine(String[] args) {
     final Options options = new Options();
-    options.addOption("h", "help", false, "print this message and exit");
+    options.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "print this message and exit");
 
-    options.addOption("s", "skip-bootstrap", false,
+    options.addOption(OPTION_SKIP_BOOTSTRAP_SHORT, OPTION_SKIP_BOOTSTRAP, false,
         "whether to skip bootstrapping (e.g. when outside kubernetes)");
 
     final CommandLineParser parser = new DefaultParser();
@@ -95,12 +106,12 @@ public class PacioFS {
       cmd = parser.parse(options, args, false);
 
       // exit on unrecognized arguments or help option
-      List<String> argList = cmd.getArgList();
+      final List<String> argList = cmd.getArgList();
       if (argList.size() > 0) {
         System.err.println("Unrecognized argument(s): " + String.join(" ", argList));
         exitCode = 1;
       } else {
-        exitCode = cmd.hasOption("help") ? 0 : -1;
+        exitCode = cmd.hasOption(OPTION_HELP) ? 0 : -1;
       }
     } catch (ParseException e) {
       // exit on parsing error

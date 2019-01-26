@@ -68,7 +68,7 @@ public class Bitcoind extends AbstractActor {
 
     // TODO if this fails, should we fail the entire actor system?
     // warm up the client
-    BitcoindRpcClient.BlockChainInfo bci = this.client.getBlockChainInfo();
+    final BitcoindRpcClient.BlockChainInfo bci = this.client.getBlockChainInfo();
     this.log.info("Connected to chain {}", bci.chain());
   }
 

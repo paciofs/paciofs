@@ -10,6 +10,7 @@ package de.zib.paciofs.blockchain.multichain;
 import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
+import de.zib.paciofs.logging.Markers;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +47,7 @@ public class MultiChaind {
 
   public MultiChaind(Config config) {
     this.config = config;
-    LOG.debug("Configuration: {}", this.config.toString());
+    LOG.debug(Markers.CONFIGURATION, "Configuration: {}", this.config);
   }
 
   /**
@@ -122,6 +123,7 @@ public class MultiChaind {
       @Override
       public synchronized void onProcessFailed(ExecuteException e) {
         LOG.debug("multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
+        LOG.debug(Markers.EXCEPTION, "multichaind failed", e);
         super.onProcessFailed(e);
       }
     };
@@ -131,31 +133,37 @@ public class MultiChaind {
     this.watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
     executor.setWatchdog(this.watchdog);
 
-    LOG.debug("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
+    LOG.trace("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
     try {
       // asynchronous execution to simulate -daemon behavior
       executor.execute(cmd, this.executeResultHandler);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    LOG.trace("Started multichaind");
   }
 
   /**
    * Terminates the MultiChain daemon via SIGTERM.
    */
   public void terminate() {
-    LOG.debug("Stopping multichaind");
+    LOG.trace("Stopping multichaind");
 
     // sends SIGTERM
     this.watchdog.destroyProcess();
     try {
       this.executeResultHandler.waitFor();
     } catch (InterruptedException e) {
-      LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
+      if (LOG.isDebugEnabled(Markers.EXCEPTION)) {
+        LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to stop", e);
+      } else {
+        LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
+      }
     }
 
     this.watchdog = null;
     this.executeResultHandler = null;
+    LOG.trace("Stopped multichaind");
   }
 
   public boolean isRunning() {
@@ -168,7 +176,7 @@ public class MultiChaind {
     // data directory needs to exist before creating the chain
     final File datadir = new File(options.getString(OPTION_DATADIR));
     if (!datadir.exists()) {
-      LOG.debug("Creating multichaind -datadir: {}", datadir.toString());
+      LOG.trace("Creating multichaind -datadir: {}", datadir.toString());
       if (!datadir.mkdirs()) {
         throw new RuntimeException(
             "Could not create multichaind -" + OPTION_DATADIR + ": " + datadir.toString());
@@ -212,11 +220,11 @@ public class MultiChaind {
         }
       };
 
-      LOG.debug("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
+      LOG.trace("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
       try {
         // synchronous execution
         final int exitValue = executor.execute(cmd);
-        LOG.debug("multichain-util completed with exit code: {}", exitValue);
+        LOG.trace("multichain-util completed with exit code: {}", exitValue);
       } catch (IOException e) {
         throw new RuntimeException("multichain-util failed", e);
       }

@@ -19,6 +19,8 @@ public class MultiChainOptions {
 
   public static final String PROTOCOL_VERSION_KEY = "multichain.protocol-version";
 
+  public static final String PORT_KEY = "multichain.multichaind.options.port";
+
   public static final String RPC_CONNECT_KEY = "rpcconnect";
   public static final String RPC_PORT_KEY = "rpcport";
   public static final String RPC_USER_KEY = "rpcuser";

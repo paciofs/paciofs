@@ -1,27 +1,61 @@
 <configuration>
-    <define name="multiChainLogLevel" class="de.zib.paciofs.logging.LogbackPropertyDefiners$EnvVarWithDefaultValue">
-        <envVar>PACIOFS_MULTICHAIN_LOG_LEVEL</envVar>
+    <!-- log levels -->
+    <define name="log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <configVar>log-level</configVar>
         <defaultValue>INFO</defaultValue>
     </define>
+    <define name="paciofs.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <configVar>paciofs.log-level</configVar>
+        <defaultValue>${log-level}</defaultValue>
+    </define>
+    <define name="paciofs.bitcoind-client.multichain.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <configVar>paciofs.bitcoind-client.multichain.log-level</configVar>
+        <defaultValue>${paciofs.log-level}</defaultValue>
+    </define>
 
+    <!-- enable/disable markers -->
+    <define name="paciofs.logging.markers.configuration" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <configVar>paciofs.logging.markers.configuration</configVar>
+        <defaultValue>DENY</defaultValue>
+    </define>
+    <define name="paciofs.logging.markers.exception" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <configVar>paciofs.logging.markers.exception</configVar>
+        <defaultValue>DENY</defaultValue>
+    </define>
+
+    <!-- corresponding filters -->
+    <turboFilter class="ch.qos.logback.classic.turbo.MarkerFilter">
+        <Marker>CONFIGURATION</Marker>
+        <OnMatch>${paciofs.logging.markers.configuration}</OnMatch>
+    </turboFilter>
+    <turboFilter class="ch.qos.logback.classic.turbo.MarkerFilter">
+        <Marker>EXCEPTION</Marker>
+        <OnMatch>${paciofs.logging.markers.exception}</OnMatch>
+    </turboFilter>
+
+    <!-- log to console -->
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>[%level] [%date] [%thread] [%logger] %message %n</pattern>
         </encoder>
     </appender>
 
-    <appender name="async-stdout" class="ch.qos.logback.classic.AsyncAppender" level="INFO">
+    <!-- Logback is blocking by default, so use an asynchronous appender -->
+    <appender name="async-stdout" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="stdout" />
     </appender>
 
-    <logger name="de.zib.paciofs.blockchain.multichain.MultiChainClient" level="${multiChainLogLevel}" additivity="false">
-        <appender-ref ref="async-stdout" />
-    </logger>
-    <logger name="de.zib.paciofs.blockchain.multichain.MultiChaind" level="${multiChainLogLevel}" additivity="false">
+    <!-- parent logger used by all classes that match its name and have no more specific definitions below -->
+    <logger name="de.zib.paciofs" level="${paciofs.log-level}" additivity="false">
         <appender-ref ref="async-stdout" />
     </logger>
 
-    <root level="INFO">
+    <!-- special logger for MultiChain -->
+    <logger name="de.zib.paciofs.blockchain.multichain" level="${paciofs.bitcoind-client.multichain.log-level}" additivity="false">
+        <appender-ref ref="async-stdout" />
+    </logger>
+
+    <root level="${log-level}">
         <appender-ref ref="async-stdout" />
     </root>
 </configuration>

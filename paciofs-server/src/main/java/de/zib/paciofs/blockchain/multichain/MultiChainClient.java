@@ -8,6 +8,7 @@
 package de.zib.paciofs.blockchain.multichain;
 
 import com.typesafe.config.Config;
+import de.zib.paciofs.logging.Markers;
 import java.net.MalformedURLException;
 import java.net.URL;
 import org.slf4j.Logger;
@@ -58,6 +59,11 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     return super.query(method, o);
   }
 
+  @Override
+  public void addNode(String node, String command) throws GenericRpcException {
+    super.addNode(node + ":" + this.config.getInt(MultiChainOptions.PORT_KEY), command);
+  }
+
   // manages the transition from RUNNING -> STOPPING -> STOPPED
   @Override
   public void stop() {
@@ -66,7 +72,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
       // if chain is STOPPING: some other thread is already stopping the chain
       // if chain is STOPPED: well, we are good then
     } else {
-      // have exactly one thread to the stopping
+      // have exactly one thread do the stopping
       synchronized (this) {
         if (this.state == State.RUNNING) {
           this.state = State.STOPPING;
@@ -141,7 +147,7 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
               lastCaught = rpcException;
               LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
                   rpcException.getMessage());
-              LOG.trace(rpcException.getMessage(), rpcException);
+              LOG.debug(Markers.EXCEPTION, "multichaind has not started yet", rpcException);
             }
           }
 
@@ -150,16 +156,20 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
             Thread.sleep(backoff);
             backoff *= 2;
           } catch (InterruptedException e) {
-            LOG.debug("Interrupted while waiting for multichaind to start");
+            if (LOG.isDebugEnabled(Markers.EXCEPTION)) {
+              LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to start", e);
+            } else {
+              LOG.debug("Interrupted while waiting for multichaind to start: {}", e.getMessage());
+            }
           }
         }
       }
 
+      final long waitTime = System.currentTimeMillis() - startWait;
       if (failedRetries == maxRetries) {
-        LOG.debug("multichaind not up after {} ms", System.currentTimeMillis() - startWait);
-        throw new RuntimeException("multichaind did not start", lastCaught);
+        throw new RuntimeException("multichaind not up after " + waitTime + " ms", lastCaught);
       } else {
-        LOG.debug("multichaind up after {} ms", System.currentTimeMillis() - startWait);
+        LOG.debug("multichaind up after {} ms", waitTime);
       }
 
       // done

@@ -19,7 +19,9 @@ import akka.stream.Materializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.zib.paciofs.blockchain.Bitcoind;
-import de.zib.paciofs.cluster.ClusterEventListener;
+import de.zib.paciofs.logging.LogbackPropertyDefiners;
+import de.zib.paciofs.logging.Markers;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -29,12 +31,18 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PacioFS {
-  private static final String OPTION_SKIP_BOOTSTRAP = "skip-bootstrap";
-  private static final String OPTION_SKIP_BOOTSTRAP_SHORT = "s";
+  private static final String OPTION_CONFIG = "config";
+  private static final String OPTION_CONFIG_SHORT = "c";
   private static final String OPTION_HELP = "help";
   private static final String OPTION_HELP_SHORT = "h";
+  private static final String OPTION_SKIP_BOOTSTRAP = "skip-bootstrap";
+  private static final String OPTION_SKIP_BOOTSTRAP_SHORT = "s";
+
+  private static Logger log;
 
   private PacioFS() {}
 
@@ -49,17 +57,28 @@ public class PacioFS {
     // parses application.conf from the classpath
     // exclude bootstrapping configuration if requested (e.g. if we are not
     // running in kubernetes)
-    final Config config = skipBootstrap
+    final Config applicationConfig = skipBootstrap
         ? ConfigFactory.load().withoutPath("akka.management.cluster.bootstrap")
         : ConfigFactory.load();
 
+    // if the user has supplied a configuration, use the default configuration only as a fallback
+    // for missing options (i.e. the user configuration wins)
+    final Config config;
+    if (cmd.hasOption(OPTION_CONFIG)) {
+      config = ConfigFactory.parseFile(new File(cmd.getOptionValue(OPTION_CONFIG)))
+                   .withFallback(applicationConfig);
+    } else {
+      config = applicationConfig;
+    }
+
+    // no logging is allowed to happen before here
+    initializeLogging(config);
+
+    // the entire Akka configuration is a bit overwhelming
+    log.debug(Markers.CONFIGURATION, "Using configuration: {}", config);
+
     // create the actor system
     final ActorSystem paciofs = ActorSystem.create("paciofs", config);
-
-    final Cluster cluster = Cluster.get(paciofs);
-
-    paciofs.log().info(
-        "Started [" + paciofs + "], cluster.selfAddress = " + cluster.selfAddress() + ")");
 
     // again, skip bootstrapping if requested
     if (!skipBootstrap) {
@@ -70,8 +89,8 @@ public class PacioFS {
       ClusterBootstrap.get(paciofs).start();
     }
 
-    // listens to cluster events
-    paciofs.actorOf(ClusterEventListener.props(), "cluster");
+    final Cluster cluster = Cluster.get(paciofs);
+    log.info("Started [{}], cluster.selfAddress = {}", paciofs, cluster.selfAddress());
 
     // actor for the blockchain
     paciofs.actorOf(Bitcoind.props(), "bitcoind");
@@ -94,6 +113,7 @@ public class PacioFS {
     final Options options = new Options();
     options.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "print this message and exit");
 
+    options.addOption(OPTION_CONFIG_SHORT, OPTION_CONFIG, true, "path/to/paciofs.conf");
     options.addOption(OPTION_SKIP_BOOTSTRAP_SHORT, OPTION_SKIP_BOOTSTRAP, false,
         "whether to skip bootstrapping (e.g. when outside kubernetes)");
 
@@ -126,5 +146,13 @@ public class PacioFS {
     }
 
     return cmd;
+  }
+
+  private static void initializeLogging(Config config) {
+    // supply our configuration to Logback
+    LogbackPropertyDefiners.ConfigVarWithDefaultValue.setConfig(config);
+
+    // now trigger initialization of Logback
+    log = LoggerFactory.getLogger(PacioFS.class);
   }
 }

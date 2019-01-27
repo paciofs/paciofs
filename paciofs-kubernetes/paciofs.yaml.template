@@ -63,10 +63,20 @@ spec:
           httpGet:
             path: /ready
             port: management
+          # wait 30 seconds, then fail after 3 tries with 10 seconds in between
+          # this means we have a total of 60 seconds to start
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /alive
             port: management
+          # wait 30 seconds, then fail after 3 tries with 10 seconds in between
+          # this means we have a total of 60 seconds to start
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
         env:
         - name: KUBERNETES_NAMESPACE
           valueFrom:

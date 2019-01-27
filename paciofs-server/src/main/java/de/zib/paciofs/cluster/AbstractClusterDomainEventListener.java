@@ -17,18 +17,14 @@ import akka.event.LoggingAdapter;
 /**
  * Listens to cluster events.
  */
-public class ClusterEventListener extends AbstractActor {
+public class AbstractClusterDomanEventListener extends AbstractActor {
   private final LoggingAdapter log;
 
   private final Cluster cluster;
 
-  private ClusterEventListener() {
+  private AbstractClusterDomanEventListener() {
     this.log = Logging.getLogger(this.getContext().system(), this);
     this.cluster = Cluster.get(this.getContext().system());
-  }
-
-  public static Props props() {
-    return Props.create(ClusterEventListener.class, ClusterEventListener::new);
   }
 
   @Override

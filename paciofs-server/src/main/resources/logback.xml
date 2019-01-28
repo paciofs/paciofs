@@ -1,25 +1,25 @@
 <configuration>
     <!-- log levels -->
     <define name="log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <configVar>log-level</configVar>
+        <var>log-level</var>
         <defaultValue>INFO</defaultValue>
     </define>
     <define name="paciofs.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <configVar>paciofs.log-level</configVar>
+        <var>paciofs.log-level</var>
         <defaultValue>${log-level}</defaultValue>
     </define>
     <define name="paciofs.bitcoind-client.multichain.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <configVar>paciofs.bitcoind-client.multichain.log-level</configVar>
+        <var>paciofs.bitcoind-client.multichain.log-level</var>
         <defaultValue>${paciofs.log-level}</defaultValue>
     </define>
 
     <!-- enable/disable markers -->
     <define name="paciofs.logging.markers.configuration" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <configVar>paciofs.logging.markers.configuration</configVar>
+        <var>paciofs.logging.markers.configuration</var>
         <defaultValue>DENY</defaultValue>
     </define>
     <define name="paciofs.logging.markers.exception" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <configVar>paciofs.logging.markers.exception</configVar>
+        <var>paciofs.logging.markers.exception</var>
         <defaultValue>DENY</defaultValue>
     </define>
 

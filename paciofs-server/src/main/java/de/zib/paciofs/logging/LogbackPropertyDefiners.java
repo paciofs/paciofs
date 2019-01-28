@@ -14,27 +14,54 @@ import com.typesafe.config.ConfigException;
 public class LogbackPropertyDefiners {
   private LogbackPropertyDefiners() {}
 
-  public static class ConfigVarWithDefaultValue extends PropertyDefinerBase {
-    private static Config config;
-
-    private String configVar;
+  private abstract static class AbstractVarWithDefaultValue extends PropertyDefinerBase {
+    private String var;
     private String defaultValue;
 
-    public ConfigVarWithDefaultValue() {
-      this.configVar = null;
-      this.defaultValue = null;
+    public void setVar(String var) {
+      this.var = var;
     }
+
+    public void setDefaultValue(String defaultValue) {
+      this.defaultValue = defaultValue;
+    }
+
+    protected String getVar() {
+      if (this.var == null || "".equals(this.var)) {
+        throw new IllegalStateException("var not specified");
+      }
+
+      return this.var;
+    }
+
+    protected String getDefaultValue() {
+      if (this.defaultValue == null) {
+        throw new IllegalStateException("defaultValue not specified");
+      }
+
+      return this.defaultValue;
+    }
+  }
+
+  public static class ConfigVarWithDefaultValue extends AbstractVarWithDefaultValue {
+    private static Config config;
+
+    public ConfigVarWithDefaultValue() {}
 
     public static void setConfig(Config config) {
       ConfigVarWithDefaultValue.config = config;
     }
 
-    public void setConfigVar(String configVar) {
-      this.configVar = configVar;
+    /* Must redeclare setters so Logback finds them */
+
+    @Override
+    public void setVar(String var) {
+      super.setVar(var);
     }
 
+    @Override
     public void setDefaultValue(String defaultValue) {
-      this.defaultValue = defaultValue;
+      super.setDefaultValue(defaultValue);
     }
 
     @Override
@@ -44,52 +71,34 @@ public class LogbackPropertyDefiners {
             "config was not set, initialize this PropertyDefiner before using it");
       }
 
-      if (this.configVar == null || "".equals(this.configVar)) {
-        throw new IllegalStateException("configVar not specified");
-      }
-
       try {
-        return config.getString(this.configVar);
+        return config.getString(this.getVar());
       } catch (ConfigException.Missing e) {
-        if (this.defaultValue == null) {
-          throw new IllegalStateException("defaultValue not specified");
-        }
+        return this.getDefaultValue();
       }
-
-      return this.defaultValue;
     }
   }
 
-  public static class EnvVarWithDefaultValue extends PropertyDefinerBase {
-    private String envVar;
-    private String defaultValue;
+  public static class EnvVarWithDefaultValue extends AbstractVarWithDefaultValue {
+    public EnvVarWithDefaultValue() {}
 
-    public EnvVarWithDefaultValue() {
-      this.envVar = null;
-      this.defaultValue = null;
+    /* Must redeclare setters so Logback finds them */
+
+    @Override
+    public void setVar(String var) {
+      super.setVar(var);
     }
 
-    public void setEnvVar(String envVar) {
-      this.envVar = envVar;
-    }
-
+    @Override
     public void setDefaultValue(String defaultValue) {
-      this.defaultValue = defaultValue;
+      super.setDefaultValue(defaultValue);
     }
 
     @Override
     public String getPropertyValue() {
-      if (this.envVar == null || "".equals(this.envVar)) {
-        throw new IllegalStateException("envVar not specified");
-      }
-
-      final String envValue = System.getenv(this.envVar);
+      final String envValue = System.getenv(this.getVar());
       if (envValue == null) {
-        if (this.defaultValue == null) {
-          throw new IllegalStateException("defaultValue not specified");
-        }
-
-        return this.defaultValue;
+        return getDefaultValue();
       }
 
       return envValue;

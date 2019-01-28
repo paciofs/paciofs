@@ -154,11 +154,8 @@ public class MultiChaind {
     try {
       this.executeResultHandler.waitFor();
     } catch (InterruptedException e) {
-      if (LOG.isDebugEnabled(Markers.EXCEPTION)) {
-        LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to stop", e);
-      } else {
-        LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
-      }
+      LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
+      LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to stop", e);
     }
 
     this.watchdog = null;

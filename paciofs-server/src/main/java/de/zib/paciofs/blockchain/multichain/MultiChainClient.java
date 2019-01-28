@@ -11,23 +11,31 @@ import com.typesafe.config.Config;
 import de.zib.paciofs.logging.Markers;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCError;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
-public class MultiChainClient extends BitcoinJSONRPCClient {
-  private enum State { STOPPED, STARTING, RUNNING, STOPPING }
+public class MultiChainClient extends MultiChainJsonRpcClient {
+  private enum LifecyclePhase { STOPPED, STARTING, RUNNING, STOPPING, FAILED }
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainClient.class);
+
+  private static final Map<LifecyclePhase, Set<LifecyclePhase>> LIFECYCLE;
 
   private final Config config;
 
   private final MultiChaind multiChaind;
 
-  private State state;
+  private LifecyclePhase lifecyclePhase;
+
+  private final Object lifecyclePhaseTransition;
 
   /**
    * Creates the MultiChain client.
@@ -45,12 +53,33 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     // start MultiChain locally if localhost is the target connect
     if ("localhost".equals(this.config.getString(MultiChainOptions.RPC_CONNECT_KEY))) {
       this.multiChaind = new MultiChaind(this.config);
-      this.state = State.STOPPED;
+      this.lifecyclePhase = LifecyclePhase.STOPPED;
+      this.lifecyclePhaseTransition = new Object();
     } else {
       // assume all is well if we connect to a remote MultiChain
       this.multiChaind = null;
-      this.state = State.RUNNING;
+      this.lifecyclePhase = LifecyclePhase.RUNNING;
+      this.lifecyclePhaseTransition = null;
     }
+  }
+
+  static {
+    final Map<LifecyclePhase, Set<LifecyclePhase>> lifecycle = new HashMap<>();
+    lifecycle.put(LifecyclePhase.STOPPED, lifecyclePhases(LifecyclePhase.STARTING));
+    lifecycle.put(
+        LifecyclePhase.STARTING, lifecyclePhases(LifecyclePhase.RUNNING, LifecyclePhase.FAILED));
+    lifecycle.put(
+        LifecyclePhase.RUNNING, lifecyclePhases(LifecyclePhase.STOPPING, LifecyclePhase.FAILED));
+    lifecycle.put(
+        LifecyclePhase.STOPPING, lifecyclePhases(LifecyclePhase.STOPPED, LifecyclePhase.FAILED));
+    lifecycle.put(LifecyclePhase.FAILED, lifecyclePhases(LifecyclePhase.STOPPED));
+    LIFECYCLE = Collections.unmodifiableMap(lifecycle);
+  }
+
+  private static Set<LifecyclePhase> lifecyclePhases(LifecyclePhase... l) {
+    final Set<LifecyclePhase> s = new HashSet<>();
+    Collections.addAll(s, l);
+    return Collections.unmodifiableSet(s);
   }
 
   @Override
@@ -81,103 +110,114 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
     LOG.trace("{}'ed {}", command, nodeWithPort);
   }
 
-  // manages the transition from RUNNING -> STOPPING -> STOPPED
+  // manages the transition from RUNNING -> STOPPING -> STOPPED in a blocking fashion
   @Override
   public void stop() {
-    if (!swapState(State.RUNNING, State.STOPPING)) {
-      // we are not the thread that does the stopping
+    if (this.lifecyclePhase == LifecyclePhase.STOPPED || this.multiChaind == null) {
+      // all is well, or this is a remote chain which we will not stop
       return;
     }
 
-    if (this.multiChaind != null) {
-      // seems more reliable: we get an exit code, and the RPC stop request fails since the server
-      // does not answer anymore (since it is shutting down)
-      this.multiChaind.terminate();
-    } else {
-      // TODO do we shut down remote chains? this should be prohibited by proper authorization
-      super.stop();
-    }
+    synchronized (this.lifecyclePhaseTransition) {
+      // check that we can transition to the STOPPING phase (also fails if we are STOPPED already)
+      if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STOPPING)) {
+        // seems more reliable: we get an exit code, and the RPC stop request fails since the
+        // server does not answer anymore (since it is shutting down)
+        this.multiChaind.terminate();
 
-    // done
-    this.state = State.STOPPED;
+        // done
+        this.forcedLifecyclePhaseTransition(LifecyclePhase.STOPPED);
+      }
+    }
   }
 
-  // manages the transition from STOPPED -> STARTING -> RUNNING
+  // manages the transition from STOPPED -> STARTING -> RUNNING in a blocking fashion
   private void ensureRunning() {
-    if (!swapState(State.STOPPED, State.STARTING)) {
-      // we are not the thread that does the starting
+    if (this.lifecyclePhase == LifecyclePhase.RUNNING) {
+      // all is well
       return;
     }
 
-    // wait until the service is up
-    this.multiChaind.start();
+    synchronized (this.lifecyclePhaseTransition) {
+      // check that we can transition to the STARTING phase (also fails if we are RUNNING already)
+      if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STARTING)) {
+        // wait until the service is up
+        this.multiChaind.start();
 
-    // the code multichain responds with while warming up
-    final int multiChaindWarmupCode = this.config.getInt(MultiChainOptions.WARMUP_CODE_KEY);
+        // the code multichain responds with while warming up
+        final int multiChaindWarmupCode = this.config.getInt(MultiChainOptions.WARMUP_CODE_KEY);
 
-    // wait at most backoff * (2^maxRetries - 1) milliseconds
-    // e.g. 50 * (2^10 -1) = 51150 milliseconds
-    long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS);
-    final int maxRetries = this.config.getInt(MultiChainOptions.BACKOFF_RETRIES);
-    int failedRetries = 0;
-    for (; failedRetries < maxRetries; ++failedRetries) {
-      try {
-        final BlockChainInfo bci = this.getBlockChainInfo();
-        LOG.debug("Connected to chain {}", bci.chain());
-        break;
-      } catch (BitcoinRPCException rpcException) {
-        final BitcoinRPCError rpcError = rpcException.getRPCError();
+        // wait at most backoff * (2^maxRetries - 1) milliseconds
+        // e.g. 50 * (2^10 -1) = 51150 milliseconds
+        long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS);
+        final int maxRetries = this.config.getInt(MultiChainOptions.BACKOFF_RETRIES);
+        int failedRetries = 0;
 
-        if (rpcError != null && rpcError.getCode() == multiChaindWarmupCode) {
-          LOG.debug(
-              "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());
+        // try and get the blockchain info at most a number of maxRetries times
+        BlockChainInfo bci = null;
+        for (; failedRetries < maxRetries; ++failedRetries) {
+          try {
+            bci = this.getBlockChainInfo();
+            break;
+          } catch (BitcoinRPCException rpcException) {
+            final BitcoinRPCError rpcError = rpcException.getRPCError();
 
-          // keep waiting, multichaind is at work and will be with us soon
-          --failedRetries;
-        } else {
-          // multichaind might have crashed
-          if (!this.multiChaind.isRunning()) {
-            this.state = State.STOPPED;
-            throw new RuntimeException("multichaind stopped running");
+            // check what has gone wrong
+            if (rpcError != null && rpcError.getCode() == multiChaindWarmupCode) {
+              // keep waiting, multichaind is at work and will be with us soon
+              LOG.debug(
+                  "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());
+              --failedRetries;
+            } else if (!this.multiChaind.isRunning()) {
+              // multichaind has crashed
+              this.forcedLifecyclePhaseTransition(LifecyclePhase.FAILED);
+              throw new RuntimeException("multichaind stopped running");
+            } else {
+              // we do not know yet what is wrong
+              LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
+                  rpcException.getMessage());
+              LOG.debug(Markers.EXCEPTION, "multichaind has not started yet", rpcException);
+            }
+
+            // exponential backoff so we do not annoy multichaind too much
+            try {
+              Thread.sleep(backoff);
+              backoff *= 2;
+            } catch (InterruptedException e) {
+              LOG.debug("Interrupted while waiting for multichaind to start: {}", e.getMessage());
+              LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to start", e);
+            }
           }
-
-          LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
-              rpcException.getMessage());
-          LOG.debug(Markers.EXCEPTION, "multichaind has not started yet", rpcException);
         }
 
-        // exponential backoff so we do not annoy multichaind too much
-        try {
-          Thread.sleep(backoff);
-          backoff *= 2;
-        } catch (InterruptedException e) {
-          if (LOG.isDebugEnabled(Markers.EXCEPTION)) {
-            LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to start", e);
-          } else {
-            LOG.debug("Interrupted while waiting for multichaind to start: {}", e.getMessage());
-          }
+        if (bci == null) {
+          this.forcedLifecyclePhaseTransition(LifecyclePhase.FAILED);
+          throw new RuntimeException("multichaind not up after " + failedRetries + " retries");
         }
+
+        // done
+        LOG.debug(
+            "multichaind up after {} retries, connected to chain {}", failedRetries, bci.chain());
+        this.forcedLifecyclePhaseTransition(LifecyclePhase.RUNNING);
       }
     }
-
-    if (failedRetries == maxRetries) {
-      throw new RuntimeException("multichaind not up after " + failedRetries + " retries");
-    }
-
-    LOG.debug("multichaind up after {} retries", failedRetries);
-
-    // done
-    this.state = State.RUNNING;
   }
 
-  private boolean swapState(State from, State to) {
-    synchronized (this) {
-      if (this.state == from) {
-        this.state = to;
-        return true;
-      }
+  // not thread-safe
+  private boolean checkedLifecyclePhaseTransition(LifecyclePhase to) {
+    if (LIFECYCLE.get(this.lifecyclePhase).contains(to)) {
+      this.lifecyclePhase = to;
+      return true;
     }
 
+    LOG.debug("Illegal lifecycle phase transition: {} -> {}", this.lifecyclePhase, to);
     return false;
+  }
+
+  // not thread-safe
+  private void forcedLifecyclePhaseTransition(LifecyclePhase to) {
+    if (!this.checkedLifecyclePhaseTransition(to)) {
+      throw new IllegalStateException("Expected to be able to switch to " + to);
+    }
   }
 }

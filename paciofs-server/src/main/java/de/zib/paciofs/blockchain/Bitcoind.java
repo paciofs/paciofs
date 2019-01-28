@@ -132,11 +132,8 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
         this.client.addNode(host.get(), "add");
         LOG.trace("Added node: {}", host.get());
       } catch (GenericRpcException e) {
-        if (LOG.isWarnEnabled(Markers.EXCEPTION)) {
-          LOG.warn(Markers.EXCEPTION, "Adding node failed", e);
-        } else {
-          LOG.warn("Adding node failed: {}", e.getMessage());
-        }
+        LOG.warn("Adding node failed: {}", e.getMessage());
+        LOG.debug(Markers.EXCEPTION, "Adding node failed", e);
       }
     }
   }
@@ -151,11 +148,8 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
         this.client.addNode(host.get(), "remove");
         LOG.trace("Removed node: {}", host.get());
       } catch (GenericRpcException e) {
-        if (LOG.isWarnEnabled(Markers.EXCEPTION)) {
-          LOG.warn(Markers.EXCEPTION, "Removing node failed", e);
-        } else {
-          LOG.warn("Removing node failed: {}", e.getMessage());
-        }
+        LOG.warn("Removing node failed: {}", e.getMessage());
+        LOG.debug(Markers.EXCEPTION, "Removing node failed", e);
       }
     }
   }

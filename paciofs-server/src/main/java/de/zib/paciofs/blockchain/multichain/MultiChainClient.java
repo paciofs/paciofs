@@ -68,11 +68,9 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
     lifecycle.put(LifecyclePhase.STOPPED, lifecyclePhases(LifecyclePhase.STARTING));
     lifecycle.put(
         LifecyclePhase.STARTING, lifecyclePhases(LifecyclePhase.RUNNING, LifecyclePhase.FAILED));
-    lifecycle.put(
-        LifecyclePhase.RUNNING, lifecyclePhases(LifecyclePhase.STOPPING, LifecyclePhase.FAILED));
-    lifecycle.put(
-        LifecyclePhase.STOPPING, lifecyclePhases(LifecyclePhase.STOPPED, LifecyclePhase.FAILED));
-    lifecycle.put(LifecyclePhase.FAILED, lifecyclePhases(LifecyclePhase.STOPPED));
+    lifecycle.put(LifecyclePhase.RUNNING, lifecyclePhases(LifecyclePhase.STOPPING));
+    lifecycle.put(LifecyclePhase.STOPPING, lifecyclePhases(LifecyclePhase.STOPPED));
+    lifecycle.put(LifecyclePhase.FAILED, lifecyclePhases());
     LIFECYCLE = Collections.unmodifiableMap(lifecycle);
   }
 
@@ -94,6 +92,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       return result;
     }
 
+    // TODO surround with try-catch and maybe switch to FAILED if we get errors
     return super.query(method, o);
   }
 

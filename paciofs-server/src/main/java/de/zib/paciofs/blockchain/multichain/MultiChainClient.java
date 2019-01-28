@@ -56,12 +56,29 @@ public class MultiChainClient extends BitcoinJSONRPCClient {
   @Override
   public Object query(String method, Object... o) throws GenericRpcException {
     this.ensureRunning();
+
+    // logging is potentially expensive here
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Query: {}{}", method, o);
+      final Object result = super.query(method, o);
+      LOG.trace("Result: {}", result);
+      return result;
+    }
+
     return super.query(method, o);
   }
 
   @Override
   public void addNode(String node, String command) throws GenericRpcException {
-    super.addNode(node + ":" + this.config.getInt(MultiChainOptions.PORT_KEY), command);
+    final String nodeWithPort = node + ":" + this.config.getInt(MultiChainOptions.PORT_KEY);
+
+    // https://www.multichain.com/developers/json-rpc-api/
+    // The command parameter should be one of add (to manually queue a node for the next available
+    // slot), remove (to remove a node), or onetry (to immediately connect to a node even if a slot
+    // is not available).
+    LOG.trace("{}'ing {}", command, nodeWithPort);
+    super.addNode(nodeWithPort, command);
+    LOG.trace("{}'ed {}", command, nodeWithPort);
   }
 
   // manages the transition from RUNNING -> STOPPING -> STOPPED

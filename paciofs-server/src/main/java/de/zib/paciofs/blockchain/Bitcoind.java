@@ -128,6 +128,7 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
       LOG.warn("Cannot add node with empty host: {}", member);
     } else {
       try {
+        LOG.trace("Adding node: {}", host.get());
         this.client.addNode(host.get(), "add");
         LOG.trace("Added node: {}", host.get());
       } catch (GenericRpcException e) {
@@ -146,6 +147,7 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
       LOG.warn("Cannot remove with empty host: {}", member);
     } else {
       try {
+        LOG.trace("Removing node: {}", host.get());
         this.client.addNode(host.get(), "remove");
         LOG.trace("Removed node: {}", host.get());
       } catch (GenericRpcException e) {

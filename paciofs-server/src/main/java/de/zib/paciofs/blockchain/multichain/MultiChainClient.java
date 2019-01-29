@@ -146,9 +146,6 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
         // wait until the service is up
         this.multiChaind.start();
 
-        // the code multichain responds with while warming up
-        final int multiChaindWarmupCode = this.config.getInt(MultiChainOptions.WARMUP_CODE_KEY);
-
         // wait at most backoff * (2^maxRetries - 1) milliseconds
         // e.g. 50 * (2^10 -1) = 51150 milliseconds
         long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS);
@@ -167,7 +164,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
             final BitcoinRPCError rpcError = rpcException.getRPCError();
 
             // check what has gone wrong
-            if (rpcError != null && rpcError.getCode() == multiChaindWarmupCode) {
+            if (rpcError != null && rpcError.getCode() == RPC_IN_WARMUP) {
               // keep waiting, multichaind is at work and will be with us soon
               LOG.debug(
                   "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());

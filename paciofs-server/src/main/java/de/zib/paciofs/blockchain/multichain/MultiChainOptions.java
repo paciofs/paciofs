@@ -28,7 +28,5 @@ public class MultiChainOptions {
 
   public static final String UTIL_OPTIONS_KEY = "multichain.multichain-util.options";
 
-  public static final String WARMUP_CODE_KEY = "multichain.multichaind.warmup-code";
-
   private MultiChainOptions() {}
 }

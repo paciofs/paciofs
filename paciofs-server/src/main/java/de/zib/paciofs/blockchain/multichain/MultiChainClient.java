@@ -139,6 +139,9 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
 
     synchronized (this.lifecyclePhaseTransition) {
       // check that we can transition to the STARTING phase (also fails if we are RUNNING already)
+      // this check also fails if we are STARTING, which we might encounter since the thread
+      // performing the start holds the lock and recurses into ensureRunning() during the
+      // getBlockChainInfo() query (see below)
       if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STARTING)) {
         // wait until the service is up
         this.multiChaind.start();
@@ -156,6 +159,8 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
         BlockChainInfo bci = null;
         for (; failedRetries < maxRetries; ++failedRetries) {
           try {
+            // causes one recursion step via query(), however this step will fail the above
+            // checkedLifecyclePhaseTransition to STARTING and therefore return early
             bci = this.getBlockChainInfo();
             break;
           } catch (BitcoinRPCException rpcException) {

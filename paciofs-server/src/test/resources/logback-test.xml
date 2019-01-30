@@ -1,0 +1,17 @@
+<configuration debug="false">
+    <!-- log to console -->
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%level] [%date] [%thread] [%logger] %message %n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logback is blocking by default, so use an asynchronous appender -->
+    <appender name="async-stdout" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="stdout" />
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="async-stdout" />
+    </root>
+</configuration>

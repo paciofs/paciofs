@@ -38,7 +38,9 @@
         <java.target.version>1.8</java.target.version>
         <scala.version>2.12</scala.version>
 
+        <checkstyle.skip>false</checkstyle.skip>
         <format-sources.skip>false</format-sources.skip>
+        <spotbugs.skip>false</spotbugs.skip>
 
         <protobuf.protoc>protoc</protobuf.protoc>
         <protobuf.include.dirs>/usr/local/include</protobuf.include.dirs>
@@ -63,6 +65,7 @@
             <properties>
                 <format-sources.skip>true</format-sources.skip>
                 <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
             </properties>
         </profile>
     </profiles>

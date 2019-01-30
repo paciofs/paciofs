@@ -88,7 +88,7 @@ script:
   - sleep 15s
 
   # simple query with default parameters
-  - ${MULTICHAIN_PATH}/multichain-cli paciofs -rpcuser=rpcuser -rpcpassword=rpcpassword -rpconnect=localhost -rpcport=8332 getblockchaininfo; CLI_EXIT=$?
+  - ${MULTICHAIN_PATH}/multichain-cli paciofs -datadir=/tmp/multichain-data-dir -rpconnect=localhost -rpcport=8332 getblockchaininfo; CLI_EXIT=$?
 
   # wait for everyting to shut down
   - kill ${MVN_PID}; wait ${MVN_PID}; MVN_EXIT=$?

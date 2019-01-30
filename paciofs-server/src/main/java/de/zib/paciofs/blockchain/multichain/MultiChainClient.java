@@ -9,8 +9,9 @@ package de.zib.paciofs.blockchain.multichain;
 
 import com.typesafe.config.Config;
 import de.zib.paciofs.logging.Markers;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,9 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
 
   private final MultiChaind multiChaind;
 
+  private String localhostName;
+  private String localhostAddress;
+
   private LifecyclePhase lifecyclePhase;
 
   private final Object lifecyclePhaseTransition;
@@ -44,10 +48,6 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
    * @throws MalformedURLException if the URL constructed from the configuration is invalid
    */
   public MultiChainClient(Config config) throws MalformedURLException {
-    super(new URL("http://" + config.getString(MultiChainOptions.RPC_USER_KEY) + ":"
-        + config.getString(MultiChainOptions.RPC_PASSWORD_KEY) + "@"
-        + config.getString(MultiChainOptions.RPC_CONNECT_KEY) + ":"
-        + config.getInt(MultiChainOptions.RPC_PORT_KEY)));
     this.config = config;
 
     // start MultiChain locally if localhost is the target connect
@@ -55,11 +55,28 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       this.multiChaind = new MultiChaind(this.config);
       this.lifecyclePhase = LifecyclePhase.STOPPED;
       this.lifecyclePhaseTransition = new Object();
+
+      // we need to start multichaind first and obtain the user info from it
     } else {
       // assume all is well if we connect to a remote MultiChain
       this.multiChaind = null;
       this.lifecyclePhase = LifecyclePhase.RUNNING;
       this.lifecyclePhaseTransition = null;
+
+      // set target URL to configured values
+      this.setUrl(this.getProtocol(), config.getString(MultiChainOptions.RPC_USER_KEY),
+          config.getString(MultiChainOptions.RPC_PASSWORD_KEY),
+          config.getString(MultiChainOptions.RPC_CONNECT_KEY),
+          config.getInt(MultiChainOptions.RPC_PORT_KEY));
+    }
+
+    try {
+      final InetAddress localhost = InetAddress.getLocalHost();
+      this.localhostName = localhost.getHostName();
+      this.localhostAddress = localhost.getHostAddress();
+    } catch (UnknownHostException e) {
+      LOG.warn("Could not get localhost: {}" + e.getMessage());
+      LOG.debug(Markers.EXCEPTION, "Could not get localhost", e);
     }
   }
 
@@ -84,7 +101,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
   public Object query(String method, Object... o) throws GenericRpcException {
     this.ensureRunning();
 
-    // logging is potentially expensive here
+    // TODO surround with try-catch and maybe switch to FAILED if we get errors
     if (LOG.isTraceEnabled()) {
       LOG.trace("Query: {}{}", method, o);
       final Object result = super.query(method, o);
@@ -92,12 +109,16 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       return result;
     }
 
-    // TODO surround with try-catch and maybe switch to FAILED if we get errors
     return super.query(method, o);
   }
 
   @Override
   public void addNode(String node, String command) throws GenericRpcException {
+    if (node.equals(this.localhostName) || node.equals(this.localhostAddress)) {
+      LOG.debug("Not {}'ing {} because it is this node", command, node);
+      return;
+    }
+
     final String nodeWithPort = node + ":" + this.config.getInt(MultiChainOptions.PORT_KEY);
 
     // https://www.multichain.com/developers/json-rpc-api/
@@ -130,6 +151,10 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
     }
   }
 
+  private String getProtocol() {
+    return this.config.hasPath(MultiChainOptions.RPC_SSL) ? "https" : "http";
+  }
+
   // manages the transition from STOPPED -> STARTING -> RUNNING in a blocking fashion
   private void ensureRunning() {
     if (this.lifecyclePhase == LifecyclePhase.RUNNING) {
@@ -145,6 +170,13 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STARTING)) {
         // wait until the service is up
         this.multiChaind.start();
+
+        // now we have all the information of where to direct our RPC calls
+        this.setUrl(this.getProtocol(),
+            this.multiChaind.getMultiChainConf().getString(MultiChainOptions.RPC_USER_KEY),
+            this.multiChaind.getMultiChainConf().getString(MultiChainOptions.RPC_PASSWORD_KEY),
+            config.getString(MultiChainOptions.RPC_CONNECT_KEY),
+            config.getInt(MultiChainOptions.RPC_PORT_KEY));
 
         // wait at most backoff * (2^maxRetries - 1) milliseconds
         // e.g. 50 * (2^10 -1) = 51150 milliseconds
@@ -162,8 +194,6 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
             break;
           } catch (BitcoinRPCException rpcException) {
             final BitcoinRPCError rpcError = rpcException.getRPCError();
-
-            // check what has gone wrong
             if (rpcError != null && rpcError.getCode() == RPC_IN_WARMUP) {
               // keep waiting, multichaind is at work and will be with us soon
               LOG.debug(
@@ -174,9 +204,9 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
               this.forcedLifecyclePhaseTransition(LifecyclePhase.FAILED);
               throw new RuntimeException("multichaind stopped running");
             } else {
-              // we do not know yet what is wrong
-              LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
-                  rpcException.getMessage());
+              // we do not know yet what is wrong, multichaind does not react to RPC calls
+              LOG.debug("Waiting {} ms, multichaind has not started yet ({}: {})", backoff,
+                  rpcException.getResponseCode(), rpcException.getMessage());
               LOG.debug(Markers.EXCEPTION, "multichaind has not started yet", rpcException);
             }
 

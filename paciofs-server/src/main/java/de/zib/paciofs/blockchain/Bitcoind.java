@@ -136,6 +136,9 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
         LOG.debug(Markers.EXCEPTION, "Adding node failed", e);
       }
     }
+
+    // have MultiChain measure latency and backlog
+    this.client.ping();
   }
 
   private void removeNode(Member member) {
@@ -152,5 +155,8 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
         LOG.debug(Markers.EXCEPTION, "Removing node failed", e);
       }
     }
+
+    // have MultiChain measure latency and backlog
+    this.client.ping();
   }
 }

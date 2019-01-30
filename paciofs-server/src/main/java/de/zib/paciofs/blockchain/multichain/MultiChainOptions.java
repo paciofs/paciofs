@@ -25,6 +25,7 @@ public class MultiChainOptions {
   public static final String RPC_PORT_KEY = "rpcport";
   public static final String RPC_USER_KEY = "rpcuser";
   public static final String RPC_PASSWORD_KEY = "rpcpassword";
+  public static final String RPC_SSL = "rpcssl";
 
   public static final String UTIL_OPTIONS_KEY = "multichain.multichain-util.options";
 

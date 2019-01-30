@@ -9,12 +9,15 @@ package de.zib.paciofs.blockchain.multichain;
 
 import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import de.zib.paciofs.logging.Markers;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -33,6 +36,10 @@ import sun.misc.Signal;
 public class MultiChaind {
   private static final String OPTION_DAEMON = "daemon";
   private static final String OPTION_DATADIR = "datadir";
+  private static final String OPTION_RPCALLOW = "rpcallow";
+  private static final String OPTION_RPCUSER = "rpcuser";
+  private static final String OPTION_RPCPASSWORD = "rpcpassword";
+  private static final String OPTION_SERVER = "server";
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChaind.class);
 
@@ -41,6 +48,8 @@ public class MultiChaind {
   private static final int EXIT_SIGTERM = 128 + new Signal("TERM").getNumber();
 
   private final Config config;
+
+  private Config multiChainConf;
 
   private ExecuteWatchdog watchdog;
   private DefaultExecuteResultHandler executeResultHandler;
@@ -63,36 +72,14 @@ public class MultiChaind {
     cmd.addArgument(this.config.getString(MultiChainOptions.BLOCKCHAIN_NAME_KEY));
     cmd.addArgument(this.config.getString(MultiChainOptions.PROTOCOL_VERSION_KEY));
 
-    // holds substitutions for the command line arguments we are building
-    final Map<String, Object> substitutions = new HashMap<>();
-
-    // build the remaining options
-    final Config options = this.config.getConfig(MultiChainOptions.DAEMON_OPTIONS_KEY);
-    for (Map.Entry<String, ConfigValue> entry : options.entrySet()) {
-      final String key = entry.getKey();
-
-      String value = entry.getValue().unwrapped().toString();
-
-      switch (key) {
-        case OPTION_DAEMON:
-          // we are running multichaind in the background anyway
-          LOG.debug("Ignoring -{} multichaind option", key);
-          break;
-        case OPTION_DATADIR:
-          // add substitution and replace value with placeholder for
-          // substitution
-          substitutions.put(key, new File(value));
-          value = buildCommandLineSubstitution(key);
-          // fall-through
-        default:
-          cmd.addArgument(buildCommandLineOption(key, value));
-          break;
-      }
-    }
-    cmd.setSubstitutionMap(substitutions);
+    // multichaind-specific options
+    this.addMultiChaindOptions(cmd);
 
     // make sure all directories and configuration files exist
     this.initializeBlockchain();
+
+    // read multichain.conf that was generated for this chain
+    this.readMultiChainConf();
 
     // the executor we use to run multichaind in
     final Executor executor = new DefaultExecutor() {
@@ -167,6 +154,10 @@ public class MultiChaind {
     return this.watchdog != null && this.watchdog.isWatching();
   }
 
+  public Config getMultiChainConf() {
+    return this.multiChainConf;
+  }
+
   private void initializeBlockchain() {
     final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
 
@@ -192,23 +183,8 @@ public class MultiChaind {
       cmd.addArgument(blockchainName);
       cmd.addArgument(this.config.getString(MultiChainOptions.PROTOCOL_VERSION_KEY));
 
-      // build remaining options like above
-      final Map<String, Object> substitutions = new HashMap<>();
-      for (Map.Entry<String, ConfigValue> entry : options.entrySet()) {
-        final String key = entry.getKey();
-        String value = entry.getValue().unwrapped().toString();
-
-        switch (key) {
-          case OPTION_DATADIR:
-            substitutions.put(key, datadir);
-            value = buildCommandLineSubstitution(key);
-            // fall-through
-          default:
-            cmd.addArgument(buildCommandLineOption(key, value));
-            break;
-        }
-      }
-      cmd.setSubstitutionMap(substitutions);
+      // multichain-util-specific options
+      this.addMultiChainUtilOptions(cmd);
 
       final Executor executor = new DefaultExecutor() {
         @Override
@@ -226,6 +202,88 @@ public class MultiChaind {
         throw new RuntimeException("multichain-util failed", e);
       }
     }
+  }
+
+  private void readMultiChainConf() {
+    final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
+    final File blockchainDir = new File(options.getString(OPTION_DATADIR),
+        this.config.getString(MultiChainOptions.BLOCKCHAIN_NAME_KEY));
+    this.multiChainConf = ConfigFactory.parseFile(new File(blockchainDir, "multichain.conf"));
+  }
+
+  private void addMultiChaindOptions(CommandLine cmd) {
+    // holds substitutions for the command line arguments we are building
+    final Map<String, Object> substitutions = new HashMap<>();
+
+    // build the remaining options
+    final Config options = this.config.getConfig(MultiChainOptions.DAEMON_OPTIONS_KEY);
+    for (Map.Entry<String, ConfigValue> entry : options.entrySet()) {
+      final String key = entry.getKey();
+
+      String value = entry.getValue().unwrapped().toString();
+
+      switch (key) {
+        case OPTION_DAEMON:
+          // we are running multichaind in the background anyway, fall-through
+        case OPTION_RPCALLOW:
+          // we only allow localhost, fall-through
+        case OPTION_RPCUSER:
+          // we use multichaind generated rpcuser, fall-through
+        case OPTION_RPCPASSWORD:
+          // we use multichaind generated rpcpassword, fall-through
+        case OPTION_SERVER:
+          // we add the server option ourselves
+          LOG.debug("Ignoring -{} multichaind option", key);
+          break;
+        case OPTION_DATADIR:
+          // add substitution and replace value with placeholder for
+          // substitution
+          substitutions.put(key, new File(value));
+          value = buildCommandLineSubstitution(key);
+          // fall-through
+        default:
+          cmd.addArgument(buildCommandLineOption(key, value));
+          break;
+      }
+    }
+    cmd.setSubstitutionMap(substitutions);
+
+    // serve JSON RPCs
+    cmd.addArgument(buildCommandLineOption(OPTION_SERVER, ""));
+
+    // only allow RPC commands from our host
+    cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, "localhost"));
+    try {
+      final InetAddress localHost = InetAddress.getLocalHost();
+      cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, localHost.getHostName()));
+      cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, localHost.getHostAddress()));
+    } catch (UnknownHostException e) {
+      LOG.warn("Could not add all -{} options: {}", OPTION_RPCALLOW, e.getMessage());
+      LOG.debug(Markers.EXCEPTION, "Could not get localhost", e);
+    }
+  }
+
+  private void addMultiChainUtilOptions(CommandLine cmd) {
+    final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
+    final File datadir = new File(options.getString(OPTION_DATADIR));
+
+    // build remaining options like above
+    final Map<String, Object> substitutions = new HashMap<>();
+    for (Map.Entry<String, ConfigValue> entry : options.entrySet()) {
+      final String key = entry.getKey();
+      String value = entry.getValue().unwrapped().toString();
+
+      switch (key) {
+        case OPTION_DATADIR:
+          substitutions.put(key, datadir);
+          value = buildCommandLineSubstitution(key);
+          // fall-through
+        default:
+          cmd.addArgument(buildCommandLineOption(key, value));
+          break;
+      }
+    }
+    cmd.setSubstitutionMap(substitutions);
   }
 
   private static String buildCommandLineOption(String option, String argument) {

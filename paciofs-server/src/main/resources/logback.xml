@@ -1,4 +1,4 @@
-<configuration>
+<configuration debug="false">
     <!-- log levels -->
     <define name="log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
         <var>log-level</var>

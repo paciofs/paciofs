@@ -7,6 +7,7 @@
 
 package de.zib.paciofs.blockchain.multichain;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
@@ -16,7 +17,7 @@ import wf.bitcoin.krotjson.HexCoder;
 /**
  * Unfortunately, wf.bitcoin.javabitcoinrpcclient.MapWrapper is package-private.
  */
-public class MapWrapper implements MapWrapperType {
+public class MapWrapper implements MapWrapperType, Serializable {
   private static final long SECONDS_TO_MILLISECONDS = 1000L;
 
   private final Map<String, ?> map;

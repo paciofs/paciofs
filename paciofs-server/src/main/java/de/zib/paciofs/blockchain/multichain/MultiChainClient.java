@@ -101,15 +101,29 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
   public Object query(String method, Object... o) throws GenericRpcException {
     this.ensureRunning();
 
-    // TODO surround with try-catch and maybe switch to FAILED if we get errors
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Query: {}{}", method, o);
-      final Object result = super.query(method, o);
-      LOG.trace("Result: {}", result);
-      return result;
-    }
+    try {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Query: {}{}", method, o);
+        final Object result = super.query(method, o);
+        LOG.trace("Result: {}", result);
+        return result;
+      }
 
-    return super.query(method, o);
+      return super.query(method, o);
+    } catch (GenericRpcException e) {
+      // multichaind has died, switch to FAILED
+      if (this.multiChaind != null && !this.multiChaind.isRunning()) {
+        synchronized (this.lifecyclePhaseTransition) {
+          LOG.error("multichaind has stopped running: {}", e.getMessage());
+          LOG.error(Markers.EXCEPTION, "multichaind has stopped running", e);
+          if (this.checkedLifecyclePhaseTransition(LifecyclePhase.FAILED)) {
+            this.multiChaind.waitForTermination();
+          }
+        }
+      }
+
+      throw e;
+    }
   }
 
   @Override

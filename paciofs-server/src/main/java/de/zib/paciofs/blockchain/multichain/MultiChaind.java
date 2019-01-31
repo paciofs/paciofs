@@ -31,7 +31,6 @@ import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.misc.Signal;
 
 public class MultiChaind {
   private static final String OPTION_DAEMON = "daemon";
@@ -42,10 +41,6 @@ public class MultiChaind {
   private static final String OPTION_SERVER = "server";
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChaind.class);
-
-  // exit code 128 means error, the signal number is added
-  private static final int EXIT_SIGPIPE = 128 + new Signal("PIPE").getNumber();
-  private static final int EXIT_SIGTERM = 128 + new Signal("TERM").getNumber();
 
   private final Config config;
 
@@ -94,19 +89,8 @@ public class MultiChaind {
         new RedirectingOutputStream(LOG::debug, Level.INFO.levelInt),
         new RedirectingOutputStream(LOG::debug, Level.ERROR.levelInt)));
 
-    // when killing the thread that multichaind is running in, the pipe reading from multichaind's
-    // stdout and stderr is closed, which is why multichaind may exit with SIGPIPE, even though
-    // SIGTERM was sent
-    executor.setExitValues(new int[] {0, EXIT_SIGPIPE, EXIT_SIGTERM});
-
     // invoked when the process is done, we use it to wait on the process before termination
     this.executeResultHandler = new DefaultExecuteResultHandler() {
-      @Override
-      public synchronized void onProcessComplete(int exitValue) {
-        LOG.debug("multichaind completed with exit code: {}", exitValue);
-        super.onProcessComplete(exitValue);
-      }
-
       @Override
       public synchronized void onProcessFailed(ExecuteException e) {
         LOG.debug("multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
@@ -115,7 +99,7 @@ public class MultiChaind {
       }
     };
 
-    // watchdog used only for killing the process, so set the timeout to
+    // watchdog used only for monitoring the process, so set the timeout to
     // infinity
     this.watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
     executor.setWatchdog(this.watchdog);
@@ -131,23 +115,21 @@ public class MultiChaind {
   }
 
   /**
-   * Terminates the MultiChain daemon via SIGTERM.
+   * Waits for the MultiChain daemon to stop and obtains the exit value, if not interrupted.
    */
-  public void terminate() {
-    LOG.trace("Stopping multichaind");
-
-    // sends SIGTERM
-    this.watchdog.destroyProcess();
+  public void waitForTermination() {
     try {
       this.executeResultHandler.waitFor();
+      LOG.debug(
+          "multichaind completed with exit code: {}", this.executeResultHandler.getExitValue());
     } catch (InterruptedException e) {
       LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
       LOG.debug(Markers.EXCEPTION, "Interrupted while waiting for multichaind to stop", e);
     }
-
-    this.watchdog = null;
     this.executeResultHandler = null;
-    LOG.trace("Stopped multichaind");
+
+    this.watchdog.stop();
+    this.watchdog = null;
   }
 
   public boolean isRunning() {

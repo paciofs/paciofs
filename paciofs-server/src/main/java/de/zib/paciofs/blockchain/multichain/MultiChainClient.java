@@ -155,11 +155,21 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
     synchronized (this.lifecyclePhaseTransition) {
       // check that we can transition to the STOPPING phase (also fails if we are STOPPED already)
       if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STOPPING)) {
-        // seems more reliable: we get an exit code, and the RPC stop request fails since the
-        // server does not answer anymore (since it is shutting down)
-        this.multiChaind.terminate();
+        LOG.trace("Stopping multichaind");
+
+        try {
+          // gracefully terminate by sending the RPC command to stop
+          super.stop();
+        } catch (BitcoinRPCException e) {
+          LOG.debug("Expected exception during stop: {}", e.getMessage());
+          LOG.debug(Markers.EXCEPTION, "Expected exception during stop", e);
+        }
+
+        // wait for multichaind to fully stop before setting the lifecycle phase
+        this.multiChaind.waitForTermination();
 
         // done
+        LOG.trace("Stopped multichaind");
         this.forcedLifecyclePhaseTransition(LifecyclePhase.STOPPED);
       }
     }

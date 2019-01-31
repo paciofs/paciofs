@@ -18,6 +18,8 @@ import wf.bitcoin.krotjson.HexCoder;
  * Unfortunately, wf.bitcoin.javabitcoinrpcclient.MapWrapper is package-private.
  */
 public class MapWrapper implements MapWrapperType, Serializable {
+  private static final long serialVersionUID = 7678720626147868841L;
+
   private static final long SECONDS_TO_MILLISECONDS = 1000L;
 
   private final Map<String, ?> map;
@@ -28,47 +30,58 @@ public class MapWrapper implements MapWrapperType, Serializable {
 
   @Override
   public Boolean mapBool(String s) {
-    return this.map.containsKey(s) ? (Boolean) this.map.get(s) : null;
+    return (Boolean) this.getOrThrow(s);
   }
 
   public Short mapShort(String s) {
-    return this.map.containsKey(s) ? ((Number) this.map.get(s)).shortValue() : null;
+    return ((Number) this.getOrThrow(s)).shortValue();
   }
 
   @Override
   public Integer mapInt(String s) {
-    return this.map.containsKey(s) ? ((Number) this.map.get(s)).intValue() : null;
+    return ((Number) this.getOrThrow(s)).intValue();
   }
 
   @Override
   public Long mapLong(String s) {
-    return this.map.containsKey(s) ? ((Number) this.map.get(s)).longValue() : null;
+    return ((Number) this.getOrThrow(s)).longValue();
   }
 
   @Override
   public String mapStr(String s) {
-    return this.map.containsKey(s) ? this.map.get(s).toString() : null;
+    return this.getOrThrow(s).toString();
   }
 
   @Override
   public Date mapDate(String s) {
-    return this.map.containsKey(s)
-        ? new Date(((Number) this.map.get(s)).longValue() * SECONDS_TO_MILLISECONDS)
-        : null;
+    return new Date(((Number) this.getOrThrow(s)).longValue() * SECONDS_TO_MILLISECONDS);
   }
 
   @Override
   public BigDecimal mapBigDecimal(String s) {
-    return this.map.containsKey(s) ? new BigDecimal(this.map.get(s).toString()) : null;
+    return new BigDecimal(this.getOrThrow(s).toString());
   }
 
   @Override
   public byte[] mapHex(String s) {
-    return this.map.containsKey(s) ? HexCoder.decode(this.map.get(s).toString()) : null;
+    return HexCoder.decode(this.getOrThrow(s).toString());
   }
 
   @Override
   public String toString() {
     return String.valueOf(this.map);
+  }
+
+  private Object getOrThrow(String s) {
+    if (!this.map.containsKey(s)) {
+      throw new IllegalArgumentException(s);
+    }
+
+    final Object o = this.map.get(s);
+    if (o == null) {
+      throw new NullPointerException(s);
+    }
+
+    return o;
   }
 }

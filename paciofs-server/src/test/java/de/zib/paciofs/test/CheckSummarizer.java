@@ -48,44 +48,31 @@ public class CheckSummarizer {
       }
     }
 
-    boolean success = true;
-
     if (!skipCheckstyle) {
-      success &=
-          countXmlTags(new File(dir, "checkstyle-result.xml"), "error", "checkstyle violation",
-              (node) -> node.getParentNode().getAttributes().getNamedItem("name").getNodeValue())
-          == 0;
+      countXmlTags(new File(dir, "checkstyle-result.xml"), "error", "checkstyle violation",
+          "file://" + new File(dir, "site/checkstyle.html").getPath() + "",
+          (node) -> node.getParentNode().getAttributes().getNamedItem("name").getNodeValue());
     }
 
     if (!skipSpotbugs) {
-      success &= countXmlTags(new File(dir, "spotbugsXml.xml"), "BugInstance", "bug", (node) -> {
-        NodeList children = node.getChildNodes();
-        for (int i = 0; i < children.getLength(); ++i) {
-          Node child = children.item(i);
-          Node sourcePathAttribute = child.getAttributes().getNamedItem("sourcepath");
-          if (sourcePathAttribute != null) {
-            return sourcePathAttribute.getNodeValue();
-          }
-        }
+      countXmlTags(
+          new File(dir, "spotbugsXml.xml"), "BugInstance", "bug", "mvn spotbugs:gui", (node) -> {
+            NodeList children = node.getChildNodes();
+            for (int i = 0; i < children.getLength(); ++i) {
+              Node child = children.item(i);
+              Node sourcePathAttribute = child.getAttributes().getNamedItem("sourcepath");
+              if (sourcePathAttribute != null) {
+                return sourcePathAttribute.getNodeValue();
+              }
+            }
 
-        return null;
-      }) == 0;
-    }
-
-    if (!success) {
-      throw new Exception("Validation failed") {
-        @Override
-        public StackTraceElement[] getStackTrace() {
-          // we only throw to end Mojo execution without calling System.exit(1)
-          // so remove the stacktrace as it only clutters output
-          return new StackTraceElement[0];
-        }
-      };
+            return null;
+          });
     }
   }
 
-  private static int countXmlTags(
-      File xml, String tagName, String message, Function<Node, String> filenameExtractor)
+  private static void countXmlTags(File xml, String tagName, String message, String see,
+      Function<Node, String> filenameExtractor)
       throws ParserConfigurationException, IOException, SAXException, GitAPIException {
     final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
     final Document document = builder.parse(xml);
@@ -100,7 +87,8 @@ public class CheckSummarizer {
       // bold blue
       System.out.print((char) 27 + "[1;34mINFO" + (char) 27 + "[0m");
     }
-    System.out.println("] " + tagCount + " " + message + ((tagCount != 1) ? "s" : ""));
+    System.out.println(
+        "] " + tagCount + " " + message + ((tagCount != 1) ? "s" : "") + " (see " + see + ")");
 
     // get all files with errors
     final List<String> offendingFiles = new ArrayList<>(tagCount);
@@ -124,23 +112,21 @@ public class CheckSummarizer {
         if (index >= 0 && uncommitedChange.length() - index == offendingFile.length()) {
           ++offendingChangedFileCount;
           System.out.print("[");
-          System.out.print((char) 27 + "[1;31mERROR" + (char) 27 + "[0m");
-          System.out.println("] " + uncommitedChange);
+          System.out.print((char) 27 + "[1;33mWARNING" + (char) 27 + "[0m");
+          System.out.println("]   - " + uncommitedChange);
         }
       }
     }
 
     if (offendingChangedFileCount > 0) {
       System.out.print("[");
-      System.out.print((char) 27 + "[1;31mERROR" + (char) 27 + "[0m");
+      System.out.print((char) 27 + "[1;33mWARNING" + (char) 27 + "[0m");
       System.out.println("] of which the above " + offendingChangedFileCount
-          + (offendingChangedFileCount != 1 ? " are" : " is") + " not committed yet");
+          + (offendingChangedFileCount != 1 ? " are" : " is") + " in files you have changed");
     } else {
       System.out.print("[");
       System.out.print((char) 27 + "[1;34mINFO" + (char) 27 + "[0m");
-      System.out.println("] of which 0 are not committed yet");
+      System.out.println("] of which 0 are in files you have changed");
     }
-
-    return offendingChangedFileCount;
   }
 }

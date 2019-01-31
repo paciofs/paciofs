@@ -199,8 +199,8 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
         this.setUrl(this.getProtocol(),
             this.multiChaind.getMultiChainConf().getString(MultiChainOptions.RPC_USER_KEY),
             this.multiChaind.getMultiChainConf().getString(MultiChainOptions.RPC_PASSWORD_KEY),
-            config.getString(MultiChainOptions.RPC_CONNECT_KEY),
-            config.getInt(MultiChainOptions.RPC_PORT_KEY));
+            this.config.getString(MultiChainOptions.RPC_CONNECT_KEY),
+            this.config.getInt(MultiChainOptions.RPC_PORT_KEY));
 
         // wait at most backoff * (2^maxRetries - 1) milliseconds
         // e.g. 50 * (2^10 -1) = 51150 milliseconds
@@ -236,6 +236,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
 
             // exponential backoff so we do not annoy multichaind too much
             try {
+              // intentionally blocks all other threads
               Thread.sleep(backoff);
               backoff *= 2;
             } catch (InterruptedException e) {

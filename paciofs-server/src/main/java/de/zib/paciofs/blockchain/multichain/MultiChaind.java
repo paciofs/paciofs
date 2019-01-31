@@ -255,15 +255,13 @@ public class MultiChaind {
       final String key = entry.getKey();
       String value = entry.getValue().unwrapped().toString();
 
-      switch (key) {
-        case OPTION_DATADIR:
-          substitutions.put(key, datadir);
-          value = buildCommandLineSubstitution(key);
-          // fall-through
-        default:
-          cmd.addArgument(buildCommandLineOption(key, value));
-          break;
+      // the only option we have to handle here
+      if (OPTION_DATADIR.equals(key)) {
+        substitutions.put(key, datadir);
+        value = buildCommandLineSubstitution(key);
       }
+
+      cmd.addArgument(buildCommandLineOption(key, value));
     }
     cmd.setSubstitutionMap(substitutions);
   }

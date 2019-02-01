@@ -10,7 +10,6 @@ package de.zib.paciofs.test;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.compiler.PluginProtos;
-import de.zib.paciofs.grpc.io.posix.IoPosix;
 
 public class SpotbugsProtocExcluder {
   private static final String OPTION_SPOTBUGS_EXCLUDE_FILE = "--spotbugs-exclude-file";
@@ -34,7 +33,6 @@ public class SpotbugsProtocExcluder {
 
     // parse the request passed in by protoc on stdin
     final ExtensionRegistry registry = ExtensionRegistry.newInstance();
-    IoPosix.registerAllExtensions(registry);
     final PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.parseFrom(System.in, registry);
     final PluginProtos.CodeGeneratorResponse.Builder response =
@@ -62,17 +60,30 @@ public class SpotbugsProtocExcluder {
         packageString = "";
       }
 
-      // escape because we use it in a regex
-      packageString = packageString.replace(".", "\\.");
-
-      // add each message class and its subclasses to the filter
+      // for each message
       for (DescriptorProtos.DescriptorProto message : protoFile.getMessageTypeList()) {
+        // exclude the class
         spotbugsExcludeFileContent
-            .append("  <Class name=\"~^" + packageString + "\\." + message.getName() + ".*$\"/>")
+            .append("  <Class name=\"" + packageString + "." + message.getName() + "\"/>")
+            .append(System.lineSeparator());
+
+        // and all static inner classes (regex)
+        spotbugsExcludeFileContent
+            .append("  <Class name=\"~^" + packageString.replace(".", "\\.") + "\\."
+                + message.getName() + "\\$.*$\"/>")
             .append(System.lineSeparator());
       }
 
-      // add services, enums, ... like above
+      // for each service do the same
+      for (DescriptorProtos.ServiceDescriptorProto service : protoFile.getServiceList()) {
+        spotbugsExcludeFileContent
+            .append("  <Class name=\"" + packageString + "." + service.getName() + "\"/>")
+            .append(System.lineSeparator());
+        spotbugsExcludeFileContent
+            .append("  <Class name=\"~^" + packageString.replace(".", "\\.") + "\\."
+                + service.getName() + "\\$.*$\"/>")
+            .append(System.lineSeparator());
+      }
     }
 
     // finally emit the filter file to stdout

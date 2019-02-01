@@ -135,6 +135,24 @@
                 </executions>
             </plugin>
 
+            <!-- use protoc to generate server code from src/main/proto/*.proto files -->
+            <plugin>
+                <groupId>com.lightbend.akka.grpc</groupId>
+                <artifactId>akka-grpc-maven-plugin</artifactId>
+                <version>${akka.grpc.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generateServer>true</generateServer>
+                            <generateClient>false</generateClient>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -237,23 +255,6 @@
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <executable>${project.basedir}/format-sources.sh</executable>
                             <skip>${format-sources.skip}</skip>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>generate-grpc</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            <executable>${protobuf.protoc}</executable>
-                            <arguments>
-                                <argument>--proto_path=${project.basedir}/src/main/proto</argument>
-                                <argument>--java_out=${project.build.directory}/generated-sources/grpc</argument>
-                                <argument>io_posix.proto</argument>
-                            </arguments>
                         </configuration>
                     </execution>
 

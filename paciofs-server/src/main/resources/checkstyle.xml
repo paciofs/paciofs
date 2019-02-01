@@ -194,7 +194,10 @@
         <module name="ParenPad"/>
         <module name="RedundantImport"/>
         <module name="RedundantModifier"/>
-        <module name="RequireThis"/>
+        <module name="RequireThis">
+            <property name="validateOnlyOverlapping" value="false"/>
+        </module>
+        <module name="ReturnCount"/>
         <module name="RightCurly">
             <property name="id" value="RightCurlyAlone"/>
             <property name="option" value="alone"/>
@@ -208,7 +211,6 @@
                       value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE,
                     LITERAL_DO"/>
         </module>
-        <module name="ReturnCount"/>
         <module name="SeparatorWrap">
             <property name="id" value="SeparatorWrapDot"/>
             <property name="tokens" value="DOT"/>

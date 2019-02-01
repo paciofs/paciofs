@@ -148,15 +148,16 @@
                         </goals>
                         <configuration>
                             <target>
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" message="#!/bin/bash${line.separator}" />
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" append="true" message="java -cp" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" message="#!/bin/bash${line.separator}" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="${java.home}/bin/java \${line.separator}" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="  -cp ${project.build.directory}/classes" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message=":${project.build.directory}/test-classes" />
                                 <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" append="true" message=" ${project.build.directory}/classes" />
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" append="true" message=":${project.build.directory}/test-classes" />
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" append="true" message=" de.zib.paciofs.test.SpotbugsProtocExcluder" />
-                                <echo file="${project.build.directory}/protoc-gen-spotbugsexcl" append="true" message=" --spotbugs-exclude-file ${spotbugs.exclude-filter}${line.separator}" />
-                                <chmod file="${project.build.directory}/protoc-gen-spotbugsexcl" perm="a+x" />
+                                <!-- protobuf-java is a transitive dependency from akka-grpc -->
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path} \${line.separator}" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="  de.zib.paciofs.test.SpotbugsProtocExcluder" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message=" --spotbugs-exclude-file ${spotbugs.exclude-filter}${line.separator}" />
+                                <chmod file="${project.build.directory}/spotbugs-exclude.sh" perm="a+x" />
                             </target>
                         </configuration>
                     </execution>
@@ -269,7 +270,7 @@
                             <arguments>
                                 <argument>--proto_path=${project.basedir}/src/main/proto</argument>
                                 <argument>--spotbugsexcl_out=${project.build.directory}</argument>
-                                <argument>--plugin=${project.build.directory}/protoc-gen-spotbugsexcl</argument>
+                                <argument>--plugin=protoc-gen-spotbugsexcl=${project.build.directory}/spotbugs-exclude.sh</argument>
                                 <argument>io_posix.proto</argument>
                             </arguments>
                         </configuration>

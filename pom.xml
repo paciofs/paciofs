@@ -43,7 +43,6 @@
         <spotbugs.skip>false</spotbugs.skip>
 
         <protobuf.protoc>protoc</protobuf.protoc>
-        <protobuf.include.dirs>/usr/local/include</protobuf.include.dirs>
 
         <!-- Plugin configurations -->
         <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>

@@ -10,5 +10,9 @@
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
+#include <sys/stat.h>
+
+int paciofs_getattr(const char *__restrict__ path,
+                    struct stat *__restrict__ buf);
 
 #endif  // PACIOFS_FUSE_H

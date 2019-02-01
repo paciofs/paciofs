@@ -66,7 +66,7 @@
                             <arguments>
                                 <argument>--proto_path=${project.basedir}/../paciofs-server/src/main/proto</argument>
                                 <argument>--cpp_out=${project.basedir}/build/grpc</argument>
-                                <argument>io.proto</argument>
+                                <argument>io_posix.proto</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -81,7 +81,6 @@
                             <workingDirectory>${project.basedir}/build</workingDirectory>
                             <executable>cmake</executable>
                             <arguments>
-                                <argument>-DPROTOBUF_INCLUDE_DIRS=${protobuf.include.dirs}</argument>
                                 <argument>-DCMAKE_BUILD_TYPE=Release</argument>
                                 <argument>..</argument>
                             </arguments>

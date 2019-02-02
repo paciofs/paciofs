@@ -23,6 +23,7 @@ matrix:
       addons:
         homebrew:
           packages:
+            - clang-format
             - cmake
       env:
         - GO_DIST=darwin

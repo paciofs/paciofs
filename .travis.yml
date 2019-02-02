@@ -93,7 +93,7 @@ install:
 
 script:
   # only build Docker if requested
-  - if [ "${DOCKER_BUILD}" -eq "1" ]; then docker-compose --file ./paciofs-docker/docker-compose.yaml build; exit $?; fi
+  - if [ "${DOCKER_BUILD}" -eq "1" ]; then docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build; exit $?; fi
 
   # run tests
   - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode

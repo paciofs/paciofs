@@ -10,8 +10,6 @@ matrix:
           packages:
             - cmake
             - libfuse-dev
-      services:
-        - docker
       env:
         - GO_DIST=linux
         - MULTICHAIN_VERSION=2.0-beta-1
@@ -30,7 +28,17 @@ matrix:
         - MULTICHAIN_VERSION=2.0-dev-898f3fc
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/2.0-dev-20190131T090104/multichain-${MULTICHAIN_VERSION}-osx.tar.gz
 
+    - os: linux
+      dist: xenial
+      services:
+        - docker
+      env:
+        - DOCKER_BUILD=1
+
 before_install:
+  # skip if this is the docker build
+  - if [ "${DOCKER_BUILD}" -eq "1" ]; then exit 0; fi
+
   # install go
   - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.5.${GO_DIST}-amd64.tar.gz
   - sudo tar --directory /usr/local --extract --file go.tar.gz
@@ -77,16 +85,18 @@ before_install:
   - cd ..
   - rm -rf commons-exec-${COMMONS_EXEC_VERSION}
 
-
 install:
+  # skip if this is the docker build
+  - if [ "${DOCKER_BUILD}" -eq "1" ]; then exit 0; fi
+
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
 
 script:
+  # only build Docker if requested
+  - if [[ "${DOCKER_BUILD}" -eq "1" ]]; then docker-compose --file ./paciofs-docker/docker-compose.yaml build; exit $?; fi
+
   # run tests
   - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
-
-  # build the docker image on Linux only
-  - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then docker-compose --file ./paciofs-docker/docker-compose.yaml build; fi
 
   # start and stop PacioFS
   - mvn --projects paciofs-server exec:java@run-server &

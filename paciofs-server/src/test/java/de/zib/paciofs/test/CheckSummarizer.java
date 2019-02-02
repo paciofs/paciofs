@@ -10,7 +10,9 @@ package de.zib.paciofs.test;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -102,8 +104,11 @@ public class CheckSummarizer {
     final Git git = new Git(repository);
     final Status status = git.status().call();
 
+    final Set<String> changes = status.getUncommittedChanges();
+    changes.addAll(status.getUntracked());
+
     int offendingChangedFileCount = 0;
-    for (String file : status.getUncommittedChanges()) {
+    for (String file : changes) {
       String uncommitedChange =
           new File(repository.getDirectory().getParent(), file).getAbsolutePath();
 

@@ -32,13 +32,12 @@ matrix:
       dist: xenial
       services:
         - docker
-      env:
-        - DOCKER_BUILD=1
+      before_install: true
+      install: true
+      script:
+        - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:
-  # skip if this is the docker build
-  - if [ "${DOCKER_BUILD}" -eq "1" ]; then exit 0; fi
-
   # install go
   - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.5.${GO_DIST}-amd64.tar.gz
   - sudo tar --directory /usr/local --extract --file go.tar.gz
@@ -86,15 +85,9 @@ before_install:
   - rm -rf commons-exec-${COMMONS_EXEC_VERSION}
 
 install:
-  # skip if this is the docker build
-  - if [ "${DOCKER_BUILD}" -eq "1" ]; then exit 0; fi
-
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
 
 script:
-  # only build Docker if requested
-  - if [ "${DOCKER_BUILD}" -eq "1" ]; then docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build; exit $?; fi
-
   # run tests
   - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
 

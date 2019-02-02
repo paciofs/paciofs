@@ -52,6 +52,8 @@
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
         <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
+        <maven-spotbugs-plugin.version>3.1.10</maven-spotbugs-plugin.version>
+        <spotbugs.version>3.1.11</spotbugs.version>
     </properties>
 
     <profiles>
@@ -71,6 +73,19 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${maven-spotbugs-plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.github.spotbugs</groupId>
+                            <artifactId>spotbugs</artifactId>
+                            <version>${spotbugs.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>

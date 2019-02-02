@@ -10,10 +10,13 @@ matrix:
           packages:
             - cmake
             - libfuse-dev
+      services:
+        - docker
       env:
         - GO_DIST=linux
         - MULTICHAIN_VERSION=2.0-beta-1
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
+
     - os: osx
       osx_image: xcode10.1
       jdk: oraclejdk11
@@ -25,9 +28,6 @@ matrix:
         - GO_DIST=darwin
         - MULTICHAIN_VERSION=2.0-dev-898f3fc
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/2.0-dev-20190131T090104/multichain-${MULTICHAIN_VERSION}-osx.tar.gz
-
-services:
-  - docker
 
 before_install:
   # install go
@@ -84,8 +84,8 @@ script:
   # run tests
   - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
 
-  # build the docker image
-  - docker-compose --file ./paciofs-docker/docker-compose.yaml build
+  # build the docker image on Linux only
+  - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then docker-compose --file ./paciofs-docker/docker-compose.yaml build; fi
 
   # start and stop PacioFS
   - mvn --projects paciofs-server exec:java@run-server &

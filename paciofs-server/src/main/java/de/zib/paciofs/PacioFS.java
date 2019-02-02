@@ -11,7 +11,6 @@ import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
-import akka.http.javadsl.server.Directives;
 import akka.management.AkkaManagement;
 import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.stream.ActorMaterializer;
@@ -19,11 +18,11 @@ import akka.stream.Materializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.zib.paciofs.blockchain.Bitcoind;
+import de.zib.paciofs.grpc.io.posix.PosixIoServiceHandlerFactory;
+import de.zib.paciofs.grpc.io.posix.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -95,18 +94,18 @@ public class PacioFS {
     // actor for the blockchain
     paciofs.actorOf(Bitcoind.props(), "bitcoind");
 
-    // figure out where we are
-    String hostAddress;
-    try {
-      hostAddress = InetAddress.getLocalHost().getHostAddress();
-    } catch (UnknownHostException e) {
-      hostAddress = "<unknown host>";
-    }
-
     final Materializer mat = ActorMaterializer.create(paciofs);
-    Http.get(paciofs).bindAndHandle(
-        Directives.complete("paciofs@" + hostAddress).flow(paciofs, mat),
-        ConnectHttp.toHost("0.0.0.0", 8080), mat);
+
+    // bind the POSIX IO service to all interfaces (0.0.0.0)
+    // TODO should we bind to all interfaces?
+    // TODO restrict to HTTP/2 and SSL
+    Http.get(paciofs)
+        .bindAndHandleAsync(PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), mat),
+            ConnectHttp.toHost("0.0.0.0", 8080), mat)
+        .thenAccept(binding -> {
+          log.info("{} gRPC server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
+              binding.localAddress());
+        });
   }
 
   private static CommandLine parseCommandLine(String[] args) {

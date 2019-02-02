@@ -25,7 +25,6 @@
         <!-- need unreleased version that fixes [EXEC-71] -->
         <!-- https://github.com/apache/commons-exec/commit/42eb77c321f7dc17aaff45e45ac1179256517005 -->
         <commons-exec.version>1.3.1-SNAPSHOT</commons-exec.version>
-        <grpc.version>1.17.1</grpc.version>
         <jgit.version>5.2.1.201812262042-r</jgit.version>
         <logback-classic.version>1.2.3</logback-classic.version>
         <spotbugs.exclude-filter>spotbugs-exclude.xml</spotbugs.exclude-filter>
@@ -37,15 +36,34 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic.version}</version>
         </dependency>
+        <!-- explicit dependency on protobuf -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.lightbend.akka.discovery</groupId>
             <artifactId>akka-discovery-kubernetes-api_${scala.version}</artifactId>
             <version>${akka.management.version}</version>
         </dependency>
+        <!-- to generate gRPC classes from proto files -->
+        <dependency>
+            <groupId>com.lightbend.akka.grpc</groupId>
+            <artifactId>akka-grpc-codegen_${scala.version}</artifactId>
+            <version>${akka.grpc.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.lightbend.akka.grpc</groupId>
             <artifactId>akka-grpc-runtime_${scala.version}</artifactId>
             <version>${akka.grpc.version}</version>
+            <exclusions>
+                <!-- we have our own protobuf -->
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.lightbend.akka.management</groupId>
@@ -125,31 +143,39 @@
                 </executions>
             </plugin>
 
-            <!-- use protoc to generate server code from src/main/proto/*.proto files -->
-            <plugin>
-                <groupId>com.lightbend.akka.grpc</groupId>
-                <artifactId>akka-grpc-maven-plugin</artifactId>
-                <version>${akka.grpc.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <generateServer>true</generateServer>
-                            <generateClient>false</generateClient>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
-                    <!-- Create plugin for protoc that adds protc-generated classes to the spotbugs exclude filter -->
+                    <!-- Create plugin for protoc that generates akka gRPC classes -->
+                    <!-- We do this explicitly so we can use our own protobuf -->
                     <execution>
-                        <id>generate-protoc-plugin</id>
+                        <id>generate-protoc-grpc-plugin</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/generated-sources/akka-grpc-java"/>
+                                <echo file="${project.build.directory}/akka-grpc.sh" message="#!/bin/bash${line.separator}" />
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="${java.home}/bin/java \${line.separator}" />
+                                <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
+                                <!-- TODO fix hard-coded scala version -->
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="  -cp ${maven.dependency.com.lightbend.akka.grpc.akka-grpc-codegen_2.12.jar.path}" />
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="${path.separator}${maven.dependency.org.scala-lang.scala-library.jar.path}" />
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="${path.separator}${maven.dependency.org.scala-lang.modules.scala-xml_2.12.jar.path}" />
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="${path.separator}${maven.dependency.com.typesafe.play.twirl-api_2.12.jar.path}" />
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="${path.separator}${maven.dependency.com.google.protobuf.protobuf-java.jar.path} \${line.separator}" />
+                                <echo file="${project.build.directory}/akka-grpc.sh" append="true" message="  akka.grpc.gen.Main${line.separator}" />
+                                <chmod file="${project.build.directory}/akka-grpc.sh" perm="a+x" />
+                            </target>
+                        </configuration>
+                    </execution>
+
+                    <!-- Create plugin for protoc that adds protoc-generated classes to the spotbugs exclude filter -->
+                    <execution>
+                        <id>generate-protoc-spotbugsexcl-plugin</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>run</goal>
@@ -159,10 +185,9 @@
                                 <echo file="${project.build.directory}/spotbugs-exclude.sh" message="#!/bin/bash${line.separator}" />
                                 <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="${java.home}/bin/java \${line.separator}" />
                                 <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="  -cp ${project.build.directory}/classes" />
-                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message=":${project.build.directory}/test-classes" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="${path.separator}${project.build.directory}/test-classes" />
                                 <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
-                                <!-- protobuf-java is a transitive dependency from akka-grpc -->
-                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path} \${line.separator}" />
+                                <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="${path.separator}${maven.dependency.com.google.protobuf.protobuf-java.jar.path} \${line.separator}" />
                                 <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message="  de.zib.paciofs.test.SpotbugsProtocExcluder" />
                                 <echo file="${project.build.directory}/spotbugs-exclude.sh" append="true" message=" --spotbugs-exclude-file ${spotbugs.exclude-filter}${line.separator}" />
                                 <chmod file="${project.build.directory}/spotbugs-exclude.sh" perm="a+x" />
@@ -193,6 +218,26 @@
                                 <directory>${project.build.sourceDirectory}</directory>
                             </sourceDirectories>
                             <skip>${checkstyle.skip}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- add generated gRPC classes to build -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-grpc-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/akka-grpc-java</source>
+                            </sources>
                         </configuration>
                     </execution>
                 </executions>
@@ -229,6 +274,26 @@
                                 <argument>--proto_path=${project.basedir}/src/main/proto</argument>
                                 <argument>--spotbugsexcl_out=${project.build.directory}</argument>
                                 <argument>--plugin=protoc-gen-spotbugsexcl=${project.build.directory}/spotbugs-exclude.sh</argument>
+                                <argument>io_posix.proto</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <!-- generate akka gRPC classes -->
+                    <execution>
+                        <id>generate-grpc-classes</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>${protobuf.protoc}</executable>
+                            <arguments>
+                                <argument>--proto_path=${project.basedir}/src/main/proto</argument>
+                                <argument>--java_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>
+                                <argument>--grpc_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>
+                                <argument>--plugin=protoc-gen-grpc=${project.build.directory}/akka-grpc.sh</argument>
                                 <argument>io_posix.proto</argument>
                             </arguments>
                         </configuration>
@@ -298,12 +363,16 @@
                                 <includes>
                                     <include>*:*</include>
                                 </includes>
+                                <excludes>
+                                    <exclude>com.lightbend.akka.grpc:akka-grpc-codegen_${scala.version}</exclude>
+                                </excludes>
                             </artifactSet>
                             <filters>
                                 <filter>
                                     <artifact>${project.groupId}:${project.artifactId}</artifact>
                                     <excludes>
                                         <exclude>**/checkstyle.xml</exclude>
+                                        <exclude>**/logback-test.xml</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

@@ -66,6 +66,8 @@
                             <arguments>
                                 <argument>--proto_path=${project.basedir}/../paciofs-server/src/main/proto</argument>
                                 <argument>--cpp_out=${project.basedir}/build/grpc</argument>
+                                <argument>--grpc_out=${project.basedir}/build/grpc</argument>
+                                <argument>--plugin=protoc-gen-grpc=${grpc.protobuf-cpp-plugin}</argument>
                                 <argument>io_posix.proto</argument>
                             </arguments>
                         </configuration>
@@ -81,6 +83,10 @@
                             <workingDirectory>${project.basedir}/build</workingDirectory>
                             <executable>cmake</executable>
                             <arguments>
+                                <argument>-DGRPC_INCLUDE_DIRS=${grpc.dirs.include}</argument>
+                                <argument>-DPROTOBUF_INCLUDE_DIRS=${protobuf.dirs.include}</argument>
+                                <argument>-DGRPC_LIBRARY_DIRS=${grpc.dirs.library}</argument>
+                                <argument>-DPROTOBUF_LIBRARY_DIRS=${protobuf.dirs.library}</argument>
                                 <argument>-DCMAKE_BUILD_TYPE=Release</argument>
                                 <argument>..</argument>
                             </arguments>

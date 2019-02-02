@@ -42,9 +42,18 @@
         <format-sources.skip>false</format-sources.skip>
         <spotbugs.skip>false</spotbugs.skip>
 
-        <protobuf.protoc>protoc</protobuf.protoc>
+        <!-- protoc and gRPC properties here because server and client should use the same -->
+        <grpc.version>1.18.0</grpc.version>
+        <grpc.protobuf-cpp-plugin>/usr/local/bin/grpc_cpp_plugin</grpc.protobuf-cpp-plugin>
+        <grpc.dirs.include>/usr/local/include</grpc.dirs.include>
+        <grpc.dirs.library>/usr/local/lib</grpc.dirs.library>
+        <protobuf.version>3.6.1</protobuf.version>
+        <protobuf.protoc>/usr/local/bin/protoc</protobuf.protoc>
+        <protobuf.dirs.include>/usr/local/include</protobuf.dirs.include>
+        <protobuf.dirs.library>/usr/local/lib</protobuf.dirs.library>
 
         <!-- Plugin configurations -->
+        <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
         <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
         <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
@@ -84,6 +93,12 @@
                             <version>${spotbugs.version}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
 
                 <plugin>

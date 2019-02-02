@@ -82,7 +82,7 @@ install:
 
 script:
   # run tests
-  - mvn test --define protobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc --define protobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode
+  - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
 
   # build the docker image
   - docker-compose --file ./paciofs-docker/docker-compose.yaml build

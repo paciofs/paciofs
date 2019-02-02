@@ -1,7 +1,10 @@
+language: java
+
 matrix:
   include:
     - os: linux
       dist: xenial
+      jdk: openjdk8
       addons:
         apt:
           packages:
@@ -13,6 +16,7 @@ matrix:
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
     - os: osx
       osx_image: xcode10.1
+      jdk: oraclejdk11
       addons:
         homebrew:
           packages:
@@ -21,9 +25,6 @@ matrix:
         - GO_DIST=darwin
         - MULTICHAIN_VERSION=2.0-dev-898f3fc
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/2.0-dev-20190131T090104/multichain-${MULTICHAIN_VERSION}-osx.tar.gz
-
-language: java
-jdk: openjdk8
 
 services:
   - docker

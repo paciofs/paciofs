@@ -1,4 +1,25 @@
-dist: xenial
+matrix:
+  - os: linux
+    dist: xenial
+    addons:
+      apt:
+        packages:
+          - cmake
+          - libfuse-dev
+    env:
+      - GO_DIST=linux
+      - MULTICHAIN_VERSION=2.0-beta-1
+      - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
+  - os: osx
+    osx_image: xcode10.1
+    addons:
+      homebrew:
+        packages:
+          - cmake
+    env:
+      - GO_DIST=darwin
+      - MULTICHAIN_VERSION=2.0-dev-898f3fc
+      - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/2.0-dev-20190131T090104/multichain-${MULTICHAIN_VERSION}-osx.tar.gz
 
 language: java
 jdk: openjdk8
@@ -8,7 +29,7 @@ services:
 
 before_install:
   # install go
-  - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.3.linux-amd64.tar.gz
+  - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.5.${GO_DIST}-amd64.tar.gz
   - sudo tar --directory /usr/local --extract --file go.tar.gz
   - rm go.tar.gz
   - export GOPATH="${HOME}/go"
@@ -38,8 +59,7 @@ before_install:
   - rm -rf ./grpc
 
   # install MultiChain
-  - export MULTICHAIN_VERSION="2.0-beta-1"
-  - wget --output-document multichain.tar.gz --quiet https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
+  - wget --output-document multichain.tar.gz --quiet ${MULTICHAIN_URL}
   - sudo tar --directory /usr/local --extract --file multichain.tar.gz
   - rm multichain.tar.gz
   - export MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"

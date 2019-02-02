@@ -42,14 +42,22 @@ before_install:
   - export DEP_RELEASE_TAG="v0.5.0"
   - curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-  # install protoc and headers
-  - export PROTOBUF_VERSION=3.6.1
-  - wget --output-document protobuf.tar.gz --quiet https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-all-${PROTOBUF_VERSION}.tar.gz
-  - tar --extract --file protobuf.tar.gz
-  - rm protobuf.tar.gz
-  - wget --output-document protoc.zip --quiet https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protoc-${PROTOBUF_VERSION}-linux-x86_64.zip
-  - unzip protoc.zip -d protobuf-${PROTOBUF_VERSION} bin/protoc
-  - rm protoc.zip
+  # install gRPC, protoc headers and libraries
+  - export GRPC_VERSION="1.18.0"
+  - export PROTOBUF_VERSION="3.6.1"
+  - git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git
+  - export GRPC_HOME="$(pwd)/grpc"
+  - cd ${GRPC_HOME}
+  - git submodule update --init
+  - cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} && cd ../../
+  # build protobuf no matter what
+  - export HAS_SYSTEM_PROTOBUF=false
+  - make -j2
+  - sudo make install
+  - cd ./third_party/protobuf
+  - sudo make install
+  - cd ../../../
+  - rm -rf ./grpc
 
   # install MultiChain
   - export MULTICHAIN_VERSION="2.0-beta-1"
@@ -70,7 +78,7 @@ before_install:
 
 
 install:
-  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.protoc=protobuf-${PROTOBUF_VERSION}/bin/protoc --define protobuf.include.dirs=protobuf-${PROTOBUF_VERSION}/src --batch-mode --show-version
+  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
 
 script:
   # bail out when doing Coverity Scan code analysis

@@ -30,7 +30,7 @@ matrix:
         - MULTICHAIN_VERSION=2.0-dev
         - MULTICHAIN_TAG=20190131T090104
         - MULTICHAIN_HASH=898f3fc
-        - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-{MULTICHAIN_HASH}-osx.tar.gz
+        - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-${MULTICHAIN_HASH}-osx.tar.gz
 
     - os: linux
       dist: xenial

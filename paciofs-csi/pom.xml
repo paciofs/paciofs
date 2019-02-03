@@ -71,7 +71,6 @@
                             <environmentVariables>
                                 <GOPATH>${gopath}</GOPATH>
                                 <CGO_ENABLED>0</CGO_ENABLED>
-                                <GOOS>linux</GOOS>
                             </environmentVariables>
                             <executable>go</executable>
                             <arguments>

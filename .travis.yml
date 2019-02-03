@@ -23,7 +23,6 @@ matrix:
           packages:
             - clang-format
             - cmake
-            - osxfuse
       env:
         - GO_DIST=darwin
         - MULTICHAIN_VERSION=2.0-dev-898f3fc
@@ -39,6 +38,9 @@ matrix:
         - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:
+  # osxfuse is available via cask on macOS
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then sudo brew cask install osxfuse; fi
+
   # install go
   - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.11.5.${GO_DIST}-amd64.tar.gz
   - sudo tar --directory /usr/local --extract --file go.tar.gz

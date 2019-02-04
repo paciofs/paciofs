@@ -12,7 +12,7 @@
 #include <fuse.h>
 #include <sys/stat.h>
 
-int paciofs_getattr(const char *__restrict__ path,
-                    struct stat *__restrict__ buf);
+static int paciofs_getattr(const char *__restrict__ path,
+                           struct stat *__restrict__ buf);
 
 #endif  // PACIOFS_FUSE_H

@@ -90,6 +90,9 @@ before_install:
   - cd ..
   - rm -rf commons-exec-${COMMONS_EXEC_VERSION}
 
+  # for cppcheck-htmlreport
+  - pip install --user pygments
+
 install:
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
 

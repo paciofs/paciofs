@@ -39,6 +39,7 @@
         <scala.version>2.12</scala.version>
 
         <checkstyle.skip>false</checkstyle.skip>
+        <cppcheck.skip>false</cppcheck.skip>
         <format-sources.skip>false</format-sources.skip>
         <spotbugs.skip>false</spotbugs.skip>
 
@@ -72,8 +73,9 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <format-sources.skip>true</format-sources.skip>
                 <checkstyle.skip>true</checkstyle.skip>
+                <cppcheck.skip>true</cppcheck.skip>
+                <format-sources.skip>true</format-sources.skip>
                 <spotbugs.skip>true</spotbugs.skip>
             </properties>
         </profile>

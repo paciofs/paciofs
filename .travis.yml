@@ -9,6 +9,7 @@ matrix:
         apt:
           packages:
             - cmake
+            - cppcheck
             - libfuse-dev
       env:
         - GO_DIST=linux
@@ -24,6 +25,7 @@ matrix:
             - osxfuse
           packages:
             - clang-format
+            - cppcheck
             - cmake
       env:
         - GO_DIST=darwin

@@ -30,7 +30,8 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/build/grpc"/>
+                                <mkdir dir="${project.basedir}/build/generated-sources/grpc"/>
+                                <mkdir dir="${project.basedir}/build/generated-sources/protobuf"/>
                             </target>
                         </configuration>
                     </execution>
@@ -65,8 +66,8 @@
                             <executable>${protobuf.protoc}</executable>
                             <arguments>
                                 <argument>--proto_path=${project.basedir}/../paciofs-server/src/main/proto</argument>
-                                <argument>--cpp_out=${project.basedir}/build/grpc</argument>
-                                <argument>--grpc_out=${project.basedir}/build/grpc</argument>
+                                <argument>--cpp_out=${project.basedir}/build/generated-sources/protobuf</argument>
+                                <argument>--grpc_out=${project.basedir}/build/generated-sources/grpc</argument>
                                 <argument>--plugin=protoc-gen-grpc=${grpc.protobuf-cpp-plugin}</argument>
                                 <argument>io_posix.proto</argument>
                             </arguments>

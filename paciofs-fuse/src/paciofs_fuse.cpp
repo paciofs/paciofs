@@ -8,6 +8,7 @@
 #include "paciofs_fuse.h"
 #include "io_posix.pb.h"
 
+#include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
 
 int paciofs_getattr(const char *__restrict__ path,

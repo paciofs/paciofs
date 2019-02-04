@@ -11,6 +11,7 @@ import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
+import akka.http.javadsl.UseHttp2;
 import akka.management.AkkaManagement;
 import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.stream.ActorMaterializer;
@@ -98,10 +99,10 @@ public class PacioFS {
 
     // bind the POSIX IO service to all interfaces (0.0.0.0)
     // TODO should we bind to all interfaces?
-    // TODO restrict to HTTP/2 and SSL
+    // TODO restrict to SSL
     Http.get(paciofs)
         .bindAndHandleAsync(PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), mat),
-            ConnectHttp.toHost("0.0.0.0", 8080), mat)
+            ConnectHttp.toHost("0.0.0.0", 8080, UseHttp2.always()), mat)
         .thenAccept(binding -> {
           log.info("{} gRPC server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
               binding.localAddress());

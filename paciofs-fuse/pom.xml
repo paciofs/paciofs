@@ -30,8 +30,9 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/build/generated-sources/grpc"/>
-                                <mkdir dir="${project.basedir}/build/generated-sources/protobuf"/>
+                                <mkdir dir="${project.build.directory}/Release"/>
+                                <mkdir dir="${project.build.directory}/generated-sources/grpc"/>
+                                <mkdir dir="${project.build.directory}/generated-sources/protobuf"/>
                             </target>
                         </configuration>
                     </execution>
@@ -66,8 +67,8 @@
                             <executable>${protobuf.protoc}</executable>
                             <arguments>
                                 <argument>--proto_path=${project.basedir}/../paciofs-server/src/main/proto</argument>
-                                <argument>--cpp_out=${project.basedir}/build/generated-sources/protobuf</argument>
-                                <argument>--grpc_out=${project.basedir}/build/generated-sources/grpc</argument>
+                                <argument>--cpp_out=${project.build.directory}/generated-sources/protobuf</argument>
+                                <argument>--grpc_out=${project.build.directory}/generated-sources/grpc</argument>
                                 <argument>--plugin=protoc-gen-grpc=${grpc.protobuf-cpp-plugin}</argument>
                                 <argument>io_posix.proto</argument>
                             </arguments>
@@ -81,7 +82,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <workingDirectory>${project.basedir}/build</workingDirectory>
+                            <workingDirectory>${project.build.directory}/Release</workingDirectory>
                             <executable>cmake</executable>
                             <arguments>
                                 <argument>-DGRPC_INCLUDE_DIRS=${grpc.dirs.include}</argument>
@@ -89,7 +90,7 @@
                                 <argument>-DGRPC_LIBRARY_DIRS=${grpc.dirs.library}</argument>
                                 <argument>-DPROTOBUF_LIBRARY_DIRS=${protobuf.dirs.library}</argument>
                                 <argument>-DCMAKE_BUILD_TYPE=Release</argument>
-                                <argument>..</argument>
+                                <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -101,7 +102,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <workingDirectory>${project.basedir}/build</workingDirectory>
+                            <workingDirectory>${project.build.directory}/Release</workingDirectory>
                             <executable>make</executable>
                             <arguments>
                                 <argument>-j4</argument>
@@ -109,19 +110,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <!-- Clean binaries only, not the dependencies that have been fetched -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.basedir}/build</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
             </plugin>
         </plugins>
     </build>

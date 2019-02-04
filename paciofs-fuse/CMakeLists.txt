@@ -10,8 +10,8 @@ find_package (FUSE REQUIRED)
 find_library (gRPC_LIBRARIES grpc++ "${GRPC_LIBRARY_DIRS}")
 find_library (Protobuf_LIBRARIES protobuf "${PROTOBUF_LIBRARY_DIRS}")
 
-set (GENERATED_GRPC_DIR "${PROJECT_SOURCE_DIR}/build/generated-sources/grpc")
-set (GENERATED_PROTOBUF_DIR "${PROJECT_SOURCE_DIR}/build/generated-sources/protobuf")
+set (GENERATED_GRPC_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/grpc")
+set (GENERATED_PROTOBUF_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/protobuf")
 
 add_executable (
   paciofs_fuse

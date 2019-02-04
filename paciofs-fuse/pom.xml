@@ -92,7 +92,7 @@
                                 <argument>-I${project.build.directory}/generated-sources/protobuf</argument>
                                 <argument>-I${grpc.dirs.include}</argument>
                                 <argument>-I${protobuf.dirs.include}</argument>
-                                <argument>--output-file=${project.build.directory}/cppcheck.xml</argument>
+                                <argument>--quiet</argument>
                                 <argument>--std=c++11</argument>
                                 <argument>--suppress=missingIncludeSystem</argument>
                                 <argument>--suppress=*:${project.build.directory}/generated-sources/*</argument>
@@ -102,6 +102,7 @@
                                 <argument>--xml</argument>
                                 <argument>${project.basedir}/src</argument>
                             </arguments>
+                            <outputFile>${project.build.directory}/cppcheck.xml</outputFile>
                             <skip>${cppcheck.skip}</skip>
                         </configuration>
                     </execution>

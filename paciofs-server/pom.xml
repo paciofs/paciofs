@@ -274,7 +274,7 @@
                                 <argument>--proto_path=${project.basedir}/src/main/proto</argument>
                                 <argument>--spotbugsexcl_out=${project.build.directory}</argument>
                                 <argument>--plugin=protoc-gen-spotbugsexcl=${project.build.directory}/spotbugs-exclude.sh</argument>
-                                <argument>io_posix.proto</argument>
+                                <argument>posix_io.proto</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -294,7 +294,7 @@
                                 <argument>--java_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>
                                 <argument>--grpc_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>
                                 <argument>--plugin=protoc-gen-grpc=${project.build.directory}/akka-grpc.sh</argument>
-                                <argument>io_posix.proto</argument>
+                                <argument>posix_io.proto</argument>
                             </arguments>
                         </configuration>
                     </execution>

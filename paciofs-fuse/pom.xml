@@ -70,7 +70,7 @@
                                 <argument>--cpp_out=${project.build.directory}/generated-sources/protobuf</argument>
                                 <argument>--grpc_out=${project.build.directory}/generated-sources/grpc</argument>
                                 <argument>--plugin=protoc-gen-grpc=${grpc.protobuf-cpp-plugin}</argument>
-                                <argument>io_posix.proto</argument>
+                                <argument>posix_io.proto</argument>
                             </arguments>
                         </configuration>
                     </execution>

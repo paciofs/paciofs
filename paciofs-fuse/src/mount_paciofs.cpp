@@ -5,13 +5,13 @@
  *
  */
 
-#include "paciofs_fuse.h"
-#include "paciofs_client.h"
+#include "posix_io_rpc_client.h"
 
+#include <fuse.h>
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
 
-static PosixIoClient *g_client;
+static PosixIoRpcClient *g_client = nullptr;
 
 static int paciofs_getattr(const char *__restrict__ path,
                            struct stat *__restrict__ buf) {
@@ -25,7 +25,7 @@ static struct fuse_operations paciofs_fuse_operations = {.getattr =
 int main(int argc, char *argv[]) {
   umask(0);
 
-  g_client = new PosixIoClient(grpc::CreateChannel(
+  g_client = new PosixIoRpcClient(grpc::CreateChannel(
       "localhost:8080", grpc::InsecureChannelCredentials()));
 
   return fuse_main(argc, argv, &paciofs_fuse_operations, NULL);

@@ -8,20 +8,36 @@
 #ifndef POSIX_IO_RPC_CLIENT_H
 #define POSIX_IO_RPC_CLIENT_H
 
+#include "logging.h"
 #include "posix_io.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
 #include <string>
 
+namespace paciofs {
+namespace io {
+namespace posix {
+namespace grpc {
+
 class PosixIoRpcClient {
  public:
-  explicit PosixIoRpcClient(std::shared_ptr<grpc::Channel> channel);
+  // uses insecure channel credentials
+  explicit PosixIoRpcClient(std::string const& target);
 
-  grpc::StatusCode Stat(std::string path, struct stat *buf);
+  bool Stat(std::string path, struct stat* buf);
 
  private:
-  std::unique_ptr<io::posix::PosixIoService::Stub> stub_;
+  explicit PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel);
+
+  std::unique_ptr<PosixIoService::Stub> stub_;
+
+  paciofs::logging::Logger logger_;
 };
+
+}  // namespace grpc
+}  // namespace posix
+}  // namespace io
+}  // namespace paciofs
 
 #endif  // POSIX_IO_RPC_CLIENT_H

@@ -4,7 +4,7 @@ option java_multiple_files = true;
 option java_outer_classname = "PosixIo";
 option java_package = "de.zib.paciofs.io.posix.grpc";
 
-package io.posix;
+package paciofs.io.posix.grpc;
 
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/time.h.html
 message Timespec {

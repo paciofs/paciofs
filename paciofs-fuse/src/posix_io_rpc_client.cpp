@@ -7,23 +7,36 @@
 
 #include "posix_io_rpc_client.h"
 
+#include "logging.h"
+
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
-#include <iostream>
 #include <string>
 
-PosixIoRpcClient::PosixIoRpcClient(std::shared_ptr<grpc::Channel> channel)
-    : stub_{io::posix::PosixIoService::NewStub(channel)} {}
+namespace paciofs {
+namespace io {
+namespace posix {
+namespace grpc {
 
-grpc::StatusCode PosixIoRpcClient::Stat(std::string path, struct stat *buf) {
-  io::posix::StatRequest request;
+PosixIoRpcClient::PosixIoRpcClient(std::string const &target)
+    : PosixIoRpcClient(::grpc::CreateChannel(
+          target, ::grpc::InsecureChannelCredentials())) {}
+
+PosixIoRpcClient::PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel)
+    : stub_(PosixIoService::NewStub(channel)),
+      logger_(paciofs::logging::Logger()) {}
+
+bool PosixIoRpcClient::Stat(std::string path, struct stat *buf) {
+  logger_.Trace([path](auto &out) { out << "stat(" << path << ")"; });
+
+  StatRequest request;
   request.set_path(path);
 
-  io::posix::StatResponse response;
+  StatResponse response;
 
-  grpc::ClientContext context;
+  ::grpc::ClientContext context;
 
-  grpc::Status status = stub_->Stat(&context, request, &response);
+  ::grpc::Status status = stub_->Stat(&context, request, &response);
 
   if (status.ok()) {
     buf->st_dev = response.stat().dev();
@@ -55,10 +68,21 @@ grpc::StatusCode PosixIoRpcClient::Stat(std::string path, struct stat *buf) {
 
     buf->st_blksize = response.stat().blksize();
     buf->st_blocks = response.stat().blocks();
-  } else {
-    std::cerr << "Stat: " << status.error_code() << ": "
-              << status.error_message() << std::endl;
   }
 
-  return status.error_code();
+  logger_.Trace([path, status](auto &out) {
+    out << "stat(" << path << "): ";
+    if (status.ok()) {
+      out << "ok";
+    } else {
+      out << status.error_message() << " (" << status.error_code() << ")";
+    }
+  });
+
+  return status.ok();
 }
+
+}  // namespace grpc
+}  // namespace posix
+}  // namespace io
+}  // namespace paciofs

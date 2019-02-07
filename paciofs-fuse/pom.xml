@@ -15,6 +15,12 @@
 
     <packaging>pom</packaging>
 
+    <properties>
+        <boost.version>1.57.0</boost.version>
+        <!-- as per fuse.h -->
+        <fuse.version>26</fuse.version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -134,6 +140,8 @@
                             <workingDirectory>${project.build.directory}/Release</workingDirectory>
                             <executable>cmake</executable>
                             <arguments>
+                                <argument>-DBOOST_MIN_VERSION=${boost.version}</argument>
+                                <argument>-DFUSE_VERSION=${fuse.version}</argument>
                                 <argument>-DGRPC_INCLUDE_DIRS=${grpc.dirs.include}</argument>
                                 <argument>-DPROTOBUF_INCLUDE_DIRS=${protobuf.dirs.include}</argument>
                                 <argument>-DGRPC_LIBRARY_DIRS=${grpc.dirs.library}</argument>

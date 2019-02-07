@@ -5,7 +5,7 @@
  *
  */
 
-package de.zib.paciofs.grpc.io.posix;
+package de.zib.paciofs.io.posix.grpc;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;

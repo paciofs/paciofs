@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option java_multiple_files = true;
 option java_outer_classname = "PosixIo";
-option java_package = "de.zib.paciofs.grpc.io.posix";
+option java_package = "de.zib.paciofs.io.posix.grpc";
 
 package io.posix;
 
@@ -23,7 +23,7 @@ message Stat {
   sint32 dev = 1;
 
   // File serial number.
-  // macOS: unsignend long long, Ubuntu: long unsigned int
+  // macOS: unsigned long long, Ubuntu: long unsigned int
   uint64 ino = 2;
 
   // Mode of file.

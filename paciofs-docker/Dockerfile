@@ -34,13 +34,13 @@ RUN wget --output-document cmake.sh --quiet https://github.com/Kitware/CMake/rel
   && rm cmake.sh
 
 # install go
-ENV GO_VERSION="1.11.4"
+ENV GO_VERSION="1.11.5"
 RUN wget --output-document go.tar.gz --quiet https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz \
   && tar --directory /usr/local --extract --file go.tar.gz \
   && rm go.tar.gz
 ENV GOPATH="/go"
 ENV GOBIN="${GOPATH}/bin"
-ENV PATH="${PATH}:/usr/local/go/bin:${GOBIN}"
+ENV PATH="/usr/local/go/bin:${GOBIN}:${PATH}"
 
 # install dep
 RUN mkdir -p "${GOBIN}"

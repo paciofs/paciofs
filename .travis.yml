@@ -8,8 +8,9 @@ matrix:
       addons:
         apt:
           packages:
-            - cmake
+            - clang-format
             - cppcheck
+            - libbboost-all-dev
             - libfuse-dev
       env:
         - GO_DIST=linux
@@ -24,9 +25,9 @@ matrix:
           casks:
             - osxfuse
           packages:
+            - boost
             - clang-format
             - cppcheck
-            - cmake
       env:
         - GO_DIST=darwin
         - MULTICHAIN_VERSION=2.0-dev

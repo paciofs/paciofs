@@ -31,7 +31,7 @@ WORKDIR /tmp
 # install cmake
 ENV CMAKE_VERSION="3.13.4"
 RUN wget --output-document cmake.tar.gz --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz \
-  && tar --directory /usr/local --extract --file cmake.tar.gz \
+  && tar --directory /usr/local --extract --file cmake.tar.gz --strip-components 1 \
   && rm cmake.tar.gz
 
 # install go

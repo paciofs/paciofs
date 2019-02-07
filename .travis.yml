@@ -14,6 +14,8 @@ matrix:
             - libfuse-dev
       env:
         - CMAKE_DIST=Linux
+        # cmake-<VERSION>-Linux-x86_64/
+        - CMAKE_STRIP_COMPONENTS=1
         - GO_DIST=linux
         - MULTICHAIN_VERSION=2.0-beta-1
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
@@ -31,6 +33,8 @@ matrix:
             - cppcheck
       env:
         - CMAKE_DIST=Darwin
+        # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/
+        - CMAKE_STRIP_COMPONENTS=3
         - GO_DIST=darwin
         - MULTICHAIN_VERSION=2.0-dev
         - MULTICHAIN_TAG=20190131T090104
@@ -47,10 +51,10 @@ matrix:
         - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:
-  # install CMake
+  # install CMake, stripping the first N path elements
   - export CMAKE_VERSION="3.13.4"
   - wget --output-document cmake.tar.gz --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_DIST}-x86_64.tar.gz
-  - sudo tar --directory /usr/local --extract --file cmake.tar.gz
+  - sudo tar --directory /usr/local --extract --file cmake.tar.gz --strip-components ${CMAKE_STRIP_COMPONENTS}
   - rm cmake.tar.gz
 
   # install go

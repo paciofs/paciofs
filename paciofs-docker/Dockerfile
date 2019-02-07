@@ -19,6 +19,7 @@ RUN apt-get --quiet --yes install \
   autoconf \
   build-essential \
   git \
+  libboost-all-dev \
   libfuse-dev \
   libtool \
   maven \

@@ -21,8 +21,8 @@ set (GENERATED_PROTOBUF_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/prot
 
 # GLOB for sources is not recommended, however we make an exception for generated sources
 # https://cmake.org/cmake/help/v3.12/command/file.html#glob-recurse
-file (GLOB_RECURSE GRPC_SOURCES "${GENERATED_GRPC_DIR}" CONFIGURE_DEPENDS *.cc)
-file (GLOB_RECURSE PROTOBUF_SOURCES "${GENERATED_PROTOBUF_DIR}" CONFIGURE_DEPENDS *.cc)
+file (GLOB_RECURSE GRPC_SOURCES CONFIGURE_DEPENDS "${GENERATED_GRPC_DIR}/*.cc")
+file (GLOB_RECURSE PROTOBUF_SOURCES CONFIGURE_DEPENDS "${GENERATED_PROTOBUF_DIR}/*.cc")
 
 add_executable (
   mount.paciofs

@@ -11,6 +11,7 @@
 
 #include <fuse.h>
 #include <sys/stat.h>
+#include <boost/filesystem.hpp>
 #include <exception>
 #include <iostream>
 
@@ -23,6 +24,8 @@ static int paciofs_getattr(const char *__restrict__ path,
 }
 
 int main(int argc, char *argv[]) {
+  namespace bfs = boost::filesystem;
+
   // parse command line without being strict, because we might just have to
   // display help or version
   paciofs::mount::options::MountOptions options;
@@ -34,7 +37,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  // declare here because we cannot pass NULL to fuse_main
+  // declare here because we cannot pass nullptr to fuse_main
   struct fuse_operations paciofs_fuse_operations;
 
   // only show version
@@ -65,8 +68,17 @@ int main(int argc, char *argv[]) {
     }
   });
 
+  // make sure mount point exists and is empty
+  bfs::path mount_point(options.MountPoint());
+  if (!bfs::exists(mount_point) || !bfs::is_empty(mount_point)) {
+    logger.Fatal([mount_point](auto &out) {
+      out << "Mount point " << mount_point << " is not an empty directory";
+    });
+    return 1;
+  }
+
   // client to talk to I/O service
-  std::string endpoint = options.Endpoint();
+  std::string const &endpoint = options.Endpoint();
   g_client = new paciofs::io::posix::grpc::PosixIoRpcClient(endpoint);
 
   // make sure we can talk to the service

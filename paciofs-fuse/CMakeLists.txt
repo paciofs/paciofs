@@ -8,6 +8,7 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
+  filesystem
   log
   log_setup
   program_options
@@ -65,6 +66,7 @@ target_link_libraries (
   "${FUSE_LIBRARIES}"
   "${gRPC_LIBRARIES}"
   "${Protobuf_LIBRARIES}"
+  Boost::filesystem
   Boost::log
   Boost::log_setup
   Boost::program_options

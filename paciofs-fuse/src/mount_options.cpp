@@ -33,7 +33,7 @@ MountOptions::MountOptions()
   if (size > 0) {
     default_fuse_options << fuse_options_[0];
     for (size_t i = 1; i < size; ++i) {
-      default_fuse_options << "," << fuse_options_[i];
+      default_fuse_options << " " << fuse_options_[i];
     }
   }
 
@@ -45,8 +45,9 @@ MountOptions::MountOptions()
       "fuse-option,o",
       bpo::value<std::vector<std::string> >(&fuse_options_)
           ->default_value(fuse_options_, default_fuse_options.str())
-          ->value_name("key=value"),
-      "option to pass to fuse, can be specified multiple times");
+          ->value_name("key|key=value"),
+      "option to pass to fuse, may be specified repeatedly (once per "
+      "key=value)");
   mount_options.add_options()(
       "mount-point",
       bpo::value<std::string>(&mount_point_)->value_name("path")->required(),

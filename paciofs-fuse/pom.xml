@@ -70,13 +70,14 @@
                         </goals>
                         <configuration>
                             <workingDirectory>${project.basedir}</workingDirectory>
-                            <executable>${protobuf.protoc}</executable>
+                            <executable>${project.basedir}/../paciofs-server/src/main/scripts/protoc.sh</executable>
                             <arguments>
+                                <argument>${protobuf.protoc}</argument>
+                                <argument>${project.basedir}/../paciofs-server/src/main/proto</argument>
                                 <argument>--proto_path=${project.basedir}/../paciofs-server/src/main/proto</argument>
                                 <argument>--cpp_out=${project.build.directory}/generated-sources/protobuf</argument>
                                 <argument>--grpc_out=${project.build.directory}/generated-sources/grpc</argument>
                                 <argument>--plugin=protoc-gen-grpc=${grpc.protobuf-cpp-plugin}</argument>
-                                <argument>posix_io.proto</argument>
                             </arguments>
                         </configuration>
                     </execution>

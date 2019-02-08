@@ -7,6 +7,7 @@
 
 package de.zib.paciofs.io.posix.grpc;
 
+import de.zib.paciofs.io.posix.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -19,8 +20,15 @@ public class PosixIoServiceImpl implements PosixIoService {
   public PosixIoServiceImpl() {}
 
   @Override
+  public CompletionStage<PingResponse> ping(PingRequest in) {
+    LOG.trace("ping({})", in);
+    return CompletableFuture.completedFuture(
+        PingResponse.newBuilder().setPing(Ping.newBuilder().build()).build());
+  }
+
+  @Override
   public CompletionStage<StatResponse> stat(StatRequest in) {
-    LOG.trace("stat {}", in.getPath());
+    LOG.trace("stat({})", in);
 
     final Stat stat = Stat.newBuilder().build();
     final StatResponse response = StatResponse.newBuilder().setStat(stat).build();

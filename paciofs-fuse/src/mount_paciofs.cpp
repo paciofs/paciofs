@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     return fuse_main(argc, argv, &paciofs_fuse_operations, nullptr);
   }
 
-  // now that we did not exit early, we can have to be strict
+  // now that we did not exit early, we have to be strict
   try {
     options.ParseCommandLine(argc, argv, true);
   } catch (std::invalid_argument &e) {
@@ -66,9 +66,16 @@ int main(int argc, char *argv[]) {
   });
 
   // client to talk to I/O service
-  g_client = new paciofs::io::posix::grpc::PosixIoRpcClient(options.Endpoint());
+  std::string endpoint = options.Endpoint();
+  g_client = new paciofs::io::posix::grpc::PosixIoRpcClient(endpoint);
 
-  // TODO make sure we can talk to the service
+  // make sure we can talk to the service
+  if (!g_client->Ping()) {
+    logger.Fatal([endpoint](auto &out) {
+      out << "Could not ping service at " << endpoint;
+    });
+    return 1;
+  }
 
   // no mask for newly created files
   umask(0);
@@ -76,6 +83,5 @@ int main(int argc, char *argv[]) {
   // set fuse operations
   paciofs_fuse_operations.getattr = paciofs_getattr;
 
-  return 0;
-  // return fuse_main(argc, argv, &paciofs_fuse_operations, nullptr);
+  return fuse_main(argc, argv, &paciofs_fuse_operations, nullptr);
 }

@@ -25,6 +25,8 @@ class PosixIoRpcClient {
   // uses insecure channel credentials
   explicit PosixIoRpcClient(std::string const& target);
 
+  bool Ping();
+
   bool Stat(std::string path, struct stat* buf);
 
  private:

@@ -6,7 +6,16 @@ option java_package = "de.zib.paciofs.io.posix.grpc";
 
 package paciofs.io.posix.grpc;
 
+import "messages/ping.proto";
 import "messages/stat.proto";
+
+message PingRequest {
+  messages.Ping ping = 1;
+}
+
+message PingResponse {
+  messages.Ping ping = 1;
+}
 
 message StatRequest {
   string path = 1;
@@ -17,5 +26,6 @@ message StatResponse {
 }
 
 service PosixIoService {
+  rpc Ping(PingRequest) returns (PingResponse);
   rpc Stat(StatRequest) returns (StatResponse);
 }

@@ -7,6 +7,7 @@
 
 package de.zib.paciofs.io.posix.grpc;
 
+import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;

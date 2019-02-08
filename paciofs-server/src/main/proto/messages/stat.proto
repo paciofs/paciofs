@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "de.zib.paciofs.io.posix.grpc.messages";
+
+package paciofs.io.posix.grpc.messages;
+
+import "messages/timespec.proto";
+
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_stat.h.html
+message Stat {
+  // Device ID of device containing file.
+  // macOS: int, Ubuntu: long unsigned int
+  sint32 dev = 1;
+
+  // File serial number.
+  // macOS: unsigned long long, Ubuntu: long unsigned int
+  uint64 ino = 2;
+
+  // Mode of file.
+  // macOS: unsigned short, Ubuntu: unsigned int
+  uint32 mode = 3;
+
+  // Number of hard links to the file.
+  // macOS: unsigned short, Ubuntu: long unsigned int
+  uint64 nlink = 4;
+
+  // User ID of file.
+  // macOS: unsigned int, Ubuntu: unsigned int
+  uint32 uid = 5;
+
+  // Group ID of file.
+  // macOS: unsigned int, Ubuntu: unsigned int
+  uint32 gid = 6;
+
+  // Device ID (if file is character or block special).
+  // see dev
+  sint32 rdev = 7;
+
+  // For regular files, the file size in bytes.
+  // For symbolic links, the length in bytes of the pathname contained in the
+  // symbolic link. For a shared memory object, the length in bytes. For a typed
+  // memory object, the length in bytes. For other file types, the use of this
+  // field is unspecified. macOS: long long, Ubuntu: long int
+  sint64 size = 8;
+
+  // Last data access timestamp.
+  Timespec atim = 9;
+
+  // Last data modification timestamp.
+  Timespec mtim = 10;
+
+  // Last file status change timestamp.
+  Timespec ctim = 11;
+
+  // A file system-specific preferred I/O block size for this object.
+  // In some file system types, this may vary from file to file.
+  // macOS: int, Ubuntu: long int
+  sint32 blksize = 12;
+
+  // Number of blocks allocated for this object.
+  // macOS: long long, long int
+  sint64 blocks = 13;
+}

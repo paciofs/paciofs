@@ -19,6 +19,11 @@ find_library (Protobuf_LIBRARIES protobuf "${PROTOBUF_LIBRARY_DIRS}")
 set (GENERATED_GRPC_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/grpc")
 set (GENERATED_PROTOBUF_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/protobuf")
 
+# GLOB for sources is not recommended, however we make an exception for generated sources
+# https://cmake.org/cmake/help/v3.12/command/file.html#glob-recurse
+file (GLOB_RECURSE GRPC_SOURCES "${GENERATED_GRPC_DIR}" CONFIGURE_DEPENDS *.cc)
+file (GLOB_RECURSE PROTOBUF_SOURCES "${GENERATED_PROTOBUF_DIR}" CONFIGURE_DEPENDS *.cc)
+
 add_executable (
   mount.paciofs
   "${PROJECT_SOURCE_DIR}/src/logging.cpp"
@@ -26,8 +31,8 @@ add_executable (
   "${PROJECT_SOURCE_DIR}/src/mount_paciofs.cpp"
   "${PROJECT_SOURCE_DIR}/src/options.cpp"
   "${PROJECT_SOURCE_DIR}/src/posix_io_rpc_client.cpp"
-  "${GENERATED_GRPC_DIR}/posix_io.grpc.pb.cc"
-  "${GENERATED_PROTOBUF_DIR}/posix_io.pb.cc"
+  ${GRPC_SOURCES}
+  ${PROTOBUF_SOURCES}
 )
 
 target_compile_definitions (mount.paciofs PRIVATE PACIOFS_VERSION="${PROJECT_VERSION}")

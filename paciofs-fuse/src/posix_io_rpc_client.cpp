@@ -28,21 +28,27 @@ PosixIoRpcClient::PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel)
       logger_(paciofs::logging::Logger()) {}
 
 bool PosixIoRpcClient::Ping() {
-  logger_.Trace([](auto &out) { out << "ping()"; });
-
   PingRequest request;
+  logger_.Trace([request](auto &out) {
+    out << "Ping(" << request.ShortDebugString() << ")";
+  });
+
   PingResponse response;
   ::grpc::ClientContext context;
   ::grpc::Status status = stub_->Ping(&context, request, &response);
 
-  logger_.Trace([status](auto &out) {
-    out << "ping(): ";
-    if (status.ok()) {
-      out << "ok";
-    } else {
-      out << status.error_message() << " (" << status.error_code() << ")";
-    }
-  });
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "Ping(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "Ping(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+  }
 
   return status.ok();
 }

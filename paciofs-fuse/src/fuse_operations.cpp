@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-static struct fuse_operations_context g_context { .rpc_client = nullptr };
+static struct fuse_operations_context g_context = {nullptr};
 
 static int ToErrno(paciofs::io::posix::grpc::messages::Errno error) {
 #ifdef VERBATIM_ERRNO
@@ -36,8 +36,12 @@ static int ToErrno(paciofs::io::posix::grpc::messages::Errno error) {
 }
 
 void InitializeFuseOperations(
-    paciofs::io::posix::grpc::PosixIoRpcClient *rpc_client) {
+    paciofs::io::posix::grpc::PosixIoRpcClient *rpc_client,
+    fuse_operations &operations) {
   g_context.rpc_client = rpc_client;
+
+  operations.getattr = PfsGetAttr;
+  operations.readdir = PfsReadDir;
 }
 
 int PfsGetAttr(const char *path, struct stat *buf) {

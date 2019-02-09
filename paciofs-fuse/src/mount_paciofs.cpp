@@ -18,10 +18,6 @@
 #include <iostream>
 #include <string>
 
-// from fuse_operations.h
-static struct fuse_operations operations = {.getattr = PfsGetAttr,
-                                            .readdir = PfsReadDir};
-
 int main(int argc, char *argv[]) {
   // parse command line without being strict, because we might just have to
   // display help or version
@@ -40,6 +36,9 @@ int main(int argc, char *argv[]) {
     options.PrintHelp(std::string(argv[0]));
     return EXIT_SUCCESS;
   }
+
+  // declare here because we cannot pass nullptr to fuse_main
+  struct fuse_operations operations = {};
 
   // only show version
   if (options.Version()) {
@@ -121,7 +120,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  InitializeFuseOperations(&rpc_client);
+  // set up the operations
+  InitializeFuseOperations(&rpc_client, operations);
 
   // no mask for newly created files
   umask(0);

@@ -18,7 +18,8 @@ struct fuse_operations_context {
 };
 
 void InitializeFuseOperations(
-    paciofs::io::posix::grpc::PosixIoRpcClient *rpc_client);
+    paciofs::io::posix::grpc::PosixIoRpcClient *rpc_client,
+    fuse_operations &operations);
 
 int PfsGetAttr(const char *path, struct stat *buf);
 

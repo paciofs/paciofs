@@ -7,6 +7,7 @@
 
 #include "logging.h"
 
+#include <algorithm>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/log/core/record.hpp>
 #include <boost/log/expressions.hpp>
@@ -29,7 +30,7 @@ std::ostream& operator<<(std::ostream& out, const Level& in) {
   if (in < 0 || in > 5) {
     throw std::out_of_range("in");
   }
-  out << level_strings[in];
+  out << LEVEL_STRINGS[in];
   return out;
 }
 
@@ -37,22 +38,17 @@ std::ostream& operator<<(std::ostream& out, const Level& in) {
 std::istream& operator>>(std::istream& in, Level& out) {
   std::string token;
   in >> token;
-  if ("TRACE" == token) {
-    out = TRACE;
-  } else if ("DEBUG" == token) {
-    out = DEBUG;
-  } else if ("INFO" == token) {
-    out = INFO;
-  } else if ("WARNING" == token) {
-    out = WARNING;
-  } else if ("ERROR" == token) {
-    out = ERROR;
-  } else if ("FATAL" == token) {
-    out = FATAL;
-  } else {
-    throw std::invalid_argument(token);
+  // allows mixed-case levels
+  std::string upper_token(token);
+  std::transform(token.begin(), token.end(), upper_token.begin(), ::toupper);
+  for (int i = 0; i < 6; ++i) {
+    // allows abbreviated levels
+    if (LEVEL_STRINGS[i].find(upper_token) == 0) {
+      out = static_cast<Level>(i);
+      return in;
+    }
   }
-  return in;
+  throw std::invalid_argument("invalid log level: " + token);
 }
 
 void Initialize(Level level, std::string const& path) {
@@ -67,7 +63,8 @@ void Initialize(Level level, std::string const& path) {
     bl::add_console_log(
         out ? std::cout : std::cerr, bl::keywords::filter = severity >= level,
         bl::keywords::format =
-            ble::stream << "[" << severity << "] ["
+            ble::stream << "[" << std::setw(5) << std::setfill(' ') << severity
+                        << "] ["
                         << ble::format_date_time<boost::posix_time::ptime>(
                                "TimeStamp", "%Y-%m-%d %H:%M:%S")
                         << "]: " << ble::smessage);
@@ -76,7 +73,8 @@ void Initialize(Level level, std::string const& path) {
         bl::keywords::file_name = path, bl::keywords::auto_flush = true,
         bl::keywords::filter = severity >= level,
         bl::keywords::format =
-            ble::stream << "[" << severity << "] ["
+            ble::stream << "[" << std::setw(5) << std::setfill(' ') << severity
+                        << "] ["
                         << ble::format_date_time<boost::posix_time::ptime>(
                                "TimeStamp", "%Y-%m-%d %H:%M:%S")
                         << "]: " << ble::smessage);

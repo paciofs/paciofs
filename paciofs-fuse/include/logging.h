@@ -20,8 +20,8 @@ namespace logging {
 enum Level { TRACE, DEBUG, INFO, WARNING, ERROR, FATAL };
 
 // for converting our levels to nice log messages
-static std::string level_strings[] = {"TRACE",   "DEBUG", "INFO",
-                                      "WARNING", "ERROR", "FATAL"};
+const std::string LEVEL_STRINGS[] = {"TRACE",   "DEBUG", "INFO",
+                                     "WARNING", "ERROR", "FATAL"};
 std::ostream& operator<<(std::ostream& out, const Level& in);
 
 // for converting log level strings into actual levels

@@ -27,13 +27,19 @@ MountOptions::MountOptions()
 
   bpo::options_description mount_options("Mount Options");
 
+  // default fuse options
+  fuse_options_.push_back("allow_other");
+  fuse_options_.push_back("default_permissions");
+  fuse_options_.push_back("fsname=paciofs");
+  fuse_options_.push_back("noatime");
+
   // build a textual representation to display the fuse options
   size_t size = fuse_options_.size();
   std::ostringstream default_fuse_options;
   if (size > 0) {
     default_fuse_options << fuse_options_[0];
     for (size_t i = 1; i < size; ++i) {
-      default_fuse_options << " " << fuse_options_[i];
+      default_fuse_options << "," << fuse_options_[i];
     }
   }
 

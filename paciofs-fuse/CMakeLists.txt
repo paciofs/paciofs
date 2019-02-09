@@ -40,6 +40,11 @@ add_executable (
 )
 
 target_compile_definitions (mount.paciofs PRIVATE PACIOFS_VERSION="${PROJECT_VERSION}")
+
+# if enabled, error values and file modes are not converted to this platform
+# target_compile_definitions (mount.paciofs PRIVATE VERBATIM_ERRNO)
+# target_compile_definitions (mount.paciofs PRIVATE VERBATIM_MODE)
+
 target_compile_definitions (mount.paciofs PRIVATE FUSE_USE_VERSION=${FUSE_VERSION})
 target_compile_definitions (mount.paciofs PRIVATE BOOST_ALL_DYN_LINK)
 target_compile_options (mount.paciofs PRIVATE -Wall)

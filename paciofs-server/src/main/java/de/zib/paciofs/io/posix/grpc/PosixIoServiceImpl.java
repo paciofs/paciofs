@@ -11,6 +11,7 @@ import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.TextFormat;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Errno;
+import de.zib.paciofs.io.posix.grpc.messages.Mode;
 import de.zib.paciofs.io.posix.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import java.util.concurrent.CompletableFuture;
@@ -60,9 +61,9 @@ public class PosixIoServiceImpl implements PosixIoService {
     Errno error = Errno.ERRNO_ESUCCESS;
     final Stat.Builder builder = Stat.newBuilder();
     if ("/".equals(in.getPath())) {
-      // TODO use constants
       // directory | rwxr-xr-x
-      builder.setMode(0040000 | 0755);
+      builder.setMode(Mode.MODE_S_IFDIR_VALUE | Mode.MODE_S_IRWXU_VALUE | Mode.MODE_S_IRGRP_VALUE
+          | Mode.MODE_S_IXGRP_VALUE | Mode.MODE_S_IROTH_VALUE | Mode.MODE_S_IXOTH_VALUE);
       // . and ..
       builder.setNlink(2);
     } else {

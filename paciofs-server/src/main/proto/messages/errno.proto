@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "de.zib.paciofs.io.posix.grpc.messages";
+
+package paciofs.io.posix.grpc.messages;
+
+enum Errno {
+  ERRNO_ESUCCESS = 0;
+  ERRNO_ENOENT = 2;
+  ERRNO_EIO = 5;
+}

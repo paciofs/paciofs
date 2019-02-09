@@ -12,7 +12,9 @@
 
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
+#include <exception>
 #include <string>
+#include <vector>
 
 namespace paciofs {
 namespace io {
@@ -53,60 +55,79 @@ bool PosixIoRpcClient::Ping() {
   return status.ok();
 }
 
-bool PosixIoRpcClient::Stat(std::string path, struct stat *buf) {
-  logger_.Trace([path](auto &out) { out << "stat(" << path << ")"; });
+messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
+                                          std::vector<messages::Dir> &dirs) {
+  ReadDirRequest request;
+  request.set_path(path);
+  logger_.Trace([request](auto &out) {
+    out << "ReadDir(" << request.ShortDebugString() << ")";
+  });
 
+  ReadDirResponse response;
+  ::grpc::ClientContext context;
+  ::grpc::Status status = stub_->ReadDir(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "ReadDir(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    messages::Errno error = response.error();
+    if (error != messages::ERRNO_ESUCCESS) {
+      return error;
+    }
+
+    for (int i = 0; i < response.dirs_size(); ++i) {
+      dirs.push_back(response.dirs(i));
+    }
+
+    return messages::ERRNO_ESUCCESS;
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "ReadDir(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
+messages::Errno PosixIoRpcClient::Stat(std::string const &path,
+                                       messages::Stat &stat) {
   StatRequest request;
   request.set_path(path);
+  logger_.Trace([request](auto &out) {
+    out << "Stat(" << request.ShortDebugString() << ")";
+  });
 
   StatResponse response;
-
   ::grpc::ClientContext context;
-
   ::grpc::Status status = stub_->Stat(&context, request, &response);
 
   if (status.ok()) {
-    buf->st_dev = response.stat().dev();
-    buf->st_ino = response.stat().ino();
-    buf->st_mode = response.stat().mode();
-    buf->st_nlink = response.stat().nlink();
-    buf->st_uid = response.stat().uid();
-    buf->st_gid = response.stat().gid();
-    buf->st_rdev = response.stat().rdev();
-    buf->st_size = response.stat().size();
+    logger_.Trace([request, response](auto &out) {
+      out << "Stat(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
 
-#if defined(__linux__)
-    buf->st_atim.tv_sec = response.stat().atim().sec();
-    buf->st_atim.tv_nsec = response.stat().atim().nsec();
-    buf->st_mtim.tv_sec = response.stat().mtim().sec();
-    buf->st_mtim.tv_nsec = response.stat().mtim().nsec();
-    buf->st_ctim.tv_sec = response.stat().ctim().sec();
-    buf->st_ctim.tv_nsec = response.stat().ctim().nsec();
-#elif defined(__APPLE__)
-    buf->st_atimespec.tv_sec = response.stat().atim().sec();
-    buf->st_atimespec.tv_nsec = response.stat().atim().nsec();
-    buf->st_mtimespec.tv_sec = response.stat().mtim().sec();
-    buf->st_mtimespec.tv_nsec = response.stat().mtim().nsec();
-    buf->st_ctimespec.tv_sec = response.stat().ctim().sec();
-    buf->st_ctimespec.tv_nsec = response.stat().ctim().nsec();
-#else
-#error "Unsupported OS"
-#endif
-
-    buf->st_blksize = response.stat().blksize();
-    buf->st_blocks = response.stat().blocks();
-  }
-
-  logger_.Trace([path, status](auto &out) {
-    out << "stat(" << path << "): ";
-    if (status.ok()) {
-      out << "ok";
-    } else {
-      out << status.error_message() << " (" << status.error_code() << ")";
+    messages::Errno error = response.error();
+    if (error != messages::ERRNO_ESUCCESS) {
+      return error;
     }
-  });
 
-  return status.ok();
+    stat.CopyFrom(response.stat());
+    return messages::ERRNO_ESUCCESS;
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "Stat(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
 }
 
 }  // namespace grpc

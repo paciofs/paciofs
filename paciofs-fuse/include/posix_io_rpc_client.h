@@ -12,8 +12,8 @@
 #include "posix_io.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
-#include <sys/stat.h>
 #include <string>
+#include <vector>
 
 namespace paciofs {
 namespace io {
@@ -27,7 +27,10 @@ class PosixIoRpcClient {
 
   bool Ping();
 
-  bool Stat(std::string path, struct stat* buf);
+  messages::Errno ReadDir(std::string const& path,
+                          std::vector<messages::Dir>& dirs);
+
+  messages::Errno Stat(std::string const& path, messages::Stat& stat);
 
  private:
   explicit PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel);

@@ -29,6 +29,7 @@ file (GLOB_RECURSE PROTOBUF_SOURCES CONFIGURE_DEPENDS "${GENERATED_PROTOBUF_DIR}
 
 add_executable (
   mount.paciofs
+  "${PROJECT_SOURCE_DIR}/src/fuse_operations.cpp"
   "${PROJECT_SOURCE_DIR}/src/logging.cpp"
   "${PROJECT_SOURCE_DIR}/src/mount_options.cpp"
   "${PROJECT_SOURCE_DIR}/src/mount_paciofs.cpp"

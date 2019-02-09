@@ -6,7 +6,9 @@ option java_package = "de.zib.paciofs.io.posix.grpc";
 
 package paciofs.io.posix.grpc;
 
+import "messages/errno.proto";
 import "messages/ping.proto";
+import "messages/dir.proto";
 import "messages/stat.proto";
 
 message PingRequest {
@@ -23,9 +25,20 @@ message StatRequest {
 
 message StatResponse {
   messages.Stat stat = 1;
+  messages.Errno error = 2;
+}
+
+message ReadDirRequest {
+  string path = 1;
+}
+
+message ReadDirResponse {
+  repeated messages.Dir dirs = 1;
+  messages.Errno error = 2;
 }
 
 service PosixIoService {
   rpc Ping(PingRequest) returns (PingResponse);
+  rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
   rpc Stat(StatRequest) returns (StatResponse);
 }

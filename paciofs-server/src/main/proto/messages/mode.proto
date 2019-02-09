@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "de.zib.paciofs.io.posix.grpc.messages";
+
+package paciofs.io.posix.grpc.messages;
+
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_stat.h.html
+enum Mode {
+  MODE_S_EMPTY = 0;
+
+  // type of file
+  MODE_S_IFMT = 0170000;
+
+  // block special
+  MODE_S_IFBLK = 0060000;
+
+  // character special
+  MODE_S_IFCHR = 0020000;
+
+  // FIFO special
+  MODE_S_IFIFO = 0010000;
+
+  // regular
+  MODE_S_IFREG = 0100000;
+
+  // directory
+  MODE_S_IFDIR = 0040000;
+
+  // symbolic link
+  MODE_S_IFLNK = 0120000;
+
+  // read, write, execute/search by owner
+  MODE_S_IRWXU = 0000700;
+
+  // read permission, owner
+  MODE_S_IRUSR = 0000400;
+
+  // write permission, owner
+  MODE_S_IWUSR = 0000200;
+
+  // execute/search permission, owner
+  MODE_S_IXUSR = 0000100;
+
+  // read, write, execute/search by group
+  MODE_S_IRWXG = 0000070;
+
+  // read permission, group
+  MODE_S_IRGRP = 0000040;
+
+  // write permission, group
+  MODE_S_IWGRP = 0000020;
+
+  // execute/search permission, group
+  MODE_S_IXGRP = 0000010;
+
+  // read, write, execute/search by others
+  MODE_S_IRWXO = 0000007;
+
+  // read permission, others
+  MODE_S_IROTH = 0000004;
+
+  // write permission, others
+  MODE_S_IWOTH = 0000002;
+
+  // execute/search permission, others
+  MODE_S_IXOTH = 0000001;
+
+  // set-user-ID on execution
+  MODE_S_ISUID = 0004000;
+
+  // set-group-ID on execution
+  MODE_S_ISGID = 0002000;
+
+  // on directories, restricted deletion flag
+  MODE_S_ISVTX = 0001000;
+}

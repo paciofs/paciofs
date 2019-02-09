@@ -5,8 +5,13 @@ option java_package = "de.zib.paciofs.io.posix.grpc.messages";
 
 package paciofs.io.posix.grpc.messages;
 
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
 enum Errno {
   ERRNO_ESUCCESS = 0;
+
+  // No such file or directory.
   ERRNO_ENOENT = 2;
+
+  // I/O error.
   ERRNO_EIO = 5;
 }

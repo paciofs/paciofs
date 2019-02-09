@@ -5,7 +5,7 @@ option java_package = "de.zib.paciofs.io.posix.grpc.messages";
 
 package paciofs.io.posix.grpc.messages;
 
-// http://pubs.opengroup.org/onlinepubs/009695399/basedefs/dirent.h.html
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/dirent.h.html
 message Dir {
   // File serial number
   // macOS: unsigned long long, Ubuntu: long unsigned int

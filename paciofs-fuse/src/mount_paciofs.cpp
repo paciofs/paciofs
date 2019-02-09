@@ -24,8 +24,6 @@ static int paciofs_getattr(const char *__restrict__ path,
 }
 
 int main(int argc, char *argv[]) {
-  namespace bfs = boost::filesystem;
-
   // parse command line without being strict, because we might just have to
   // display help or version
   paciofs::mount::options::MountOptions options;
@@ -41,7 +39,7 @@ int main(int argc, char *argv[]) {
   // only show help
   if (options.Help()) {
     options.PrintHelp(std::string(argv[0]));
-    return 0;
+    return EXIT_SUCCESS;
   }
 
   // declare here because we cannot pass nullptr to fuse_main
@@ -61,7 +59,7 @@ int main(int argc, char *argv[]) {
   } catch (std::invalid_argument &e) {
     std::cerr << e.what() << std::endl;
     options.PrintHelp(std::string(argv[0]));
-    return 1;
+    return EXIT_FAILURE;
   }
 
   paciofs::logging::Initialize(options.LogLevel(), options.LogFile());
@@ -76,12 +74,13 @@ int main(int argc, char *argv[]) {
   });
 
   // make sure mount point exists and is empty
-  bfs::path mount_point(options.MountPoint());
-  if (!bfs::exists(mount_point) || !bfs::is_empty(mount_point)) {
+  boost::filesystem::path mount_point(options.MountPoint());
+  if (!boost::filesystem::exists(mount_point) ||
+      !boost::filesystem::is_empty(mount_point)) {
     logger.Fatal([mount_point](auto &out) {
       out << "Mount point " << mount_point << " is not an empty directory";
     });
-    return 1;
+    return EXIT_FAILURE;
   }
 
   // client to talk to I/O service
@@ -93,7 +92,7 @@ int main(int argc, char *argv[]) {
     logger.Fatal([endpoint](auto &out) {
       out << "Could not ping service at " << endpoint;
     });
-    return 1;
+    return EXIT_FAILURE;
   }
 
   // no mask for newly created files

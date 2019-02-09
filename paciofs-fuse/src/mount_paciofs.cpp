@@ -29,7 +29,14 @@ int main(int argc, char *argv[]) {
   // parse command line without being strict, because we might just have to
   // display help or version
   paciofs::mount::options::MountOptions options;
-  options.ParseCommandLine(argc, argv, false);
+  try {
+    options.ParseCommandLine(argc, argv, false);
+  } catch (std::invalid_argument &e) {
+    // non-strictness only swallows missing required options only
+    std::cerr << e.what() << std::endl;
+    options.PrintHelp(std::string(argv[0]));
+    return EXIT_FAILURE;
+  }
 
   // only show help
   if (options.Help()) {

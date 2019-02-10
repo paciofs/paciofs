@@ -7,11 +7,251 @@ package paciofs.io.posix.grpc.messages;
 
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
 enum Errno {
+  // we have duplicate values
+  option allow_alias = true;
+
   ERRNO_ESUCCESS = 0;
+
+  // Argument list too long.
+  ERRNO_E2BIG = 7;
+
+  // Permission denied.
+  ERRNO_EACCES = 13;
+
+  // Address in use.
+  ERRNO_EADDRINUSE = 48;
+
+  // Address not available.
+  ERRNO_EADDRNOTAVAIL = 49;
+
+  // Address family not supported.
+  ERRNO_EAFNOSUPPORT = 47;
+
+  // Resource unavailable, try again (may be the same value as ERRNO_EWOULDBLOCK).
+  ERRNO_EAGAIN = 35;
+
+  // Connection already in progress.
+  ERRNO_EALREADY = 37;
+
+  // Bad file descriptor.
+  ERRNO_EBADF = 9;
+
+  // Bad message.
+  ERRNO_EBADMSG = 94;
+
+  // Device or resource busy.
+  ERRNO_EBUSY = 16;
+
+  // Operation canceled.
+  ERRNO_ECANCELED = 89;
+
+  // No child processes.
+  ERRNO_ECHILD = 10;
+
+  // Connection aborted.
+  ERRNO_ECONNABORTED = 53;
+
+  // Connection refused.
+  ERRNO_ECONNREFUSED = 61;
+
+  // Connection reset.
+  ERRNO_ECONNRESET = 54;
+
+  // Resource deadlock would occur.
+  ERRNO_EDEADLK = 11;
+
+  // Destination address required.
+  ERRNO_EDESTADDRREQ = 39;
+
+  // Mathematics argument out of domain of function.
+  ERRNO_EDOM = 33;
+
+  // Reserved.
+  ERRNO_EDQUOT = 69;
+
+  // File exists.
+  ERRNO_EEXIST = 17;
+
+  // Bad address.
+  ERRNO_EFAULT = 14;
+
+  // File too large.
+  ERRNO_EFBIG = 27;
+
+  // Host is unreachable.
+  ERRNO_EHOSTUNREACH = 65;
+
+  // Identifier removed.
+  ERRNO_EIDRM = 90;
+
+  // Illegal byte sequence.
+  ERRNO_EILSEQ = 92;
+
+  // Operation in progress.
+  ERRNO_EINPROGRESS = 36;
+
+  // Interrupted function.
+  ERRNO_EINTR = 4;
+
+  // Invalid argument.
+  ERRNO_EINVAL = 22;
+
+  // I/O error.
+  ERRNO_EIO = 5;
+
+  // Socket is connected.
+  ERRNO_EISCONN = 56;
+
+  // Is a directory.
+  ERRNO_EISDIR = 21;
+
+  // Too many levels of symbolic links.
+  ERRNO_ELOOP = 62;
+
+  // File descriptor value too large.
+  ERRNO_EMFILE = 24;
+
+  // Too many links.
+  ERRNO_EMLINK = 31;
+
+  // Message too large.
+  ERRNO_EMSGSIZE = 40;
+
+  // Reserved.
+  ERRNO_EMULTIHOP = 95;
+
+  // Filename too long.
+  ERRNO_ENAMETOOLONG = 63;
+
+  // Network is down.
+  ERRNO_ENETDOWN = 50;
+
+  // Connection aborted by network.
+  ERRNO_ENETRESET = 52;
+
+  // Network unreachable.
+  ERRNO_ENETUNREACH = 51;
+
+  // Too many files open in system.
+  ERRNO_ENFILE = 23;
+
+  // No buffer space available.
+  ERRNO_ENOBUFS = 55;
+
+  // No message is available on the STREAM head read queue.
+  ERRNO_ENODATA = 96;
+
+  // No such device.
+  ERRNO_ENODEV = 19;
 
   // No such file or directory.
   ERRNO_ENOENT = 2;
 
-  // I/O error.
-  ERRNO_EIO = 5;
+  // Executable file format error.
+  ERRNO_ENOEXEC = 8;
+
+  // No locks available.
+  ERRNO_ENOLCK = 77;
+
+  // Reserved.
+  ERRNO_ENOLINK = 97;
+
+  // Not enough space.
+  ERRNO_ENOMEM = 12;
+
+  // No message of the desired type.
+  ERRNO_ENOMSG = 91;
+
+  // Protocol not available.
+  ERRNO_ENOPROTOOPT = 42;
+
+  // No space left on device.
+  ERRNO_ENOSPC = 28;
+
+  // No STREAM resources.
+  ERRNO_ENOSR = 98;
+
+  // Not a STREAM.
+  ERRNO_ENOSTR = 99;
+
+  // Functionality not supported.
+  ERRNO_ENOSYS = 78;
+
+  // The socket is not connected.
+  ERRNO_ENOTCONN = 57;
+
+  // Not a directory or a symbolic link to a directory.
+  ERRNO_ENOTDIR = 20;
+
+  // Directory not empty.
+  ERRNO_ENOTEMPTY = 66;
+
+  // State not recoverable.
+  ERRNO_ENOTRECOVERABLE = 104;
+
+  // Not a socket.
+  ERRNO_ENOTSOCK = 38;
+
+  // Not supported (may be the same value as ERRNO_EOPNOTSUPP).
+  ERRNO_ENOTSUP = 45;
+
+  // Inappropriate I/O control operation.
+  ERRNO_ENOTTY = 25;
+
+  // No such device or address.
+  ERRNO_ENXIO = 6;
+
+  // Operation not supported on socket (may be the same value as ERRNO_ENOTSUP).
+  ERRNO_EOPNOTSUPP = 45;
+
+  // Value too large to be stored in data type.
+  ERRNO_EOVERFLOW = 84;
+
+  // Previous owner died.
+  ERRNO_EOWNERDEAD = 105;
+
+  // Operation not permitted.
+  ERRNO_EPERM = 1;
+
+  // Broken pipe.
+  ERRNO_EPIPE = 32;
+
+  // Protocol error.
+  ERRNO_EPROTO = 100;
+
+  // Protocol not supported.
+  ERRNO_EPROTONOSUPPORT = 43;
+
+  // Protocol wrong type for socket.
+  ERRNO_EPROTOTYPE = 41;
+
+  // Result too large.
+  ERRNO_ERANGE = 34;
+
+  // Read-only file system.
+  ERRNO_EROFS = 30;
+
+  // Invalid seek.
+  ERRNO_ESPIPE = 29;
+
+  // No such process.
+  ERRNO_ESRCH = 3;
+
+  // Reserved.
+  ERRNO_ESTALE = 70;
+
+  // Stream ioctl() timeout.
+  ERRNO_ETIME = 101;
+
+  // Connection timed out.
+  ERRNO_ETIMEDOUT = 60;
+
+  // Text file busy.
+  ERRNO_ETXTBSY = 26;
+
+  // Operation would block (may be the same value as ERRNO_EAGAIN).
+  ERRNO_EWOULDBLOCK = 35;
+
+  // Cross-device link.
+  ERRNO_EXDEV = 18;
 }

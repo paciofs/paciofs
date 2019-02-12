@@ -351,4 +351,5 @@ ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
 				# (optional, default: no)
 
 [ alt_names ]
-# add DNS.<n> = <entry> here
+# do not change anything below this line
+# DNS.<n> = <entry> automatically added here

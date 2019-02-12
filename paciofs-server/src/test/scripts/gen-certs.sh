@@ -32,31 +32,33 @@ openssl req -config ./openssl.cnf -new -out server.csr -newkey rsa:2048 -keyout 
 # sign server and client certificates
 mkdir ./paciofsCA/newcerts
 
-# append alternative name before signing
+# append alternative names before signing, since they are not carried over from the CSRs
 echo "DNS.1 = client.paciofs.zib.de" >> ./openssl.cnf
-openssl ca -config ./openssl.cnf -in client.csr -out client.pem -md sha256 -batch -days 365
+openssl ca -config ./openssl.cnf -in client.csr -out clientcert.pem -md sha256 -batch -days 365
 rm client.csr
 
 # remove again
 tail -n 1 ./openssl.cnf | wc -c | xargs -I {} truncate ./openssl.cnf -s -{}
 
-# same for server
+# repeat for server, which has to have its host as subject alternative name
 echo "DNS.1 = server.paciofs.zib.de" >> ./openssl.cnf
 echo "DNS.2 = localhost" >> ./openssl.cnf
 echo "DNS.3 = 127.0.0.1" >> ./openssl.cnf
 echo "DNS.4 = $(uname -n)" >> ./openssl.cnf
-openssl ca -config ./openssl.cnf -in server.csr -out server.pem -md sha256 -batch -days 365
+openssl ca -config ./openssl.cnf -in server.csr -out servercert.pem -md sha256 -batch -days 365
 rm server.csr
 tail -n 4 ./openssl.cnf | wc -c | xargs -I {} truncate ./openssl.cnf -s -{}
 
-# export server certificate to p12
-pwgen -Bs 10 1 > server.p12.pass
-openssl pkcs12 -export -in server.pem -inkey serverkey.pem -out server.p12 -name "server" -passout file:server.p12.pass
+# export certificates to p12 for server
+pwgen -Bs 10 1 > servercerts.p12.pass
+
+# -certfile takes the concatenation of all intermediate CAs, with the root being last (right now it is only the root)
+openssl pkcs12 -export -in servercert.pem -inkey serverkey.pem -certfile ./paciofsCA/cacert.pem -out servercerts.p12 -name "server" -passout file:servercerts.p12.pass
 
 # install certificates
-cp server.p12 ../resources/certs/
-cp server.p12.pass ../resources/certs/
+cp servercerts.p12 ../resources/certs/
+cp servercerts.p12.pass ../resources/certs/
 
 cp ./paciofsCA/cacert.pem ../../../../paciofs-fuse/test/certs/
-cp client.pem ../../../../paciofs-fuse/test/certs/
+cp clientcert.pem ../../../../paciofs-fuse/test/certs/
 cp clientkey.pem ../../../../paciofs-fuse/test/certs/

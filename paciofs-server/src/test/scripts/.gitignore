@@ -1,3 +1,5 @@
 *.csr
+*.p12
+*.pass
 *.pem
 paciofsCA

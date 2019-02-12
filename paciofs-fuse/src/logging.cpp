@@ -63,8 +63,7 @@ void Initialize(Level level, std::string const& path) {
     bl::add_console_log(
         out ? std::cout : std::cerr, bl::keywords::filter = severity >= level,
         bl::keywords::format =
-            ble::stream << "[" << std::setw(5) << std::setfill(' ') << severity
-                        << "] ["
+            ble::stream << "[" << severity << "] ["
                         << ble::format_date_time<boost::posix_time::ptime>(
                                "TimeStamp", "%Y-%m-%d %H:%M:%S")
                         << "]: " << ble::smessage);
@@ -73,8 +72,7 @@ void Initialize(Level level, std::string const& path) {
         bl::keywords::file_name = path, bl::keywords::auto_flush = true,
         bl::keywords::filter = severity >= level,
         bl::keywords::format =
-            ble::stream << "[" << std::setw(5) << std::setfill(' ') << severity
-                        << "] ["
+            ble::stream << "[" << severity << "] ["
                         << ble::format_date_time<boost::posix_time::ptime>(
                                "TimeStamp", "%Y-%m-%d %H:%M:%S")
                         << "]: " << ble::smessage);

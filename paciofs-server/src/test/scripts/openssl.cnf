@@ -197,6 +197,7 @@ authorityKeyIdentifier=keyid,issuer
 # This stuff is for subjectAltName and issuerAltname.
 # Import the email address.
 # subjectAltName=email:copy
+subjectAltName=@alt_names
 # An alternative to produce certificates that aren't
 # deprecated according to PKIX.
 # subjectAltName=email:move
@@ -348,3 +349,6 @@ tsa_name		= yes	# Must the TSA name be included in the reply?
 				# (optional, default: no)
 ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
 				# (optional, default: no)
+
+[ alt_names ]
+# add DNS.<n> = <entry> here

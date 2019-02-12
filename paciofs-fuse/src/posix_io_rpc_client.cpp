@@ -32,9 +32,16 @@ PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
                                    std::string const &root_certs)
     : logger_(paciofs::logging::Logger()) {
   ::grpc::SslCredentialsOptions ssl;
-  ssl.pem_cert_chain = ReadPem(cert_chain);
-  ssl.pem_private_key = ReadPem(private_key);
-  ssl.pem_root_certs = ReadPem(root_certs);
+  if (cert_chain.length() > 0) {
+    ssl.pem_cert_chain = ReadPem(cert_chain);
+  }
+  if (private_key.length() > 0) {
+    ssl.pem_private_key = ReadPem(private_key);
+  }
+  if (root_certs.length() > 0) {
+    ssl.pem_root_certs = ReadPem(root_certs);
+  }
+
   stub_ = PosixIoService::NewStub(
       ::grpc::CreateChannel(target, ::grpc::SslCredentials(ssl)));
 }

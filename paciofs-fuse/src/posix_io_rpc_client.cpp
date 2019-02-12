@@ -13,6 +13,7 @@
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
 #include <exception>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,19 @@ namespace grpc {
 PosixIoRpcClient::PosixIoRpcClient(std::string const &target)
     : PosixIoRpcClient(::grpc::CreateChannel(
           target, ::grpc::InsecureChannelCredentials())) {}
+
+PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
+                                   std::string const &cert_chain,
+                                   std::string const &private_key,
+                                   std::string const &root_certs)
+    : logger_(paciofs::logging::Logger()) {
+  ::grpc::SslCredentialsOptions ssl;
+  ssl.pem_cert_chain = ReadPem(cert_chain);
+  ssl.pem_private_key = ReadPem(private_key);
+  ssl.pem_root_certs = ReadPem(root_certs);
+  stub_ = PosixIoService::NewStub(
+      ::grpc::CreateChannel(target, ::grpc::SslCredentials(ssl)));
+}
 
 PosixIoRpcClient::PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel)
     : stub_(PosixIoService::NewStub(channel)),
@@ -128,6 +142,14 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
 
     return messages::ERRNO_EIO;
   }
+}
+
+std::string PosixIoRpcClient::ReadPem(std::string const &path) {
+  std::ifstream in;
+  std::stringstream sstr;
+  in.open(path);
+  sstr << in.rdbuf();
+  return sstr.str();
 }
 
 }  // namespace grpc

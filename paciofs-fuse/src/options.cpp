@@ -23,6 +23,10 @@ Options::Options()
       help_(false),
       log_file_("stdout"),
       log_level_(logging::INFO),
+      pem_cert_chain_(""),
+      pem_private_key_(""),
+      pem_root_certs_(""),
+      tls_(false),
       version_(false) {
   namespace bpo = boost::program_options;
 
@@ -47,7 +51,29 @@ Options::Options()
       "version,V", bpo::bool_switch(&version_)->default_value(version_),
       "print version and exit");
 
+  bpo::options_description tls_options("TLS Options");
+
+  tls_options.add_options()(
+      "tls", bpo::bool_switch(&tls_)->default_value(tls_),
+      "enable TLS (implicitly true if any of the following is set)");
+  tls_options.add_options()("pem-cert-chain",
+                            bpo::value<std::string>(&pem_cert_chain_)
+                                ->default_value(pem_cert_chain_)
+                                ->value_name("path"),
+                            "path to client certificate chain PEM-file");
+  tls_options.add_options()("pem-private-key",
+                            bpo::value<std::string>(&pem_private_key_)
+                                ->default_value(pem_private_key_)
+                                ->value_name("path"),
+                            "path to client private key PEM-file");
+  tls_options.add_options()("pem-root-certs",
+                            bpo::value<std::string>(&pem_root_certs_)
+                                ->default_value(pem_root_certs_)
+                                ->value_name("path"),
+                            "path to trusted certificates PEM-file");
+
   options_.add(general_options);
+  options_.add(tls_options);
 }
 
 Options::~Options() {}
@@ -93,6 +119,17 @@ bool Options::Help() const { return help_; }
 std::string const& Options::LogFile() const { return log_file_; }
 
 logging::Level Options::LogLevel() const { return log_level_; }
+
+std::string const& Options::PemCertChain() const { return pem_cert_chain_; }
+
+std::string const& Options::PemPrivateKey() const { return pem_private_key_; }
+
+std::string const& Options::PemRootCerts() const { return pem_root_certs_; }
+
+bool Options::Tls() const {
+  return tls_ || pem_cert_chain_.length() > 0 ||
+         pem_private_key_.length() > 0 || pem_root_certs_.length() > 0;
+}
 
 bool Options::Version() const { return version_; }
 

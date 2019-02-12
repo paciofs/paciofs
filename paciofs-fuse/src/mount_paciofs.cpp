@@ -109,7 +109,11 @@ int main(int argc, char *argv[]) {
 
   // client to talk to I/O service
   std::string const &endpoint = options.Endpoint();
-  paciofs::io::posix::grpc::PosixIoRpcClient rpc_client(endpoint);
+  paciofs::io::posix::grpc::PosixIoRpcClient rpc_client =
+      options.Tls() ? paciofs::io::posix::grpc::PosixIoRpcClient(
+                          endpoint, options.PemCertChain(),
+                          options.PemPrivateKey(), options.PemRootCerts())
+                    : paciofs::io::posix::grpc::PosixIoRpcClient(endpoint);
 
   // make sure we can talk to the service
   if (!rpc_client.Ping()) {

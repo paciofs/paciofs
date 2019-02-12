@@ -25,6 +25,12 @@ class PosixIoRpcClient {
   // uses insecure channel credentials
   explicit PosixIoRpcClient(std::string const& target);
 
+  // uses TLS
+  explicit PosixIoRpcClient(std::string const& target,
+                            std::string const& cert_chain,
+                            std::string const& private_key,
+                            std::string const& root_certs);
+
   bool Ping();
 
   messages::Errno ReadDir(std::string const& path,
@@ -34,6 +40,8 @@ class PosixIoRpcClient {
 
  private:
   explicit PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel);
+
+  static std::string ReadPem(std::string const& path);
 
   std::unique_ptr<PosixIoService::Stub> stub_;
 

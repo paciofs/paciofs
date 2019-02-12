@@ -35,6 +35,14 @@ class Options {
 
   logging::Level LogLevel() const;
 
+  std::string const& PemCertChain() const;
+
+  std::string const& PemPrivateKey() const;
+
+  std::string const& PemRootCerts() const;
+
+  bool Tls() const;
+
   bool Version() const;
 
  protected:
@@ -48,6 +56,10 @@ class Options {
   bool help_;
   std::string log_file_;
   logging::Level log_level_;
+  std::string pem_cert_chain_;
+  std::string pem_private_key_;
+  std::string pem_root_certs_;
+  bool tls_;
   bool version_;
 };
 

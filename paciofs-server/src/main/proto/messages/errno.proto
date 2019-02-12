@@ -27,7 +27,8 @@ enum Errno {
   // Address family not supported.
   ERRNO_EAFNOSUPPORT = 47;
 
-  // Resource unavailable, try again (may be the same value as ERRNO_EWOULDBLOCK).
+  // Resource unavailable, try again (may be the same value as
+  // ERRNO_EWOULDBLOCK).
   ERRNO_EAGAIN = 35;
 
   // Connection already in progress.

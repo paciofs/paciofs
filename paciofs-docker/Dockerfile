@@ -66,16 +66,6 @@ RUN wget --output-document multichain.tar.gz --quiet https://www.multichain.com/
   && rm multichain.tar.gz
 ENV MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
-# install specific version of commons-exec
-ENV COMMONS_EXEC_VERSION="42eb77c321f7dc17aaff45e45ac1179256517005"
-RUN wget --output-document commons-exec.zip --quiet https://github.com/apache/commons-exec/archive/${COMMONS_EXEC_VERSION}.zip \
-   && unzip commons-exec.zip \
-   && rm commons-exec.zip
-RUN cd commons-exec-${COMMONS_EXEC_VERSION} \
-  && mvn install --define maven.compiler.source=1.8 --define maven.compiler.target=1.8 --define skipTests=true --define maven.javadoc.skip=true --batch-mode \
-  && cd .. \
-  && rm -rf commons-exec-${COMMONS_EXEC_VERSION}
-
 # install PacioFS dependencies
 WORKDIR /paciofs
 COPY ./pom.xml ./pom.xml

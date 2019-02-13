@@ -15,6 +15,14 @@
 
     <packaging>jar</packaging>
 
+    <repositories>
+        <!-- contains our custom built dependencies -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <properties>
         <akka.grpc.version>0.4.2</akka.grpc.version>
         <akka.http.version>10.1.5</akka.http.version>
@@ -104,7 +112,7 @@
             <version>${grpc.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>com.github.paciofs</groupId>
             <artifactId>commons-exec</artifactId>
             <version>${commons-exec.version}</version>
         </dependency>

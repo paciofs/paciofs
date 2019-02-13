@@ -56,16 +56,6 @@
             <groupId>com.lightbend.akka.discovery</groupId>
             <artifactId>akka-discovery-kubernetes-api_${scala.version}</artifactId>
             <version>${akka.management.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.typesafe.akka</groupId>
-                    <artifactId>akka-actor_${scala.version}</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.typesafe.akka</groupId>
-                    <artifactId>akka-stream_${scala.version}</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- to generate gRPC classes from proto files -->
         <dependency>
@@ -77,21 +67,6 @@
             <groupId>com.lightbend.akka.grpc</groupId>
             <artifactId>akka-grpc-runtime_${scala.version}</artifactId>
             <version>${akka.grpc.version}</version>
-            <exclusions>
-                <!-- we have our own protobuf -->
-                <exclusion>
-                    <groupId>com.google.protobuf</groupId>
-                    <artifactId>protobuf-java</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.grpc</groupId>
-                    <artifactId>grpc-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.grpc</groupId>
-                    <artifactId>grpc-netty-shaded</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.lightbend.akka.management</groupId>
@@ -103,12 +78,6 @@
             <groupId>com.lightbend.akka.management</groupId>
             <artifactId>akka-management-cluster-http_${scala.version}</artifactId>
             <version>${akka.management.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.typesafe.akka</groupId>
-                    <artifactId>akka-cluster-sharding_${scala.version}</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>

@@ -17,7 +17,7 @@ matrix:
         # cmake-<VERSION>-Linux-x86_64/
         - CMAKE_STRIP_COMPONENTS=1
         - GO_DIST=linux
-        - MULTICHAIN_VERSION=2.0-beta-1
+        - MULTICHAIN_VERSION=2.0-beta-2
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
 
     - os: osx

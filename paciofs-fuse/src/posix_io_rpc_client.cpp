@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <exception>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 

@@ -25,7 +25,9 @@
 
     <properties>
         <akka.grpc.version>0.4.2</akka.grpc.version>
-        <akka.http.version>10.1.5</akka.http.version>
+        <!-- adds native ALPN on JDK 9+ -->
+        <!-- https://github.com/akka/akka-http/tree/2443640a8c6e8883280b1c51c923bc98145b8c4a -->
+        <akka.http.version>10.1.7+19-2443640a</akka.http.version>
         <akka.management.version>0.20.0</akka.management.version>
         <akka.version>2.5.19</akka.version>
         <bitcoin-rpc-client.version>1.1.0</bitcoin-rpc-client.version>
@@ -61,14 +63,6 @@
                 </exclusion>
                 <exclusion>
                     <groupId>com.typesafe.akka</groupId>
-                    <artifactId>akka-http_${scala.version}</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.typesafe.akka</groupId>
-                    <artifactId>akka-http-spray-json_${scala.version}</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.typesafe.akka</groupId>
                     <artifactId>akka-stream_${scala.version}</artifactId>
                 </exclusion>
             </exclusions>
@@ -88,10 +82,6 @@
                 <exclusion>
                     <groupId>com.google.protobuf</groupId>
                     <artifactId>protobuf-java</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.typesafe.akka</groupId>
-                    <artifactId>akka-http-core_${scala.version}</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.grpc</groupId>

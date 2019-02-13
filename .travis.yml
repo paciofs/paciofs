@@ -4,7 +4,7 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      jdk: openjdk8
+      jdk: openjdk11
       addons:
         apt:
           packages:
@@ -21,8 +21,8 @@ matrix:
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
 
     - os: osx
-      osx_image: xcode9.3
-      jdk: oraclejdk8
+      osx_image: xcode10.1
+      jdk: oraclejdk11
       addons:
         homebrew:
           casks:

@@ -23,7 +23,7 @@ RUN apt-get --quiet --yes install \
   libfuse-dev \
   libtool \
   maven \
-  openjdk-8-jdk \
+  openjdk-11-jdk \
   pkg-config
 
 WORKDIR /tmp

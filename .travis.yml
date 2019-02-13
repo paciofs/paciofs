@@ -93,6 +93,13 @@ before_install:
   - rm multichain.tar.gz
   - export MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
+  # install sbt for akka-http
+  - export SBT_VERSION="1.2.8"
+  - wget --output-document sbt.tgz --quiet https://piccolo.link/sbt-${SBT_VERSION}.tgz
+  - sudo tar --directory /usr/local --extract --file sbt.tgz
+  - rm sbt.tgz
+  - export PATH="/usr/local/sbt/bin:${PATH}"
+
   # install custom version of akka-http
   - export AKKA_HTTP_VERSION="2443640a8c6e8883280b1c51c923bc98145b8c4a"
   - wget --output-document akka-http.zip --quiet https://github.com/akka/akka-http/archive/${AKKA_HTTP_VERSION}.zip
@@ -102,7 +109,7 @@ before_install:
   - sbt -Dakka.scaladoc.diagrams=false publishM2
   - cd ../
   - rm -rf akka-http-${AKKA_HTTP_VERSION}
-  - export AKKA_HTTP_VERSION=$(grep -E -o "HEAD\+\d{8}-\d{4}" $(find . -name 'Version.scala'))
+  - export AKKA_HTTP_VERSION=$(grep -E -o "HEAD\+[[:digit:]]{8}-[[:digit:]]{4}" $(find . -name 'Version.scala'))
 
   # for cppcheck-htmlreport
   - pip install --user pygments

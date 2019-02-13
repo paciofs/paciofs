@@ -35,6 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PacioFS {
+  private static final String OPTION_BIND_HOST = "host";
+  private static final String OPTION_BIND_HOST_SHORT = "o";
+  private static final String OPTION_BIND_PORT = "port";
+  private static final String OPTION_BIND_PORT_SHORT = "p";
   private static final String OPTION_CONFIG = "config";
   private static final String OPTION_CONFIG_SHORT = "c";
   private static final String OPTION_HELP = "help";
@@ -69,6 +73,19 @@ public class PacioFS {
                    .withFallback(applicationConfig);
     } else {
       config = applicationConfig;
+    }
+
+    // connection options
+    final String host = cmd.getOptionValue(OPTION_BIND_HOST, "0.0.0.0");
+    final int port;
+    try {
+      port = Integer.parseInt(cmd.getOptionValue(OPTION_BIND_PORT, "8080"));
+    } catch (NumberFormatException e) {
+      System.err.println(e.getMessage());
+      System.exit(1);
+
+      // because port is final, and javac does not know that System.exit() never returns
+      return;
     }
 
     // no logging is allowed to happen before here
@@ -113,6 +130,10 @@ public class PacioFS {
     final Options options = new Options();
     options.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "print this message and exit");
 
+    options.addOption(
+        OPTION_BIND_HOST_SHORT, OPTION_BIND_HOST, true, "interface to bind to (default 0.0.0.0)");
+    options.addOption(
+        OPTION_BIND_PORT_SHORT, OPTION_BIND_PORT, true, "port to bind to (default 8080)");
     options.addOption(OPTION_CONFIG_SHORT, OPTION_CONFIG, true, "path/to/paciofs.conf");
     options.addOption(OPTION_SKIP_BOOTSTRAP_SHORT, OPTION_SKIP_BOOTSTRAP, false,
         "whether to skip bootstrapping (e.g. when outside kubernetes)");

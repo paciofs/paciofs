@@ -13,6 +13,7 @@ RUN apt-get --quiet update \
 
   # build dependencies
   autoconf \
+  automake \
   build-essential \
   git \
   libboost-all-dev \

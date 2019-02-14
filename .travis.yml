@@ -122,7 +122,7 @@ script:
   - mvn test --define akka.http.version=${AKKA_HTTP_VERSION} --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
 
   # start and stop PacioFS
-  - mvn --projects paciofs-server exec:java@run-server &
+  - mvn --define akka.http.version=${AKKA_HTTP_VERSION} --projects paciofs-server exec:java@run-server &
   - MVN_PID=$!
   - sleep 15s
 

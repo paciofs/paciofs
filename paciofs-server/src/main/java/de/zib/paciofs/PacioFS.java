@@ -14,6 +14,10 @@ import akka.http.javadsl.ConnectWithHttps;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.HttpsConnectionContext;
+import akka.http.javadsl.UseHttp2;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
+import akka.japi.Function;
 import akka.management.AkkaManagement;
 import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.stream.ActorMaterializer;
@@ -30,19 +34,15 @@ import de.zib.paciofs.logging.Markers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyManagementException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -55,11 +55,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PacioFS {
-  private static final String OPTION_BIND_HOST = "host";
-  private static final String OPTION_BIND_HOST_SHORT = "o";
-  private static final String OPTION_BIND_PORT = "port";
-  private static final String OPTION_BIND_PORT_SHORT = "p";
+public class PacioFs {
   private static final String OPTION_CONFIG = "config";
   private static final String OPTION_CONFIG_SHORT = "c";
   private static final String OPTION_HELP = "help";
@@ -69,10 +65,10 @@ public class PacioFS {
 
   private static Logger log;
 
-  private PacioFS() {}
+  private PacioFs() {}
 
   /**
-   * Starts PacioFS and waits for shutdown.
+   * Starts PacioFs and waits for shutdown.
    * @param args the command line arguments
    */
   public static void main(String[] args) {
@@ -94,19 +90,6 @@ public class PacioFS {
                    .withFallback(applicationConfig);
     } else {
       config = applicationConfig;
-    }
-
-    // connection options
-    final String host = cmd.getOptionValue(OPTION_BIND_HOST, "0.0.0.0");
-    final int port;
-    try {
-      port = Integer.parseInt(cmd.getOptionValue(OPTION_BIND_PORT, "8080"));
-    } catch (NumberFormatException e) {
-      System.err.println(e.getMessage());
-      System.exit(1);
-
-      // because port is final, and javac does not know that System.exit() never returns
-      return;
     }
 
     // no logging is allowed to happen before here
@@ -133,36 +116,95 @@ public class PacioFS {
     // actor for the blockchain
     paciofs.actorOf(Bitcoind.props(), "bitcoind");
 
+    // get ready to serve the I/O service
+    final Http http = Http.get(paciofs);
     final Materializer mat = ActorMaterializer.create(paciofs);
+    final Function<HttpRequest, CompletionStage<HttpResponse>> posixIoHandler =
+        PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), mat);
 
-    // set up HTTPS if desired
-    final ConnectHttp connect;
-    final HttpsConnectionContext https = httpsConnectionContext(config);
-    if (https != null) {
-      connect = ConnectWithHttps.toHostHttps(host, port).withCustomHttpsContext(https);
-    } else {
-      connect = ConnectHttp.toHost(host, port);
+    // set up HTTP if desired
+    try {
+      http.bindAndHandleAsync(posixIoHandler,
+              ConnectHttp.toHost(config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME),
+                  config.getInt(PacioFsOptions.HTTP_BIND_PORT), UseHttp2.always()),
+              mat)
+          .thenAccept(binding -> {
+            log.info("{} gRPC HTTP server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
+                binding.localAddress());
+          });
+    } catch (ConfigException.Missing | ConfigException.WrongType e) {
+      log.info("No valid HTTP configuration found, not serving HTTP ({})", e.getMessage());
     }
 
-    // bind the POSIX IO service to all interfaces (0.0.0.0)
-    // TODO should we bind to all interfaces?
-    Http.get(paciofs)
-        .bindAndHandleAsync(
-            PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), mat), connect, mat)
-        .thenAccept(binding -> {
-          log.info("{} gRPC server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
-              binding.localAddress());
-        });
+    // set up HTTPS if desired
+    try {
+      final HttpsConnectionContext https = httpsConnectionContext(config);
+      http.bindAndHandleAsync(posixIoHandler,
+              ConnectWithHttps
+                  .toHostHttps(config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME),
+                      config.getInt(PacioFsOptions.HTTPS_BIND_PORT))
+                  .withCustomHttpsContext(https),
+              mat)
+          .thenAccept(binding -> {
+            log.info("{} gRPC HTTPS server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
+                binding.localAddress());
+          });
+    } catch (ConfigException.Missing | ConfigException.WrongType e) {
+      log.info("No valid HTTPS configuration found, not serving HTTPS ({})", e.getMessage());
+    } catch (GeneralSecurityException | IOException e) {
+      log.error("{}: not serving HTTPS", e.getMessage());
+      log.error(Markers.EXCEPTION, e.getMessage(), e);
+    }
+  }
+
+  /* Utility functions */
+
+  private static HttpsConnectionContext httpsConnectionContext(Config config)
+      throws GeneralSecurityException, IOException {
+    // obtain the PKCS12 archive containing all certificates
+    final InputStream p12 = new FileInputStream(config.getString(PacioFsOptions.HTTPS_CERTS_PATH));
+
+    // obtain the password to read the archive
+    final String pass =
+        new BufferedReader(new FileReader(config.getString(PacioFsOptions.HTTPS_CERTS_PASS_PATH)))
+            .readLine();
+    final char[] password = new char[pass.length()];
+    pass.getChars(0, pass.length(), password, 0);
+
+    // load the certificates
+    final String keyStoreType = "PKCS12";
+    final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+    keyStore.load(p12, password);
+
+    // initialize factories
+    final String algorithm = "SunX509";
+    final KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(algorithm);
+    keyManagerFactory.init(keyStore, password);
+    final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
+    trustManagerFactory.init(keyStore);
+
+    // finally get the context
+    final String protocol = "TLS";
+    final SSLContext sslContext = SSLContext.getInstance(protocol);
+    sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
+        new SecureRandom());
+
+    return ConnectionContext.https(sslContext, Optional.empty(), Optional.empty(),
+        Optional.of(TLSClientAuth.none()), Optional.empty());
+  }
+
+  private static void initializeLogging(Config config) {
+    // supply our configuration to Logback
+    LogbackPropertyDefiners.ConfigVarWithDefaultValue.setConfig(config);
+
+    // now trigger initialization of Logback
+    log = LoggerFactory.getLogger(PacioFs.class);
   }
 
   private static CommandLine parseCommandLine(String[] args) {
     final Options options = new Options();
     options.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "print this message and exit");
 
-    options.addOption(
-        OPTION_BIND_HOST_SHORT, OPTION_BIND_HOST, true, "interface to bind to (default 0.0.0.0)");
-    options.addOption(
-        OPTION_BIND_PORT_SHORT, OPTION_BIND_PORT, true, "port to bind to (default 8080)");
     options.addOption(OPTION_CONFIG_SHORT, OPTION_CONFIG, true, "path/to/paciofs.conf");
     options.addOption(OPTION_SKIP_BOOTSTRAP_SHORT, OPTION_SKIP_BOOTSTRAP, false,
         "whether to skip bootstrapping (e.g. when outside kubernetes)");
@@ -191,68 +233,10 @@ public class PacioFS {
 
     if (exitCode >= 0) {
       final HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp("PacioFS", options);
+      formatter.printHelp("PacioFs", options);
       System.exit(exitCode);
     }
 
     return cmd;
-  }
-
-  private static void initializeLogging(Config config) {
-    // supply our configuration to Logback
-    LogbackPropertyDefiners.ConfigVarWithDefaultValue.setConfig(config);
-
-    // now trigger initialization of Logback
-    log = LoggerFactory.getLogger(PacioFS.class);
-  }
-
-  private static HttpsConnectionContext httpsConnectionContext(Config config) {
-    try {
-      // obtain the PKCS12 archive containing all certificates
-      final InputStream p12 = new FileInputStream(config.getString("paciofs.tls.certs.path"));
-
-      // obtain the password to read the archive
-      final String pass =
-          new BufferedReader(new FileReader(config.getString("paciofs.tls.certs.pass-path")))
-              .readLine();
-      final char[] password = new char[pass.length()];
-      pass.getChars(0, pass.length(), password, 0);
-
-      // load the certificates
-      final KeyStore keyStore = KeyStore.getInstance("PKCS12");
-      keyStore.load(p12, password);
-
-      // initialize factories
-      final String algorithm = "SunX509";
-      final KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(algorithm);
-      keyManagerFactory.init(keyStore, password);
-      final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
-      trustManagerFactory.init(keyStore);
-
-      // finally get the context
-      final SSLContext sslContext = SSLContext.getInstance("TLS");
-      sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
-          new SecureRandom());
-
-      // once we made it to this point, we are good to go
-      log.info("Using TLS protocol: {}", sslContext.getProtocol());
-      return ConnectionContext.https(sslContext, Optional.empty(), Optional.empty(),
-          Optional.of(TLSClientAuth.none()), Optional.empty());
-    } catch (ConfigException.Missing e) {
-      log.warn("Incomplete TLS configuration ({}), falling back to no TLS", e.getMessage());
-      log.warn(Markers.EXCEPTION, "Incomplete TLS configuration", e);
-    } catch (FileNotFoundException e) {
-      log.warn("File not found ({}), falling back to no TLS", e.getMessage());
-      log.warn(Markers.EXCEPTION, "File not found", e);
-    } catch (IOException e) {
-      log.warn("I/O exception occurred ({}), falling back to no TLS", e.getMessage());
-      log.warn(Markers.EXCEPTION, "I/O exception", e);
-    } catch (CertificateException | KeyManagementException | KeyStoreException
-        | NoSuchAlgorithmException | UnrecoverableKeyException e) {
-      log.warn("Exception while configuring HTTPS ({}), falling back to no TLS", e.getMessage());
-      log.warn(Markers.EXCEPTION, "Exception while configuring HTTPS", e);
-    }
-
-    return null;
   }
 }

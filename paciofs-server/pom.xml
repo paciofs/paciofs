@@ -303,7 +303,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>de.zib.paciofs.PacioFS</Main-Class>
+                                        <Main-Class>de.zib.paciofs.PacioFs</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
@@ -398,7 +398,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>de.zib.paciofs.PacioFS</mainClass>
+                            <mainClass>de.zib.paciofs.PacioFs</mainClass>
                             <systemProperties>
                                 <!-- assume MultiChain has been built next to us -->
                                 <systemProperty>

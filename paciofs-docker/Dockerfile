@@ -75,13 +75,13 @@ ENV PATH="/usr/local/sbt/bin:${PATH}"
 
 # install custom version of akka-http
 ENV AKKA_HTTP_HASH="2443640a8c6e8883280b1c51c923bc98145b8c4a"
-RUN wget --output-document akka-http.zip --quiet https://github.com/akka/akka-http/archive/${AKKA_HTTP_HASH}.zip \
-  && unzip akka-http.zip \
-  && rm akka-http.zip \
-  && cd akka-http-${AKKA_HTTP_HASH} \
+RUN git clone https://github.com/akka/akka-http.git \
+  && cd akka-http \
+  && git checkout ${AKKA_HTTP_HASH} \
   && sbt -Dakka.scaladoc.diagrams=false publishM2 \
-  && export AKKA_HTTP_VERSION=$(grep -E -o 'HEAD\+[[:digit:]]{8}-[[:digit:]]{4}' $(find akka-http-${AKKA_HTTP_HASH} -name 'Version.scala')) \
-  && rm -rf akka-http-${AKKA_HTTP_HASH}
+  && cd ../ \
+  && rm -rf akka-http
+ENV AKKA_HTTP_VERSION="10.1.7+19-2443640a"
 
 # install PacioFS dependencies
 WORKDIR /paciofs

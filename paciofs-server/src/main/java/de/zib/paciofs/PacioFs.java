@@ -34,9 +34,10 @@ import de.zib.paciofs.logging.Markers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -161,20 +162,28 @@ public class PacioFs {
 
   private static HttpsConnectionContext httpsConnectionContext(Config config)
       throws GeneralSecurityException, IOException {
-    // obtain the PKCS12 archive containing all certificates
-    final InputStream p12 = new FileInputStream(config.getString(PacioFsOptions.HTTPS_CERTS_PATH));
-
     // obtain the password to read the archive
-    final String pass =
-        new BufferedReader(new FileReader(config.getString(PacioFsOptions.HTTPS_CERTS_PASS_PATH)))
-            .readLine();
-    final char[] password = new char[pass.length()];
-    pass.getChars(0, pass.length(), password, 0);
+    final char[] password;
+    try (final BufferedReader passReader = new BufferedReader(new InputStreamReader(
+             new FileInputStream(config.getString(PacioFsOptions.HTTPS_CERTS_PASS_PATH)),
+             Charset.forName("UTF-8")))) {
+      final String pass = passReader.readLine();
+      if (pass == null) {
+        throw new IllegalArgumentException(
+            config.getString(PacioFsOptions.HTTPS_CERTS_PASS_PATH) + " is empty");
+      }
+
+      password = new char[pass.length()];
+      pass.getChars(0, pass.length(), password, 0);
+    }
 
     // load the certificates
     final String keyStoreType = "PKCS12";
     final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-    keyStore.load(p12, password);
+    try (final InputStream p12 =
+             new FileInputStream(config.getString(PacioFsOptions.HTTPS_CERTS_PATH))) {
+      keyStore.load(p12, password);
+    }
 
     // initialize factories
     final String algorithm = "SunX509";

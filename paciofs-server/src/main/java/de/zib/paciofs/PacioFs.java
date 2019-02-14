@@ -10,7 +10,6 @@ package de.zib.paciofs;
 import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 import akka.http.javadsl.ConnectHttp;
-import akka.http.javadsl.ConnectWithHttps;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.HttpsConnectionContext;
@@ -129,10 +128,9 @@ public class PacioFs {
               ConnectHttp.toHost(config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME),
                   config.getInt(PacioFsOptions.HTTP_BIND_PORT), UseHttp2.always()),
               mat)
-          .thenAccept(binding -> {
-            log.info("{} gRPC HTTP server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
-                binding.localAddress());
-          });
+          .thenAccept(binding
+              -> log.info("{} gRPC HTTP server bound to: {}",
+                  PosixIoServiceImpl.class.getSimpleName(), binding.localAddress()));
     } catch (ConfigException.Missing | ConfigException.WrongType e) {
       log.info("No valid HTTP configuration found, not serving HTTP ({})", e.getMessage());
     }
@@ -141,15 +139,14 @@ public class PacioFs {
     try {
       final HttpsConnectionContext https = httpsConnectionContext(config);
       http.bindAndHandleAsync(posixIoHandler,
-              ConnectWithHttps
+              ConnectHttp
                   .toHostHttps(config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME),
                       config.getInt(PacioFsOptions.HTTPS_BIND_PORT))
                   .withCustomHttpsContext(https),
               mat)
-          .thenAccept(binding -> {
-            log.info("{} gRPC HTTPS server bound to: {}", PosixIoServiceImpl.class.getSimpleName(),
-                binding.localAddress());
-          });
+          .thenAccept(binding
+              -> log.info("{} gRPC HTTPS server bound to: {}",
+                  PosixIoServiceImpl.class.getSimpleName(), binding.localAddress()));
     } catch (ConfigException.Missing | ConfigException.WrongType e) {
       log.info("No valid HTTPS configuration found, not serving HTTPS ({})", e.getMessage());
     } catch (GeneralSecurityException | IOException e) {

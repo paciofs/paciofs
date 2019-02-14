@@ -107,9 +107,9 @@ before_install:
   - rm akka-http.zip
   - cd akka-http-${AKKA_HTTP_HASH}
   - sbt -Dakka.scaladoc.diagrams=false publishM2
-  - export AKKA_HTTP_VERSION=$(grep -E -o "HEAD\+[[:digit:]]{8}-[[:digit:]]{4}" $(find . -name 'Version.scala'))
+  - export AKKA_HTTP_VERSION=$(grep "val current" $(find ./akka-http-core -name 'Version.scala') | grep -o "\".*\"" | cut -d '"' -f 2)
   - cd ../
-  - rm -rf akka-http-${AKKA_HTTP_VERSION}
+  - rm -rf akka-http-${AKKA_HTTP_HASH}
 
   # for cppcheck-htmlreport
   - pip install --user pygments

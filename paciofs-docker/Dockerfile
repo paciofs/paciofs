@@ -80,7 +80,7 @@ RUN wget --output-document akka-http.zip --quiet https://github.com/akka/akka-ht
   && rm akka-http.zip \
   && cd akka-http-${AKKA_HTTP_HASH} \
   && sbt -Dakka.scaladoc.diagrams=false publishM2 \
-  && export AKKA_HTTP_VERSION=$(grep -E -o 'HEAD\+[[:digit:]]{8}-[[:digit:]]{4}' $(find akka-http-${AKKA_HTTP_HASH} -name 'Version.scala')) \
+  && export AKKA_HTTP_VERSION=$(grep "val current" $(find ./akka-http-core -name 'Version.scala') | grep -o "\".*\"" | cut -d '"' -f 2) \
   && rm -rf akka-http-${AKKA_HTTP_HASH}
 
 # install PacioFS dependencies

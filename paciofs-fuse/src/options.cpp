@@ -42,17 +42,18 @@ Options::Options()
           ->value_name("path"),
       "path to log file; special values 'stdout' and 'stderr' log to standard "
       "output and error, respectively; defaults to 'stdout'");
-  general_options.add_options()("log-level,d",
-                                bpo::value<logging::Level>(&log_level_)
-                                    ->default_value(log_level_)
-                                    ->value_name("level"),
-                                "TRACE, DEBUG, INFO, WARNING, ERROR, FATAL");
+  general_options.add_options()(
+      "log-level,d",
+      bpo::value<logging::Level>(&log_level_)
+          ->default_value(log_level_)
+          ->value_name("level"),
+      "TRACE, DEBUG, INFO, WARNING, ERROR, FATAL (also consider '--fuse-option "
+      "debug' and the GRPC_VERBOSITY environment variable)");
   general_options.add_options()(
       "version,V", bpo::bool_switch(&version_)->default_value(version_),
       "print version and exit");
 
   bpo::options_description tls_options("TLS Options");
-
   tls_options.add_options()(
       "tls", bpo::bool_switch(&tls_)->default_value(tls_),
       "enable TLS (implicitly true if any of the following is set)");

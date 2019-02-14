@@ -5,17 +5,17 @@ ENV DEBIAN_FRONTEND="noninteractive"
 
 # update system
 RUN apt-get --quiet update \
-  && apt-get --quiet --yes install --no-install-recommends apt-utils \
-  && apt-get --quiet --yes upgrade
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get --quiet --yes install --no-install-recommends apt-utils
 
 # system dependencies
-RUN apt-get --quiet --yes install \
+RUN apt-get --quiet --yes install --no-install-recommends \
   curl \
   unzip \
   wget
 
 # build dependencies
-RUN apt-get --quiet --yes install \
+RUN apt-get --quiet --yes install --no-install-recommends \
   autoconf \
   build-essential \
   git \

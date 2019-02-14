@@ -3,19 +3,15 @@ LABEL maintainer="schmidtke@zib.de"
 
 ENV DEBIAN_FRONTEND="noninteractive"
 
-# update system
 RUN apt-get --quiet update \
-  && rm -rf /var/lib/apt/lists/* \
-  && apt-get --quiet --yes install --no-install-recommends apt-utils
+  && apt-get --quiet --yes install --no-install-recommends \
 
-# system dependencies
-RUN apt-get --quiet --yes install --no-install-recommends \
+  # system dependencies
   curl \
   unzip \
-  wget
+  wget \
 
-# build dependencies
-RUN apt-get --quiet --yes install --no-install-recommends \
+  # build dependencies
   autoconf \
   build-essential \
   git \
@@ -24,7 +20,10 @@ RUN apt-get --quiet --yes install --no-install-recommends \
   libtool \
   maven \
   openjdk-11-jdk \
-  pkg-config
+  pkg-config \
+
+  # cleanup
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
 

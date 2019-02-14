@@ -118,6 +118,9 @@ install:
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --define akka.http.version=${AKKA_HTTP_VERSION} --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
 
 script:
+  # generate TLS certificates
+  - cd ./paciofs-server/src/test/scripts && ./gen-certs.sh && cd ../../../../
+
   # run tests
   - mvn test --define akka.http.version=${AKKA_HTTP_VERSION} --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
 

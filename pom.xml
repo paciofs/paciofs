@@ -139,8 +139,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
                     <configuration>
-                        <source>${java.source.version}</source>
-                        <target>${java.target.version}</target>
+                        <!-- for native application layer protocol negotiation support -->
+                        <release>9</release>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
                         <compilerArgs>

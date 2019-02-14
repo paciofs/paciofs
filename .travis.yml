@@ -4,7 +4,7 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      jdk: openjdk8
+      jdk: openjdk11
       addons:
         apt:
           packages:
@@ -21,8 +21,8 @@ matrix:
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
 
     - os: osx
-      osx_image: xcode9.3
-      jdk: oraclejdk8
+      osx_image: xcode10.1
+      jdk: oraclejdk11
       addons:
         homebrew:
           casks:
@@ -93,21 +93,39 @@ before_install:
   - rm multichain.tar.gz
   - export MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
+  # install sbt for akka-http
+  - export SBT_VERSION="1.2.8"
+  - wget --output-document sbt.tgz --quiet https://piccolo.link/sbt-${SBT_VERSION}.tgz
+  - sudo tar --directory /usr/local --extract --file sbt.tgz
+  - rm sbt.tgz
+  - export PATH="/usr/local/sbt/bin:${PATH}"
+
+  # install custom version of akka-http
+  - export AKKA_HTTP_HASH="2443640a8c6e8883280b1c51c923bc98145b8c4a"
+  - wget --output-document akka-http.zip --quiet https://github.com/akka/akka-http/archive/${AKKA_HTTP_HASH}.zip
+  - unzip akka-http.zip
+  - rm akka-http.zip
+  - cd akka-http-${AKKA_HTTP_HASH}
+  - sbt -Dakka.scaladoc.diagrams=false publishM2
+  - export AKKA_HTTP_VERSION=$(grep "val current" $(find ./akka-http-core -name 'Version.scala') | grep -o "\".*\"" | cut -d '"' -f 2)
+  - cd ../
+  - rm -rf akka-http-${AKKA_HTTP_HASH}
+
   # for cppcheck-htmlreport
   - pip install --user pygments
 
 install:
-  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
+  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define akka.http.version=${AKKA_HTTP_VERSION} --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
 
 script:
   # generate TLS certificates
   - cd ./paciofs-server/src/test/scripts && ./gen-certs.sh && cd ../../../../
 
   # run tests
-  - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
+  - mvn test --define akka.http.version=${AKKA_HTTP_VERSION} --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
 
   # start and stop PacioFS
-  - mvn --projects paciofs-server exec:java@run-server &
+  - mvn --define akka.http.version=${AKKA_HTTP_VERSION} --projects paciofs-server exec:java@run-server &
   - MVN_PID=$!
   - sleep 15s
 

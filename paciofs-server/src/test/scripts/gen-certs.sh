@@ -50,14 +50,16 @@ rm server.csr
 tail -n 4 ./openssl.cnf | wc -c | xargs -I {} truncate ./openssl.cnf -s -{}
 
 # export certificates to p12 for server
-pwgen -Bs 10 1 > servercerts.p12.pass
-
-# -certfile takes the concatenation of all intermediate CAs, with the root being last (right now it is only the root)
-openssl pkcs12 -export -in servercert.pem -inkey serverkey.pem -certfile ./paciofsCA/cacert.pem -out servercerts.p12 -name "server" -passout file:servercerts.p12.pass
+pwgen -Bs 10 1 > servercert.p12.pass
+pwgen -Bs 10 1 > cacert.p12.pass
+openssl pkcs12 -export -in servercert.pem -inkey serverkey.pem -out servercert.p12 -name "server" -passout file:servercert.p12.pass
+openssl pkcs12 -export -in ./paciofsCA/cacert.pem -inkey ./paciofsCA/private/cakey.pem -out cacert.p12 -name "ca" -passout file:cacert.p12.pass
 
 # install certificates
-cp servercerts.p12 ../resources/certs/
-cp servercerts.p12.pass ../resources/certs/
+cp servercert.p12 ../resources/certs/
+cp servercert.p12.pass ../resources/certs/
+cp cacert.p12 ../resources/certs/
+cp cacert.p12.pass ../resources/certs/
 
 cp ./paciofsCA/cacert.pem ../../../../paciofs-fuse/test/certs/
 cp clientcert.pem ../../../../paciofs-fuse/test/certs/

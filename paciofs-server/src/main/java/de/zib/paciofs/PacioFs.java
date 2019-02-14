@@ -159,44 +159,32 @@ public class PacioFs {
 
   private static HttpsConnectionContext httpsConnectionContext(Config config)
       throws GeneralSecurityException, IOException {
-    // obtain the password to read the archive
-    final char[] password;
-    try (final BufferedReader passReader = new BufferedReader(new InputStreamReader(
-             new FileInputStream(config.getString(PacioFsOptions.HTTPS_CERTS_PASS_PATH)),
-             Charset.forName("UTF-8")))) {
-      final String pass = passReader.readLine();
-      if (pass == null) {
-        throw new IllegalArgumentException(
-            config.getString(PacioFsOptions.HTTPS_CERTS_PASS_PATH) + " is empty");
-      }
-
-      password = new char[pass.length()];
-      pass.getChars(0, pass.length(), password, 0);
-    }
-
-    // load the certificates
-    final String keyStoreType = "PKCS12";
-    final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-    try (final InputStream p12 =
-             new FileInputStream(config.getString(PacioFsOptions.HTTPS_CERTS_PATH))) {
-      keyStore.load(p12, password);
-    }
-
-    // initialize factories
     final String algorithm = "SunX509";
+    final String protocol = "TLS";
+    final String type = "PKCS12";
+
+    // initialize key manager (contains our certificates)
     final KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(algorithm);
-    keyManagerFactory.init(keyStore, password);
+    char[] password =
+        readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PASS_PATH));
+    keyManagerFactory.init(
+        readKeyStoreFromFile(
+            config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PATH), password, type),
+        password);
+
+    // initialize trust manager (contains trusted certificates)
     final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
-    trustManagerFactory.init(keyStore);
+    password = readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PASS_PATH));
+    trustManagerFactory.init(
+        readKeyStoreFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PATH), password, type));
 
     // finally get the context
-    final String protocol = "TLS";
     final SSLContext sslContext = SSLContext.getInstance(protocol);
     sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
         new SecureRandom());
 
     return ConnectionContext.https(sslContext, Optional.empty(), Optional.empty(),
-        Optional.of(TLSClientAuth.none()), Optional.empty());
+        Optional.of(TLSClientAuth.need()), Optional.empty());
   }
 
   private static void initializeLogging(Config config) {
@@ -244,5 +232,31 @@ public class PacioFs {
     }
 
     return cmd;
+  }
+
+  private static KeyStore readKeyStoreFromFile(String path, char[] password, String type)
+      throws GeneralSecurityException, IOException {
+    final KeyStore keyStore = KeyStore.getInstance(type);
+    try (InputStream p12 = new FileInputStream(path)) {
+      keyStore.load(p12, password);
+    }
+
+    return keyStore;
+  }
+
+  private static char[] readPasswordFromFile(String path) throws IOException {
+    final char[] password;
+    try (BufferedReader passReader = new BufferedReader(
+             new InputStreamReader(new FileInputStream(path), Charset.forName("UTF-8")))) {
+      final String pass = passReader.readLine();
+      if (pass == null) {
+        throw new IllegalArgumentException(path + " is empty");
+      }
+
+      password = new char[pass.length()];
+      pass.getChars(0, pass.length(), password, 0);
+    }
+
+    return password;
   }
 }

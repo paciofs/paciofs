@@ -64,7 +64,7 @@ ENV MULTICHAIN_VERSION="2.0-beta-2"
 RUN wget --output-document multichain.tar.gz --quiet https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz \
   && tar --directory /usr/local --extract --file multichain.tar.gz \
   && rm multichain.tar.gz
-ENV MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"
+ENV MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
 # install sbt for akka-http
 ENV SBT_VERSION="1.2.8"

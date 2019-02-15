@@ -60,7 +60,7 @@ public class MultiChaind {
   public void start() {
     // see multichaind -?
     final CommandLine cmd =
-        new CommandLine(new File(this.config.getString(MultiChainOptions.PATH_KEY), "multichaind"));
+        new CommandLine(new File(this.config.getString(MultiChainOptions.HOME_KEY), "multichaind"));
 
     // the only positional arguments are the name of the chain and the protocol
     // version
@@ -158,7 +158,7 @@ public class MultiChaind {
     if (!chaindir.exists()) {
       // see multichain-util -?
       final CommandLine cmd = new CommandLine(
-          new File(this.config.getString(MultiChainOptions.PATH_KEY), "multichain-util"));
+          new File(this.config.getString(MultiChainOptions.HOME_KEY), "multichain-util"));
 
       // all required positional arguments
       cmd.addArgument("create");

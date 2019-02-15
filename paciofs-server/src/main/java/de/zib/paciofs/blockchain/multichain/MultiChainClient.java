@@ -176,7 +176,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
   }
 
   private String getProtocol() {
-    return this.config.hasPath(MultiChainOptions.RPC_SSL) ? "https" : "http";
+    return this.config.hasPath(MultiChainOptions.RPC_SSL_KEY) ? "https" : "http";
   }
 
   // manages the transition from STOPPED -> STARTING -> RUNNING in a blocking fashion
@@ -204,8 +204,8 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
 
         // wait at most backoff * (2^maxRetries - 1) milliseconds
         // e.g. 50 * (2^10 -1) = 51150 milliseconds
-        long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS);
-        final int maxRetries = this.config.getInt(MultiChainOptions.BACKOFF_RETRIES);
+        long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS_KEY);
+        final int maxRetries = this.config.getInt(MultiChainOptions.BACKOFF_RETRIES_KEY);
         int failedRetries = 0;
 
         // try and get the blockchain info at most a number of maxRetries times

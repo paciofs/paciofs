@@ -8,14 +8,15 @@
 package de.zib.paciofs.blockchain.multichain;
 
 public class MultiChainOptions {
-  public static final String BACKOFF_MILLISECONDS = "multichain.multichaind.backoff.milliseconds";
-  public static final String BACKOFF_RETRIES = "multichain.multichaind.backoff.retries";
+  public static final String BACKOFF_MILLISECONDS_KEY =
+      "multichain.multichaind.backoff.milliseconds";
+  public static final String BACKOFF_RETRIES_KEY = "multichain.multichaind.backoff.retries";
 
   public static final String BLOCKCHAIN_NAME_KEY = "multichain.blockchain-name";
 
   public static final String DAEMON_OPTIONS_KEY = "multichain.multichaind.options";
 
-  public static final String PATH_KEY = "multichain.path";
+  public static final String HOME_KEY = "multichain.home";
 
   public static final String PROTOCOL_VERSION_KEY = "multichain.protocol-version";
 
@@ -25,7 +26,7 @@ public class MultiChainOptions {
   public static final String RPC_PORT_KEY = "rpcport";
   public static final String RPC_USER_KEY = "rpcuser";
   public static final String RPC_PASSWORD_KEY = "rpcpassword";
-  public static final String RPC_SSL = "rpcssl";
+  public static final String RPC_SSL_KEY = "rpcssl";
 
   public static final String UTIL_OPTIONS_KEY = "multichain.multichain-util.options";
 

@@ -91,7 +91,7 @@ before_install:
   - wget --output-document multichain.tar.gz --quiet ${MULTICHAIN_URL}
   - sudo tar --directory /usr/local --extract --file multichain.tar.gz
   - rm multichain.tar.gz
-  - export MULTICHAIN_PATH="/usr/local/multichain-${MULTICHAIN_VERSION}"
+  - export MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
   # install sbt for akka-http
   - export SBT_VERSION="1.2.8"
@@ -130,7 +130,7 @@ script:
   - sleep 15s
 
   # simple query with default parameters
-  - ${MULTICHAIN_PATH}/multichain-cli paciofs -datadir=/tmp/multichain-data-dir -rpconnect=localhost -rpcport=8332 getblockchaininfo; CLI_EXIT=$?
+  - ${MULTICHAIN_HOME}/multichain-cli paciofs -datadir=/tmp/multichain-data-dir -rpconnect=localhost -rpcport=8332 getblockchaininfo; CLI_EXIT=$?
 
   # wait for everyting to shut down
   - kill ${MVN_PID}; wait ${MVN_PID}; MVN_EXIT=$?

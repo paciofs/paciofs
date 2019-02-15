@@ -130,8 +130,8 @@ public class PacioFs {
     // set up HTTP if desired
     try {
       http.bindAndHandleAsync(posixIoHandler,
-              ConnectHttp.toHost(config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME),
-                  config.getInt(PacioFsOptions.HTTP_BIND_PORT), UseHttp2.always()),
+              ConnectHttp.toHost(config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME_KEY),
+                  config.getInt(PacioFsOptions.HTTP_BIND_PORT_KEY), UseHttp2.always()),
               mat)
           .thenAccept(binding
               -> log.info("{} gRPC HTTP server bound to: {}",
@@ -145,8 +145,8 @@ public class PacioFs {
       final HttpsConnectionContext https = httpsConnectionContext(config);
       http.bindAndHandleAsync(posixIoHandler,
               ConnectHttp
-                  .toHostHttps(config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME),
-                      config.getInt(PacioFsOptions.HTTPS_BIND_PORT))
+                  .toHostHttps(config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME_KEY),
+                      config.getInt(PacioFsOptions.HTTPS_BIND_PORT_KEY))
                   .withCustomHttpsContext(https),
               mat)
           .thenAccept(binding
@@ -171,17 +171,17 @@ public class PacioFs {
     // initialize key manager (contains our certificates)
     final KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(algorithm);
     char[] password =
-        readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PASS_PATH));
+        readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PASS_PATH_KEY));
     keyManagerFactory.init(
         readKeyStoreFromFile(
-            config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PATH), password, type),
+            config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PATH_KEY), password, type),
         password);
 
     // initialize trust manager (contains trusted certificates)
     final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
-    password = readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PASS_PATH));
-    trustManagerFactory.init(
-        readKeyStoreFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PATH), password, type));
+    password = readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PASS_PATH_KEY));
+    trustManagerFactory.init(readKeyStoreFromFile(
+        config.getString(PacioFsOptions.HTTPS_CA_CERT_PATH_KEY), password, type));
 
     // finally get the context
     final SSLContext sslContext = SSLContext.getInstance(protocol);

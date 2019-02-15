@@ -40,7 +40,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -177,17 +176,28 @@ public class PacioFs {
             config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PATH_KEY), password, type),
         password);
 
-    // initialize trust manager (contains trusted certificates)
-    final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
-    password = readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PASS_PATH_KEY));
-    trustManagerFactory.init(readKeyStoreFromFile(
-        config.getString(PacioFsOptions.HTTPS_CA_CERT_PATH_KEY), password, type));
-
-    // finally get the context
+    // get the context
     final SSLContext sslContext = SSLContext.getInstance(protocol);
-    sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
-        new SecureRandom());
 
+    try {
+      // initialize trust manager (contains trusted certificates)
+      final TrustManagerFactory trustManagerFactory;
+      password = readPasswordFromFile(config.getString(PacioFsOptions.HTTPS_CA_CERT_PASS_PATH_KEY));
+      trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
+      trustManagerFactory.init(readKeyStoreFromFile(
+          config.getString(PacioFsOptions.HTTPS_CA_CERT_PATH_KEY), password, type));
+
+      sslContext.init(
+          keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+    } catch (ConfigException.Missing e) {
+      // tolerate missing trust manager configuration
+      log.info("Using system trust managers because {} and/or {} were not set",
+          PacioFsOptions.HTTPS_CA_CERT_PATH_KEY, PacioFsOptions.HTTPS_CA_CERT_PASS_PATH_KEY);
+
+      sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+    }
+
+    // build the context, requiring mutual authentication
     return ConnectionContext.https(sslContext, Optional.empty(), Optional.empty(),
         Optional.of(TLSClientAuth.need()), Optional.empty());
   }

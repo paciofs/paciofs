@@ -101,5 +101,5 @@ COPY ./paciofs-server ./paciofs-server/
 RUN mvn --activate-profiles docker --define akka.http.version=$(cat /tmp/akka.http.version) --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} clean install
 
 # run PacioFS
-CMD [ "/bin/sh", "-c", \
-  "java -jar ./paciofs-server/target/paciofs-server-1.0.0-SNAPSHOT-allinone.jar" ]
+ENTRYPOINT [ "java", "-jar", "/paciofs/paciofs-server/target/paciofs-server-1.0.0-SNAPSHOT-allinone.jar" ]
+CMD [ "--config", "/paciofs/paciofs-server/src/test/resources/debug.conf" ]

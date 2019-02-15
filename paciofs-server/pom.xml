@@ -407,8 +407,6 @@
                                 </systemProperty>
                             </systemProperties>
                             <arguments>
-                                <!-- bootstrapping is useful in kubernetes only -->
-                                <argument>--skip-bootstrap</argument>
                                 <argument>--config</argument>
                                 <argument>${project.basedir}/src/test/resources/debug.conf</argument>
                             </arguments>

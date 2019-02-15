@@ -61,8 +61,6 @@ public class PacioFs {
   private static final String OPTION_CONFIG_SHORT = "c";
   private static final String OPTION_HELP = "help";
   private static final String OPTION_HELP_SHORT = "h";
-  private static final String OPTION_SKIP_BOOTSTRAP = "skip-bootstrap";
-  private static final String OPTION_SKIP_BOOTSTRAP_SHORT = "s";
 
   private static Logger log;
 
@@ -74,14 +72,9 @@ public class PacioFs {
    */
   public static void main(String[] args) {
     final CommandLine cmd = parseCommandLine(args);
-    final boolean skipBootstrap = cmd.hasOption(OPTION_SKIP_BOOTSTRAP);
 
     // parses application.conf from the classpath
-    // exclude bootstrapping configuration if requested (e.g. if we are not
-    // running in kubernetes)
-    final Config applicationConfig = skipBootstrap
-        ? ConfigFactory.load().withoutPath("akka.management.cluster.bootstrap")
-        : ConfigFactory.load();
+    final Config applicationConfig = ConfigFactory.load();
 
     // if the user has supplied a configuration, use the default configuration only as a fallback
     // for missing options (i.e. the user configuration wins)
@@ -96,6 +89,9 @@ public class PacioFs {
     // no logging is allowed to happen before here
     initializeLogging(config);
 
+    // log invocation for later inspection
+    log.info("Arguments: {}", String.join(" ", args));
+
     // the entire Akka configuration is a bit overwhelming
     log.debug(Markers.CONFIGURATION, "Using configuration: {}", config);
 
@@ -105,8 +101,10 @@ public class PacioFs {
     // reset Akka logging if necessary
     initializeAkkaLogging(paciofs);
 
-    // again, skip bootstrapping if requested
-    if (!skipBootstrap) {
+    // if we appear to be in a k8s environment, do the bootstrapping
+    if (System.getenv("KUBERNETES_SERVICE_HOST") != null) {
+      log.info("Bootstrapping using k8s");
+
       // hosts HTTP routes used by bootstrap
       AkkaManagement.get(paciofs).start();
 
@@ -230,8 +228,6 @@ public class PacioFs {
     options.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "print this message and exit");
 
     options.addOption(OPTION_CONFIG_SHORT, OPTION_CONFIG, true, "path/to/paciofs.conf");
-    options.addOption(OPTION_SKIP_BOOTSTRAP_SHORT, OPTION_SKIP_BOOTSTRAP, false,
-        "whether to skip bootstrapping (e.g. when outside kubernetes)");
 
     final CommandLineParser parser = new DefaultParser();
     CommandLine cmd = null;

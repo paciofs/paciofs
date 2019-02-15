@@ -8,6 +8,13 @@ services:
       dockerfile: paciofs-docker/Dockerfile
     image: paciofs/paciofs:latest
     ports:
+      # http
       - "8080:8080"
+      # https
+      - "8081:8081"
+      # remoting
       - "30552:30552"
+      # management
       - "30558:30558"
+      # multichain
+      - "30771:30771"

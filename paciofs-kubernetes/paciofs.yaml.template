@@ -18,6 +18,9 @@ spec:
   - name: http
     port: 8080
     targetPort: http # must correspond to a containerPort name below
+  - name: https
+    port: 8081
+    targetPort: https
   selector: # Route service traffic to pods with label keys and values matching this selector.
     app: pacio
     component: paciofs
@@ -51,12 +54,16 @@ spec:
         ports:
         - name: http
           containerPort: 8080
+        - name: https
+          containerPort: 8081
         # akka-management bootstrap
         # must match up with contact-point-discovery.port-name for bootstrap
         - name: management
           containerPort: 30558
         - name: remoting
           containerPort: 30552
+        - name: multichain
+          containerPort: 30771
         resources: {}
         # probes provided by Akka management
         readinessProbe:

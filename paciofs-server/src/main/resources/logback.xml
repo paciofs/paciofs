@@ -1,12 +1,12 @@
 <configuration debug="false">
     <!-- log levels -->
-    <define name="log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <var>log-level</var>
+    <define name="akka.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <var>akka.loglevel</var>
         <defaultValue>INFO</defaultValue>
     </define>
     <define name="paciofs.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
         <var>paciofs.log-level</var>
-        <defaultValue>${log-level}</defaultValue>
+        <defaultValue>INFO</defaultValue>
     </define>
     <define name="paciofs.bitcoind-client.multichain.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
         <var>paciofs.bitcoind-client.multichain.log-level</var>
@@ -45,6 +45,11 @@
         <appender-ref ref="stdout" />
     </appender>
 
+    <!-- for all Akka logs -->
+    <logger name ="akka" level="${akka.log-level}" additivity="false">
+        <appender-ref ref="async-stdout" />
+    </logger>
+
     <!-- parent logger used by all classes that match its name and have no more specific definitions below -->
     <logger name="de.zib.paciofs" level="${paciofs.log-level}" additivity="false">
         <appender-ref ref="async-stdout" />
@@ -55,7 +60,7 @@
         <appender-ref ref="async-stdout" />
     </logger>
 
-    <root level="${log-level}">
+    <root level="${paciofs.log-level}">
         <appender-ref ref="async-stdout" />
     </root>
 </configuration>

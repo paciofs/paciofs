@@ -9,6 +9,7 @@ package de.zib.paciofs;
 
 import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
+import akka.event.Logging;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
@@ -41,6 +42,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.net.ssl.KeyManagerFactory;
@@ -100,6 +102,9 @@ public class PacioFs {
 
     // create the actor system
     final ActorSystem paciofs = ActorSystem.create("paciofs", config);
+
+    // reset Akka logging if necessary
+    initializeAkkaLogging(paciofs);
 
     // again, skip bootstrapping if requested
     if (!skipBootstrap) {
@@ -185,6 +190,21 @@ public class PacioFs {
 
     return ConnectionContext.https(sslContext, Optional.empty(), Optional.empty(),
         Optional.of(TLSClientAuth.need()), Optional.empty());
+  }
+
+  private static void initializeAkkaLogging(ActorSystem system) {
+    final Config config = system.settings().config();
+
+    // Akka loggers get started with the default application.conf, so reset the log level in case
+    // the user has changed it
+    try {
+      system.eventStream().setLogLevel(
+          Logging.levelFor(config.getString(AkkaOptions.LOG_LEVEL_KEY)).get().asInt());
+    } catch (ConfigException.Missing e) {
+      // the user has not specified a custom log level
+    } catch (NoSuchElementException e) {
+      log.warn("Invalid Akka log level: {}", config.getString(AkkaOptions.LOG_LEVEL_KEY));
+    }
   }
 
   private static void initializeLogging(Config config) {

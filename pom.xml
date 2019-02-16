@@ -38,6 +38,7 @@
         <java.target.version>1.8</java.target.version>
         <scala.version>2.12</scala.version>
 
+        <build.parallelism>4</build.parallelism>
         <checkstyle.skip>false</checkstyle.skip>
         <cppcheck.skip>false</cppcheck.skip>
         <format-sources.skip>false</format-sources.skip>
@@ -73,6 +74,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
+                <build.parallelism>2</build.parallelism>
                 <checkstyle.skip>true</checkstyle.skip>
                 <cppcheck.skip>true</cppcheck.skip>
                 <format-sources.skip>true</format-sources.skip>

@@ -163,7 +163,7 @@
                             <workingDirectory>${project.build.directory}/${build-type}</workingDirectory>
                             <executable>make</executable>
                             <arguments>
-                                <argument>-j4</argument>
+                                <argument>-j${build.parallelism}</argument>
                             </arguments>
                         </configuration>
                     </execution>

@@ -76,7 +76,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       this.localhostAddress = localhost.getHostAddress();
     } catch (UnknownHostException e) {
       LOG.warn("Could not get localhost: {}" + e.getMessage());
-      LOG.debug(Markers.EXCEPTION, "Could not get localhost", e);
+      LOG.warn(Markers.EXCEPTION, "Could not get localhost", e);
     }
   }
 
@@ -155,7 +155,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
     synchronized (this.lifecyclePhaseTransition) {
       // check that we can transition to the STOPPING phase (also fails if we are STOPPED already)
       if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STOPPING)) {
-        LOG.trace("Stopping multichaind");
+        LOG.info("Stopping multichaind");
 
         try {
           // gracefully terminate by sending the RPC command to stop
@@ -169,7 +169,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
         this.multiChaind.waitForTermination();
 
         // done
-        LOG.trace("Stopped multichaind");
+        LOG.info("Stopped multichaind");
         this.forcedLifecyclePhaseTransition(LifecyclePhase.STOPPED);
       }
     }

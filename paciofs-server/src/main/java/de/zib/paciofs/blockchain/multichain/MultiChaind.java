@@ -89,12 +89,12 @@ public class MultiChaind {
         new RedirectingOutputStream(LOG::debug, Level.INFO.levelInt),
         new RedirectingOutputStream(LOG::debug, Level.ERROR.levelInt)));
 
-    // invoked when the process is done, we use it to wait on the process before termination
+    // invoked when the process is done
     this.executeResultHandler = new DefaultExecuteResultHandler() {
       @Override
       public synchronized void onProcessFailed(ExecuteException e) {
-        LOG.debug("multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
-        LOG.debug(Markers.EXCEPTION, "multichaind failed", e);
+        LOG.error("multichaind failed with exit code: {} ({})", e.getExitValue(), e.getMessage());
+        LOG.error(Markers.EXCEPTION, "multichaind failed", e);
         super.onProcessFailed(e);
       }
     };
@@ -104,14 +104,14 @@ public class MultiChaind {
     this.watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
     executor.setWatchdog(this.watchdog);
 
-    LOG.trace("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
+    LOG.info("Starting multichaind: {}", String.join(" ", cmd.toStrings()));
     try {
       // asynchronous execution to simulate -daemon behavior
       executor.execute(cmd, this.executeResultHandler);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    LOG.trace("Started multichaind");
+    LOG.info("Started multichaind");
   }
 
   /**
@@ -120,7 +120,7 @@ public class MultiChaind {
   public void waitForTermination() {
     try {
       this.executeResultHandler.waitFor();
-      LOG.debug(
+      LOG.info(
           "multichaind completed with exit code: {}", this.executeResultHandler.getExitValue());
     } catch (InterruptedException e) {
       LOG.debug("Interrupted while waiting for multichaind to stop: {}", e.getMessage());
@@ -146,7 +146,7 @@ public class MultiChaind {
     // data directory needs to exist before creating the chain
     final File datadir = new File(options.getString(OPTION_DATADIR));
     if (!datadir.exists()) {
-      LOG.trace("Creating multichaind -datadir: {}", datadir.toString());
+      LOG.info("Creating multichaind -datadir: {}", datadir.toString());
       if (!datadir.mkdirs()) {
         throw new RuntimeException(
             "Could not create multichaind -" + OPTION_DATADIR + ": " + datadir.toString());
@@ -175,11 +175,11 @@ public class MultiChaind {
         }
       };
 
-      LOG.trace("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
+      LOG.info("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
       try {
         // synchronous execution
         final int exitValue = executor.execute(cmd);
-        LOG.trace("multichain-util completed with exit code: {}", exitValue);
+        LOG.info("multichain-util completed with exit code: {}", exitValue);
       } catch (IOException e) {
         throw new RuntimeException("multichain-util failed", e);
       }
@@ -241,7 +241,7 @@ public class MultiChaind {
       cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, localHost.getHostAddress()));
     } catch (UnknownHostException e) {
       LOG.warn("Could not add all -{} options: {}", OPTION_RPCALLOW, e.getMessage());
-      LOG.debug(Markers.EXCEPTION, "Could not get localhost", e);
+      LOG.warn(Markers.EXCEPTION, "Could not get localhost", e);
     }
   }
 

@@ -18,6 +18,7 @@ echo "Setting minikube environment"
 eval $(minikube docker-env)
 
 # redirect to minikube Docker daemon
+# (the minikube VM has to have the necessary ports forwarded)
 docker-compose --host "${DOCKER_HOST}" \
   --tls --tlscacert "${DOCKER_CERT_PATH}/ca.pem" --tlscert "${DOCKER_CERT_PATH}/cert.pem" --tlskey "${DOCKER_CERT_PATH}/key.pem" --tlsverify \
   --file "${DIR}/docker-compose.yaml" \

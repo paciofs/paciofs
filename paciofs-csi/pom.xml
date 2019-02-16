@@ -10,8 +10,7 @@
     </parent>
 
     <artifactId>paciofs-csi</artifactId>
-    <!-- Version numbering according to CSI specification version number -->
-    <version>0.3.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>paciofs-csi</name>
 
     <packaging>pom</packaging>

@@ -240,6 +240,21 @@
                 </executions>
             </plugin>
 
+            <!-- run before checkstyle -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-xref</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>jxr</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- run after formatting the sources -->
             <!-- must be specified before summarize-tests (see below) -->
             <plugin>
@@ -255,7 +270,7 @@
                         <configuration>
                             <configLocation>${project.basedir}/src/main/resources/checkstyle.xml</configLocation>
                             <encoding>UTF-8</encoding>
-                            <linkXRef>false</linkXRef>
+                            <linkXRef>true</linkXRef>
                             <sourceDirectories>
                                 <!-- so the generated code does not get checked -->
                                 <directory>${project.build.sourceDirectory}</directory>

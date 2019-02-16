@@ -18,8 +18,10 @@ import (
 )
 
 var (
-	endpoint string
-	nodeID   string
+	driverName    string
+	driverVersion string
+	endpoint      string
+	nodeID        string
 )
 
 func init() {
@@ -40,6 +42,9 @@ func main() {
 
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 
+	cmd.PersistentFlags().StringVar(&driverName, "name", "paciofs-csi", "Driver name")
+	cmd.PersistentFlags().StringVar(&driverVersion, "version", "1.0.0", "Driver version")
+
 	cmd.PersistentFlags().StringVar(&nodeID, "nodeid", "", "Node ID")
 	cmd.MarkPersistentFlagRequired("nodeid")
 
@@ -57,6 +62,6 @@ func main() {
 }
 
 func handle() {
-	d := pfs.NewDriver(nodeID, endpoint)
+	d := pfs.NewDriver(endpoint, driverName, nodeID, driverVersion)
 	d.Run()
 }

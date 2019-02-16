@@ -13,23 +13,49 @@ import (
 )
 
 type driver struct {
+	endpoint string
+	name     string
+	nodeID   string
+	version  string
+
 	identity   csi.IdentityServer
 	controller csi.ControllerServer
 	node       csi.NodeServer
 }
 
-const (
-	driverName = "paciofs-csi"
-	version    = "1.0.0"
-)
+func NewDriver(endpoint string, name string, nodeID string, version string) *driver {
+	glog.Infof("Driver: %v version: %v endpoint: %v node: %v", name, version, endpoint, nodeID)
 
-func NewDriver(nodeID string, endpoint string) *driver {
-	glog.Infof("Driver: %v version: %v", driverName, version)
+	d := driver{
+		endpoint: endpoint,
+		name:     name,
+		nodeID:   nodeID,
+		version:  version,
+	}
 
-	d := &driver{}
+	return &d
+}
 
-	return d
+func NewControllerServer(d *driver) *controllerServer {
+	return &controllerServer{
+		driver: d,
+	}
+}
+
+func NewIdentityServer(d *driver) *identityServer {
+	return &identityServer{
+		driver: d,
+	}
+}
+
+func NewNodeServer(d *driver) *nodeServer {
+	return &nodeServer{
+		driver: d,
+	}
 }
 
 func (d *driver) Run() {
+	d.controller = NewControllerServer(d)
+	d.identity = NewIdentityServer(d)
+	d.node = NewNodeServer(d)
 }

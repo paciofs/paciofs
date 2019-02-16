@@ -32,7 +32,6 @@ import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,28 +39,16 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PacioFs {
-  private static final String OPTION_CONFIG = "config";
-  private static final String OPTION_CONFIG_SHORT = "c";
-  private static final String OPTION_HELP = "help";
-  private static final String OPTION_HELP_SHORT = "h";
-
   private static Logger log;
 
   private PacioFs() {}
@@ -71,7 +58,8 @@ public class PacioFs {
    * @param args the command line arguments
    */
   public static void main(String[] args) {
-    final CommandLine cmd = parseCommandLine(args);
+    // prints error, help and exits if necessary
+    final PacioFsCliOptions cliOptions = parseCommandLine(args);
 
     // parses application.conf from the classpath
     final Config applicationConfig = ConfigFactory.load();
@@ -79,9 +67,8 @@ public class PacioFs {
     // if the user has supplied a configuration, use the default configuration only as a fallback
     // for missing options (i.e. the user configuration wins)
     final Config config;
-    if (cmd.hasOption(OPTION_CONFIG)) {
-      config = ConfigFactory.parseFile(new File(cmd.getOptionValue(OPTION_CONFIG)))
-                   .withFallback(applicationConfig);
+    if (cliOptions.getConfig() != null) {
+      config = ConfigFactory.parseFile(cliOptions.getConfig()).withFallback(applicationConfig);
     } else {
       config = applicationConfig;
     }
@@ -223,41 +210,23 @@ public class PacioFs {
     log = LoggerFactory.getLogger(PacioFs.class);
   }
 
-  private static CommandLine parseCommandLine(String[] args) {
-    final Options options = new Options();
-    options.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "print this message and exit");
+  private static PacioFsCliOptions parseCommandLine(String[] args) {
+    final PacioFsCliOptions cliOptions = new PacioFsCliOptions();
 
-    options.addOption(OPTION_CONFIG_SHORT, OPTION_CONFIG, true, "path/to/paciofs.conf");
-
-    final CommandLineParser parser = new DefaultParser();
-    CommandLine cmd = null;
-
-    // 0 on help option, 1 on error, -1 otherwise
-    int exitCode;
-    try {
-      cmd = parser.parse(options, args, false);
-
-      // exit on unrecognized arguments or help option
-      final List<String> argList = cmd.getArgList();
-      if (argList.size() > 0) {
-        System.err.println("Unrecognized argument(s): " + String.join(" ", argList));
-        exitCode = 1;
-      } else {
-        exitCode = cmd.hasOption(OPTION_HELP) ? 0 : -1;
-      }
-    } catch (ParseException e) {
-      // exit on parsing error
-      System.err.println(e.getMessage());
-      exitCode = 1;
+    // exit with 1 on error
+    if (!cliOptions.parseCommandLine(args)) {
+      cliOptions.printError();
+      cliOptions.printHelp();
+      System.exit(1);
     }
 
-    if (exitCode >= 0) {
-      final HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp("PacioFs", options);
-      System.exit(exitCode);
+    // exit with 0 on help
+    if (cliOptions.getHelp()) {
+      cliOptions.printHelp();
+      System.exit(0);
     }
 
-    return cmd;
+    return cliOptions;
   }
 
   private static KeyStore readKeyStoreFromFile(String path, char[] password, String type)

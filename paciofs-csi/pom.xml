@@ -61,8 +61,8 @@
 
                     <!-- Build the thing using the vendor/ dependencies -->
                     <execution>
-                        <id>install-csi</id>
-                        <phase>install</phase>
+                        <id>compile-csi</id>
+                        <phase>compile</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -77,6 +77,24 @@
                                 <argument>-ldflags</argument>
                                 <argument>-extldflags '-static'</argument>
                                 <argument>github.com/paciofs/paciofs/paciofs-csi</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>test-csi</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <environmentVariables>
+                                <GOPATH>${gopath}</GOPATH>
+                            </environmentVariables>
+                            <executable>go</executable>
+                            <arguments>
+                                <argument>test</argument>
+                                <argument>github.com/paciofs/paciofs/paciofs-csi/pfs</argument>
                             </arguments>
                         </configuration>
                     </execution>

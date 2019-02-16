@@ -10,7 +10,7 @@ RUN apt-get --quiet update \
   curl \
   unzip \
   wget \
-
+  \
   # build dependencies
   autoconf \
   automake \
@@ -22,7 +22,7 @@ RUN apt-get --quiet update \
   maven \
   openjdk-11-jdk \
   pkg-config \
-
+  \
   # cleanup
   && rm -rf /var/lib/apt/lists/*
 

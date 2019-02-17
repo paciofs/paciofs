@@ -64,8 +64,8 @@ public class PosixIoHttp {
     http.bindAndHandleAsync(getDefaultPosixIoHandler(materializer),
             ConnectHttp.toHost(hostname, port, UseHttp2.always()), materializer)
         .thenAccept(binding
-            -> LOG.info("{} gRPC HTTP server bound to: {}",
-                PosixIoService.name, binding.localAddress()));
+            -> LOG.info(
+                "{} gRPC HTTP server bound to: {}", PosixIoService.name, binding.localAddress()));
   }
 
   /**
@@ -78,12 +78,12 @@ public class PosixIoHttp {
    */
   public static void bindAndHandleAsyncHttps(Http http, String hostname, int port,
       Materializer materializer, HttpsConnectionContext httpsConnectionContext) {
-    http.bindAndHandleAsync(posixIoHandler,
+    http.bindAndHandleAsync(getDefaultPosixIoHandler(materializer),
             ConnectHttp.toHostHttps(hostname, port).withCustomHttpsContext(httpsConnectionContext),
             materializer)
         .thenAccept(binding
-            -> LOG.info("{} gRPC HTTPS server bound to: {}",
-                PosixIoService.name, binding.localAddress()));
+            -> LOG.info(
+                "{} gRPC HTTPS server bound to: {}", PosixIoService.name, binding.localAddress()));
   }
 
   /**

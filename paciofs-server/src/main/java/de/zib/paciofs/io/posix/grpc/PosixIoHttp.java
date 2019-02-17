@@ -65,7 +65,7 @@ public class PosixIoHttp {
             ConnectHttp.toHost(hostname, port, UseHttp2.always()), materializer)
         .thenAccept(binding
             -> LOG.info("{} gRPC HTTP server bound to: {}",
-                posixIoHandler.getClass().getSimpleName(), binding.localAddress()));
+                PosixIoService.name, binding.localAddress()));
   }
 
   /**
@@ -83,7 +83,7 @@ public class PosixIoHttp {
             materializer)
         .thenAccept(binding
             -> LOG.info("{} gRPC HTTPS server bound to: {}",
-                PosixIoServiceImpl.class.getSimpleName(), binding.localAddress()));
+                PosixIoService.name, binding.localAddress()));
   }
 
   /**

@@ -28,11 +28,8 @@ PacioFsRpcClient::PacioFsRpcClient(std::string const &target,
       logger_(paciofs::logging::Logger()) {}
 
 bool PacioFsRpcClient::CreateVolume(std::string const &name) {
-  messages::Volume volume;
-  volume.set_name(name);
-
   CreateVolumeRequest request;
-  request.set_allocated_volume(&volume);
+  request.mutable_volume()->set_name(name);
   logger_.Trace([request](auto &out) {
     out << "CreateVolume(" << request.ShortDebugString() << ")";
   });

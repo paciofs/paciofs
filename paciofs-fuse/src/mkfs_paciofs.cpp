@@ -79,10 +79,11 @@ int main(int argc, char *argv[]) {
   if (rpc_client.CreateVolume(name)) {
     logger.Debug(
         [name](auto &out) { out << "Successfully created volume " << name; });
-    return EXIT_SUCCESS;
   } else {
     logger.Fatal(
         [name](auto &out) { out << "Could not create volume " << name; });
     return EXIT_FAILURE;
   }
+
+  return EXIT_SUCCESS;
 }

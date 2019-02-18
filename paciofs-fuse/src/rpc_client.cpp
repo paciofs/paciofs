@@ -8,6 +8,7 @@
 #include "rpc_client.h"
 
 #include "paciofs.grpc.pb.h"
+#include "posix_io.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
 #include <fstream>
@@ -55,6 +56,7 @@ std::string RpcClient<Service>::ReadPem(std::string const &path) {
   return sstr.str();
 }
 
+template class RpcClient<PacioFsService>;
 template class RpcClient<paciofs::io::posix::grpc::PosixIoService>;
 
 }  // namespace grpc

@@ -38,6 +38,49 @@ target_include_directories (grpc_obj PRIVATE ${GENERATED_GRPC_DIR} ${GENERATED_P
 target_include_directories (grpc_obj BEFORE PRIVATE ${GRPC_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
 
 add_executable (
+  mkfs.paciofs
+  "${PROJECT_SOURCE_DIR}/src/logging.cpp"
+  "${PROJECT_SOURCE_DIR}/src/mkfs_options.cpp"
+  "${PROJECT_SOURCE_DIR}/src/mkfs_paciofs.cpp"
+  "${PROJECT_SOURCE_DIR}/src/options.cpp"
+  "${PROJECT_SOURCE_DIR}/src/paciofs_rpc_client.cpp"
+  "${PROJECT_SOURCE_DIR}/src/rpc_client.cpp"
+  $<TARGET_OBJECTS:grpc_obj>
+  $<TARGET_OBJECTS:protobuf_obj>
+)
+
+target_compile_definitions (mkfs.paciofs PRIVATE PACIOFS_VERSION="${PROJECT_VERSION}")
+
+target_compile_definitions (mkfs.paciofs PRIVATE BOOST_ALL_DYN_LINK)
+target_compile_options (mkfs.paciofs PRIVATE -Wall)
+
+target_include_directories (
+  mkfs.paciofs
+  PRIVATE
+  "${PROJECT_SOURCE_DIR}/include"
+  "${GENERATED_GRPC_DIR}"
+  "${GENERATED_PROTOBUF_DIR}"
+  "${Boost_INCLUDE_DIRS}"
+)
+
+# prepend include directories to search path to avoid accidentally using the system headers
+target_include_directories (
+  mkfs.paciofs
+  BEFORE PRIVATE
+  "${GRPC_INCLUDE_DIRS}"
+  "${PROTOBUF_INCLUDE_DIRS}"
+)
+
+target_link_libraries (
+  mkfs.paciofs
+  "${gRPC_LIBRARIES}"
+  "${Protobuf_LIBRARIES}"
+  Boost::log
+  Boost::log_setup
+  Boost::program_options
+)
+
+add_executable (
   mount.paciofs
   "${PROJECT_SOURCE_DIR}/src/fuse_operations.cpp"
   "${PROJECT_SOURCE_DIR}/src/logging.cpp"

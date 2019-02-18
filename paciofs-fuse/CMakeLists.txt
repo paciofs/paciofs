@@ -27,6 +27,16 @@ set (GENERATED_PROTOBUF_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/prot
 file (GLOB_RECURSE GRPC_SOURCES CONFIGURE_DEPENDS "${GENERATED_GRPC_DIR}/*.cc")
 file (GLOB_RECURSE PROTOBUF_SOURCES CONFIGURE_DEPENDS "${GENERATED_PROTOBUF_DIR}/*.cc")
 
+# object library for gRPC
+add_library (protobuf_obj OBJECT ${PROTOBUF_SOURCES})
+target_include_directories (protobuf_obj PRIVATE ${GENERATED_PROTOBUF_DIR})
+target_include_directories (protobuf_obj BEFORE PRIVATE ${GRPC_INCLUDE_DIRS})
+
+# object library for protobuf
+add_library (grpc_obj OBJECT ${GRPC_SOURCES})
+target_include_directories (grpc_obj PRIVATE ${GENERATED_GRPC_DIR} ${GENERATED_PROTOBUF_DIR})
+target_include_directories (grpc_obj BEFORE PRIVATE ${GRPC_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
+
 add_executable (
   mount.paciofs
   "${PROJECT_SOURCE_DIR}/src/fuse_operations.cpp"
@@ -35,8 +45,8 @@ add_executable (
   "${PROJECT_SOURCE_DIR}/src/mount_paciofs.cpp"
   "${PROJECT_SOURCE_DIR}/src/options.cpp"
   "${PROJECT_SOURCE_DIR}/src/posix_io_rpc_client.cpp"
-  ${GRPC_SOURCES}
-  ${PROTOBUF_SOURCES}
+  $<TARGET_OBJECTS:grpc_obj>
+  $<TARGET_OBJECTS:protobuf_obj>
 )
 
 target_compile_definitions (mount.paciofs PRIVATE PACIOFS_VERSION="${PROJECT_VERSION}")

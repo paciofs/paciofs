@@ -7,12 +7,11 @@
 
 package de.zib.paciofs.io.posix.grpc;
 
-import com.google.protobuf.AbstractMessage;
-import com.google.protobuf.TextFormat;
+import de.zib.paciofs.grpc.PacioFsGrpc;
+import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Errno;
 import de.zib.paciofs.io.posix.grpc.messages.Mode;
-import de.zib.paciofs.io.posix.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -26,18 +25,18 @@ public class PosixIoServiceImpl implements PosixIoService {
 
   @Override
   public CompletionStage<PingResponse> ping(PingRequest in) {
-    trace("ping({})", in);
+    PacioFsGrpc.traceRequest(LOG, "ping({})", in);
 
     final Ping ping = Ping.newBuilder().build();
     final PingResponse out = PingResponse.newBuilder().setPing(ping).build();
 
-    trace("ping({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "ping({}):{}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
   @Override
   public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in) {
-    trace("readDir({})", in);
+    PacioFsGrpc.traceRequest(LOG, "readDir({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final ReadDirResponse.Builder builder = ReadDirResponse.newBuilder();
@@ -50,13 +49,13 @@ public class PosixIoServiceImpl implements PosixIoService {
 
     final ReadDirResponse out = builder.setError(error).build();
 
-    trace("readDir({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "readDir({}):{}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
   @Override
   public CompletionStage<StatResponse> stat(StatRequest in) {
-    trace("stat({})", in);
+    PacioFsGrpc.traceRequest(LOG, "stat({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final Stat.Builder builder = Stat.newBuilder();
@@ -73,18 +72,7 @@ public class PosixIoServiceImpl implements PosixIoService {
     final StatResponse out =
         StatResponse.newBuilder().setStat(builder.build()).setError(error).build();
 
-    trace("stat({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "stat({}):{}", in, out);
     return CompletableFuture.completedFuture(out);
-  }
-
-  private static void trace(String formatString, AbstractMessage... messages) {
-    // building the string representations is expensive, so guard it
-    if (LOG.isTraceEnabled()) {
-      final String[] messageStrings = new String[messages.length];
-      for (int i = 0; i < messages.length; ++i) {
-        messageStrings[i] = TextFormat.shortDebugString(messages[i]);
-      }
-      LOG.trace(formatString, messageStrings);
-    }
   }
 }

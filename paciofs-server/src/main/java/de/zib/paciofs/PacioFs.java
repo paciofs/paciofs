@@ -19,7 +19,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import de.zib.paciofs.blockchain.Bitcoind;
-import de.zib.paciofs.io.posix.grpc.PosixIoHttp;
+import de.zib.paciofs.grpc.PacioFsGrpc;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import java.io.IOException;
@@ -85,17 +85,16 @@ public class PacioFs {
     // actor for the blockchain
     paciofs.actorOf(Bitcoind.props(), "bitcoind");
 
-    // serve the default posix I/O service
-    bindAndHandleAsyncPosixIo(Http.get(paciofs), config, ActorMaterializer.create(paciofs));
+    // serve the default services
+    bindAndHandleAsync(Http.get(paciofs), config, ActorMaterializer.create(paciofs));
   }
 
   /* Utility functions */
 
-  private static void bindAndHandleAsyncPosixIo(
-      Http http, Config config, Materializer materializer) {
+  private static void bindAndHandleAsync(Http http, Config config, Materializer materializer) {
     // set up HTTP if desired
     try {
-      PosixIoHttp.bindAndHandleAsyncHttp(http,
+      PacioFsGrpc.bindAndHandleAsyncHttp(http,
           config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTP_BIND_PORT_KEY), materializer);
     } catch (ConfigException.Missing | ConfigException.WrongType e) {
@@ -113,10 +112,10 @@ public class PacioFs {
         // tolerate missing CA certificates, falls back to system
       }
 
-      PosixIoHttp.bindAndHandleAsyncHttps(http,
+      PacioFsGrpc.bindAndHandleAsyncHttps(http,
           config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTPS_BIND_PORT_KEY), materializer,
-          PosixIoHttp.httpsConnectionContext(
+          PacioFsGrpc.httpsConnectionContext(
               config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PATH_KEY),
               config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PASS_PATH_KEY), caCertPath,
               caCertPassPath));

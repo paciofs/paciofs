@@ -5,4 +5,6 @@ option java_package = "de.zib.paciofs.grpc.messages";
 
 package paciofs.grpc.messages;
 
-message Ping {}
+message Volume {
+  string name = 1;
+}

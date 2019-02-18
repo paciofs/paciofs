@@ -12,11 +12,11 @@ import "messages/dir.proto";
 import "messages/stat.proto";
 
 message PingRequest {
-  messages.Ping ping = 1;
+  paciofs.grpc.messages.Ping ping = 1;
 }
 
 message PingResponse {
-  messages.Ping ping = 1;
+  paciofs.grpc.messages.Ping ping = 1;
 }
 
 message StatRequest {

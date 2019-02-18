@@ -5,8 +5,9 @@
  *
  */
 
-package de.zib.paciofs.io.posix.grpc;
+package de.zib.paciofs.grpc;
 
+import akka.grpc.javadsl.ServiceHandler;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
@@ -17,6 +18,10 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.japi.Function;
 import akka.stream.Materializer;
 import akka.stream.TLSClientAuth;
+import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.TextFormat;
+import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
+import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,27 +38,28 @@ import javax.net.ssl.TrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PosixIoHttp {
-  private static final Logger LOG = LoggerFactory.getLogger(PosixIoHttp.class);
+public class PacioFsGrpc {
+  private static final Logger LOG = LoggerFactory.getLogger(PacioFsGrpc.class);
 
-  private static Function<HttpRequest, CompletionStage<HttpResponse>> posixIoHandler;
+  private static Function<HttpRequest, CompletionStage<HttpResponse>> services;
 
-  private PosixIoHttp() {}
+  private PacioFsGrpc() {}
 
-  private static Function<HttpRequest, CompletionStage<HttpResponse>> getDefaultPosixIoHandler(
+  private static Function<HttpRequest, CompletionStage<HttpResponse>> getDefaultServices(
       Materializer materializer) {
-    synchronized (PosixIoHttp.class) {
-      if (posixIoHandler == null) {
-        posixIoHandler =
-            PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer);
+    synchronized (PacioFsGrpc.class) {
+      if (services == null) {
+        services = ServiceHandler.concatOrNotFound(
+            PacioFsServiceHandlerFactory.create(new PacioFsServiceImpl(), materializer),
+            PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
       }
     }
 
-    return posixIoHandler;
+    return services;
   }
 
   /**
-   * Binds the default posix I/O handler to an HTTP port.
+   * Binds the default handlers to an HTTP port.
    * @param http Http instance to use
    * @param hostname bind to this hostname
    * @param port bind to this port
@@ -61,15 +67,13 @@ public class PosixIoHttp {
    */
   public static void bindAndHandleAsyncHttp(
       Http http, String hostname, int port, Materializer materializer) {
-    http.bindAndHandleAsync(getDefaultPosixIoHandler(materializer),
+    http.bindAndHandleAsync(getDefaultServices(materializer),
             ConnectHttp.toHost(hostname, port, UseHttp2.always()), materializer)
-        .thenAccept(binding
-            -> LOG.info(
-                "{} gRPC HTTP server bound to: {}", PosixIoService.name, binding.localAddress()));
+        .thenAccept(binding -> LOG.info("gRPC HTTP server bound to: {}", binding.localAddress()));
   }
 
   /**
-   * Binds the default posix I/O handler to an HTTPS port.
+   * Binds the default handlers to an HTTPS port.
    * @param http Http instance to use
    * @param hostname bind to this hostname
    * @param port bind to this port
@@ -78,12 +82,10 @@ public class PosixIoHttp {
    */
   public static void bindAndHandleAsyncHttps(Http http, String hostname, int port,
       Materializer materializer, HttpsConnectionContext httpsConnectionContext) {
-    http.bindAndHandleAsync(getDefaultPosixIoHandler(materializer),
+    http.bindAndHandleAsync(getDefaultServices(materializer),
             ConnectHttp.toHostHttps(hostname, port).withCustomHttpsContext(httpsConnectionContext),
             materializer)
-        .thenAccept(binding
-            -> LOG.info(
-                "{} gRPC HTTPS server bound to: {}", PosixIoService.name, binding.localAddress()));
+        .thenAccept(binding -> LOG.info("gRPC HTTPS server bound to: {}", binding.localAddress()));
   }
 
   /**
@@ -129,6 +131,23 @@ public class PosixIoHttp {
     // build the context, requiring mutual authentication
     return ConnectionContext.https(sslContext, Optional.empty(), Optional.empty(),
         Optional.of(TLSClientAuth.need()), Optional.empty());
+  }
+
+  /**
+   * Build a string representation of messages, and logs them at trace level if enabled.
+   * @param log logger to use
+   * @param formatString format string with placeholders to use
+   * @param messages messages to convert to strings via shortDebugString
+   */
+  public static void traceRequest(Logger log, String formatString, AbstractMessage... messages) {
+    // building the string representations is expensive, so guard it
+    if (log.isTraceEnabled()) {
+      final String[] messageStrings = new String[messages.length];
+      for (int i = 0; i < messages.length; ++i) {
+        messageStrings[i] = TextFormat.shortDebugString(messages[i]);
+      }
+      log.trace(formatString, messageStrings);
+    }
   }
 
   private static KeyStore readKeyStoreFromFile(String path, char[] password, String type)

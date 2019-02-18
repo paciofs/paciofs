@@ -45,6 +45,7 @@ add_executable (
   "${PROJECT_SOURCE_DIR}/src/mount_paciofs.cpp"
   "${PROJECT_SOURCE_DIR}/src/options.cpp"
   "${PROJECT_SOURCE_DIR}/src/posix_io_rpc_client.cpp"
+  "${PROJECT_SOURCE_DIR}/src/rpc_client.cpp"
   $<TARGET_OBJECTS:grpc_obj>
   $<TARGET_OBJECTS:protobuf_obj>
 )

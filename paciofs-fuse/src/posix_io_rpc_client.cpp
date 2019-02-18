@@ -9,12 +9,10 @@
 
 #include "logging.h"
 #include "posix_io.grpc.pb.h"
+#include "rpc_client.h"
 
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
-#include <exception>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,31 +22,15 @@ namespace posix {
 namespace grpc {
 
 PosixIoRpcClient::PosixIoRpcClient(std::string const &target)
-    : PosixIoRpcClient(::grpc::CreateChannel(
-          target, ::grpc::InsecureChannelCredentials())) {}
+    : paciofs::grpc::RpcClient<PosixIoService>(target),
+      logger_(paciofs::logging::Logger()) {}
 
 PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
                                    std::string const &cert_chain,
                                    std::string const &private_key,
                                    std::string const &root_certs)
-    : logger_(paciofs::logging::Logger()) {
-  ::grpc::SslCredentialsOptions ssl;
-  if (cert_chain.length() > 0) {
-    ssl.pem_cert_chain = ReadPem(cert_chain);
-  }
-  if (private_key.length() > 0) {
-    ssl.pem_private_key = ReadPem(private_key);
-  }
-  if (root_certs.length() > 0) {
-    ssl.pem_root_certs = ReadPem(root_certs);
-  }
-
-  stub_ = PosixIoService::NewStub(
-      ::grpc::CreateChannel(target, ::grpc::SslCredentials(ssl)));
-}
-
-PosixIoRpcClient::PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel)
-    : stub_(PosixIoService::NewStub(channel)),
+    : paciofs::grpc::RpcClient<PosixIoService>(target, cert_chain, private_key,
+                                               root_certs),
       logger_(paciofs::logging::Logger()) {}
 
 bool PosixIoRpcClient::Ping() {
@@ -150,14 +132,6 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
 
     return messages::ERRNO_EIO;
   }
-}
-
-std::string PosixIoRpcClient::ReadPem(std::string const &path) {
-  std::ifstream in;
-  std::stringstream sstr;
-  in.open(path);
-  sstr << in.rdbuf();
-  return sstr.str();
 }
 
 }  // namespace grpc

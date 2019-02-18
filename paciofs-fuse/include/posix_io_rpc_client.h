@@ -10,8 +10,8 @@
 
 #include "logging.h"
 #include "posix_io.grpc.pb.h"
+#include "rpc_client.h"
 
-#include <grpcpp/grpcpp.h>
 #include <string>
 #include <vector>
 
@@ -20,7 +20,7 @@ namespace io {
 namespace posix {
 namespace grpc {
 
-class PosixIoRpcClient {
+class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
  public:
   // uses insecure channel credentials
   explicit PosixIoRpcClient(std::string const& target);
@@ -39,12 +39,6 @@ class PosixIoRpcClient {
   messages::Errno Stat(std::string const& path, messages::Stat& stat);
 
  private:
-  explicit PosixIoRpcClient(std::shared_ptr<::grpc::Channel> channel);
-
-  static std::string ReadPem(std::string const& path);
-
-  std::unique_ptr<PosixIoService::Stub> stub_;
-
   paciofs::logging::Logger logger_;
 };
 

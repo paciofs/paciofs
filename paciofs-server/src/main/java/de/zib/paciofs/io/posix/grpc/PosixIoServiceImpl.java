@@ -30,7 +30,7 @@ public class PosixIoServiceImpl implements PosixIoService {
     final Ping ping = Ping.newBuilder().build();
     final PingResponse out = PingResponse.newBuilder().setPing(ping).build();
 
-    PacioFsGrpc.traceRequest(LOG, "ping({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "ping({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
@@ -49,7 +49,7 @@ public class PosixIoServiceImpl implements PosixIoService {
 
     final ReadDirResponse out = builder.setError(error).build();
 
-    PacioFsGrpc.traceRequest(LOG, "readDir({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "readDir({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
@@ -72,7 +72,7 @@ public class PosixIoServiceImpl implements PosixIoService {
     final StatResponse out =
         StatResponse.newBuilder().setStat(builder.build()).setError(error).build();
 
-    PacioFsGrpc.traceRequest(LOG, "stat({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "stat({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 }

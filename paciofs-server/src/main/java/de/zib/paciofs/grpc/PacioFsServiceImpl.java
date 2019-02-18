@@ -37,7 +37,7 @@ public class PacioFsServiceImpl implements PacioFsService {
     final Ping ping = Ping.newBuilder().build();
     final PingResponse out = PingResponse.newBuilder().setPing(ping).build();
 
-    PacioFsGrpc.traceRequest(LOG, "ping({}):{}", in, out);
+    PacioFsGrpc.traceRequest(LOG, "ping({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 }

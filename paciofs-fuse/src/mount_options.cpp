@@ -20,7 +20,6 @@ namespace options {
 
 MountOptions::MountOptions()
     : paciofs::options::Options(),
-      endpoint_(""),
       fuse_options_(std::vector<std::string>()),
       mount_point_("") {
   namespace bpo = boost::program_options;
@@ -44,10 +43,6 @@ MountOptions::MountOptions()
   }
 
   mount_options.add_options()(
-      "endpoint",
-      bpo::value<std::string>(&endpoint_)->value_name("url")->required(),
-      "URL pointing to a PacioFS service");
-  mount_options.add_options()(
       "fuse-option,o",
       bpo::value<std::vector<std::string> >(&fuse_options_)
           ->default_value(fuse_options_, default_fuse_options.str())
@@ -61,14 +56,10 @@ MountOptions::MountOptions()
 
   options_.add(mount_options);
 
-  // positional arguments may be obtained from similarly named option as well
-  positional_.add("endpoint", 1);
   positional_.add("mount-point", 1);
 }
 
 MountOptions::~MountOptions() {}
-
-std::string const& MountOptions::Endpoint() const { return endpoint_; }
 
 std::vector<std::string> const& MountOptions::FuseOptions() const {
   return fuse_options_;

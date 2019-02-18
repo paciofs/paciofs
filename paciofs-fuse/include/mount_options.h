@@ -23,14 +23,11 @@ class MountOptions : public paciofs::options::Options {
 
   ~MountOptions();
 
-  std::string const& Endpoint() const;
-
   std::vector<std::string> const& FuseOptions() const;
 
   std::string const& MountPoint() const;
 
  private:
-  std::string endpoint_;
   std::vector<std::string> fuse_options_;
   std::string mount_point_;
 };

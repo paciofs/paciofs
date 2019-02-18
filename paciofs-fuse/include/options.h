@@ -29,6 +29,8 @@ class Options {
   // prints usage to stderr
   void PrintHelp(std::string const& executable) const;
 
+  std::string const& Endpoint() const;
+
   bool Help() const;
 
   std::string const& LogFile() const;
@@ -53,6 +55,7 @@ class Options {
   boost::program_options::positional_options_description positional_;
 
  private:
+  std::string endpoint_;
   bool help_;
   std::string log_file_;
   logging::Level log_level_;

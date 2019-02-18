@@ -20,6 +20,7 @@ namespace options {
 Options::Options()
     : options_(boost::program_options::options_description()),
       positional_(boost::program_options::positional_options_description()),
+      endpoint_(""),
       help_(false),
       log_file_("stdout"),
       log_level_(logging::INFO),
@@ -32,6 +33,10 @@ Options::Options()
 
   bpo::options_description general_options("General Options");
 
+  general_options.add_options()(
+      "endpoint",
+      bpo::value<std::string>(&endpoint_)->value_name("url")->required(),
+      "URL pointing to a PacioFS service");
   general_options.add_options()("help,h",
                                 bpo::bool_switch(&help_)->default_value(help_),
                                 "print this message and exit");
@@ -75,6 +80,9 @@ Options::Options()
 
   options_.add(general_options);
   options_.add(tls_options);
+
+  // positional arguments may be obtained from similarly named option as well
+  positional_.add("endpoint", 1);
 }
 
 Options::~Options() {}
@@ -114,6 +122,8 @@ void Options::PrintHelp(std::string const& executable) const {
   // options are nicely printed by boost
   std::cerr << std::endl << options_;
 }
+
+std::string const& Options::Endpoint() const { return endpoint_; }
 
 bool Options::Help() const { return help_; }
 

@@ -5,7 +5,7 @@
  *
  */
 
-package de.zib.paciofs.blockchain.multichain;
+package de.zib.paciofs.multichain;
 
 import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
@@ -32,7 +32,7 @@ import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MultiChaind {
+public class MultiChainDaemon {
   private static final String OPTION_DAEMON = "daemon";
   private static final String OPTION_DATADIR = "datadir";
   private static final String OPTION_RPCALLOW = "rpcallow";
@@ -40,7 +40,7 @@ public class MultiChaind {
   private static final String OPTION_RPCPASSWORD = "rpcpassword";
   private static final String OPTION_SERVER = "server";
 
-  private static final Logger LOG = LoggerFactory.getLogger(MultiChaind.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MultiChainDaemon.class);
 
   private final Config config;
 
@@ -49,7 +49,7 @@ public class MultiChaind {
   private ExecuteWatchdog watchdog;
   private DefaultExecuteResultHandler executeResultHandler;
 
-  public MultiChaind(Config config) {
+  public MultiChainDaemon(Config config) {
     this.config = config;
     LOG.debug(Markers.CONFIGURATION, "Configuration: {}", this.config);
   }
@@ -64,7 +64,7 @@ public class MultiChaind {
 
     // the only positional arguments are the name of the chain and the protocol
     // version
-    cmd.addArgument(this.config.getString(MultiChainOptions.BLOCKCHAIN_NAME_KEY));
+    cmd.addArgument(this.config.getString(MultiChainOptions.CHAIN_NAME_KEY));
     cmd.addArgument(this.config.getString(MultiChainOptions.PROTOCOL_VERSION_KEY));
 
     // multichaind-specific options
@@ -153,8 +153,8 @@ public class MultiChaind {
       }
     }
 
-    final String blockchainName = this.config.getString(MultiChainOptions.BLOCKCHAIN_NAME_KEY);
-    final File chaindir = new File(datadir, blockchainName);
+    final String chainName = this.config.getString(MultiChainOptions.CHAIN_NAME_KEY);
+    final File chaindir = new File(datadir, chainName);
     if (!chaindir.exists()) {
       // see multichain-util -?
       final CommandLine cmd = new CommandLine(
@@ -162,7 +162,7 @@ public class MultiChaind {
 
       // all required positional arguments
       cmd.addArgument("create");
-      cmd.addArgument(blockchainName);
+      cmd.addArgument(chainName);
       cmd.addArgument(this.config.getString(MultiChainOptions.PROTOCOL_VERSION_KEY));
 
       // multichain-util-specific options
@@ -188,9 +188,9 @@ public class MultiChaind {
 
   private void readMultiChainConf() {
     final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
-    final File blockchainDir = new File(options.getString(OPTION_DATADIR),
-        this.config.getString(MultiChainOptions.BLOCKCHAIN_NAME_KEY));
-    this.multiChainConf = ConfigFactory.parseFile(new File(blockchainDir, "multichain.conf"));
+    final File datadir = new File(
+        options.getString(OPTION_DATADIR), this.config.getString(MultiChainOptions.CHAIN_NAME_KEY));
+    this.multiChainConf = ConfigFactory.parseFile(new File(datadir, "multichain.conf"));
   }
 
   private void addMultiChaindOptions(CommandLine cmd) {

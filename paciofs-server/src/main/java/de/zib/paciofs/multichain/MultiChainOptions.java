@@ -5,14 +5,14 @@
  *
  */
 
-package de.zib.paciofs.blockchain.multichain;
+package de.zib.paciofs.multichain;
 
 public class MultiChainOptions {
   public static final String BACKOFF_MILLISECONDS_KEY =
       "multichain.multichaind.backoff.milliseconds";
   public static final String BACKOFF_RETRIES_KEY = "multichain.multichaind.backoff.retries";
 
-  public static final String BLOCKCHAIN_NAME_KEY = "multichain.blockchain-name";
+  public static final String CHAIN_NAME_KEY = "multichain.chain-name";
 
   public static final String DAEMON_OPTIONS_KEY = "multichain.multichaind.options";
 

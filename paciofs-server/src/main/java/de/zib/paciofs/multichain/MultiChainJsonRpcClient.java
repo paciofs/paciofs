@@ -5,7 +5,7 @@
  *
  */
 
-package de.zib.paciofs.blockchain.multichain;
+package de.zib.paciofs.multichain;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,7 +29,8 @@ import wf.bitcoin.krotjson.Base64Coder;
  * Exposes some of MultiChain's custom commands.
  * @see <a href="https://www.multichain.com/developers/json-rpc-api/">JSON RPC API</a>
  */
-public class MultiChainJsonRpcClient extends BitcoinJSONRPCClient implements MultiChaindRpcClient {
+public class MultiChainJsonRpcClient
+    extends BitcoinJSONRPCClient implements MultiChainDaemonRpcClient {
   private static final int STREAM_BUFFER_SIZE = 1024;
 
   private URL url;

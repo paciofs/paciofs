@@ -5,7 +5,7 @@
  *
  */
 
-package de.zib.paciofs.blockchain;
+package de.zib.paciofs.multichain;
 
 import akka.actor.CoordinatedShutdown;
 import akka.actor.Props;
@@ -18,56 +18,56 @@ import java.lang.reflect.InvocationTargetException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
-public class Bitcoind extends AbstractClusterDomainEventListener {
-  private static final String PACIOFS_BITCOIND_CLIENT_KEY = "paciofs.bitcoind-client";
-  private static final String PACIOFS_BITCOIND_CLIENT_CLASS_KEY =
-      PACIOFS_BITCOIND_CLIENT_KEY + ".class";
+public class MultiChain extends AbstractClusterDomainEventListener {
+  private static final String PACIOFS_MUTLICHAIN_CLIENT_KEY = "paciofs.multichain-client";
+  private static final String PACIOFS_MULTICHAIN_CLIENT_CLASS_KEY =
+      PACIOFS_MUTLICHAIN_CLIENT_KEY + ".class";
 
-  private static final Logger LOG = LoggerFactory.getLogger(Bitcoind.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MultiChain.class);
 
-  private final BitcoindRpcClient client;
+  private final MultiChainDaemonRpcClient client;
 
   private final Config config;
 
-  private Bitcoind() {
+  private MultiChain() {
     this.config = this.getContext().system().settings().config();
 
     // may throw if key is empty or null
-    final String bitcoindClientClassName = this.config.getString(PACIOFS_BITCOIND_CLIENT_CLASS_KEY);
+    final String multichainClientClassName =
+        this.config.getString(PACIOFS_MULTICHAIN_CLIENT_CLASS_KEY);
 
     // find the class implementing the BitcoindRpcClient interface
-    final Class<BitcoindRpcClient> bitcoindClientClass;
+    final Class<MultiChainDaemonRpcClient> multiChainDaemonRpcClientClass;
     try {
-      bitcoindClientClass = (Class<BitcoindRpcClient>) Class.forName(bitcoindClientClassName);
+      multiChainDaemonRpcClientClass =
+          (Class<MultiChainDaemonRpcClient>) Class.forName(multichainClientClassName);
     } catch (ClassNotFoundException e) {
-      throw new RuntimeException(bitcoindClientClassName + " not found", e);
+      throw new RuntimeException(multichainClientClassName + " not found", e);
     }
 
     // obtain an instance from the two argument constructor
-    final Constructor<BitcoindRpcClient> constructor;
+    final Constructor<MultiChainDaemonRpcClient> constructor;
     try {
-      constructor = bitcoindClientClass.getDeclaredConstructor(Config.class);
+      constructor = multiChainDaemonRpcClientClass.getDeclaredConstructor(Config.class);
     } catch (NoSuchMethodException e) {
       throw new RuntimeException("Could not find constructor with single argument of type "
-          + Config.class.getName() + " in " + bitcoindClientClassName);
+          + Config.class.getName() + " in " + multichainClientClassName);
     }
 
     try {
-      this.client = constructor.newInstance(this.config.getConfig(PACIOFS_BITCOIND_CLIENT_KEY));
+      this.client = constructor.newInstance(this.config.getConfig(PACIOFS_MUTLICHAIN_CLIENT_KEY));
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException("Could not instantiate " + bitcoindClientClassName, e);
+      throw new RuntimeException("Could not instantiate " + multichainClientClassName, e);
     }
 
-    // shut down the blockchain before the actor
-    CoordinatedShutdown.get(this.getContext().getSystem())
-        .addJvmShutdownHook(this.client::stop);
+    // shut down the multichain before the actor
+    CoordinatedShutdown.get(this.getContext().getSystem()).addJvmShutdownHook(this.client::stop);
   }
 
   public static Props props() {
-    return Props.create(Bitcoind.class, Bitcoind::new);
+    return Props.create(MultiChain.class, MultiChain::new);
   }
 
   @Override
@@ -76,7 +76,7 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
 
     // TODO if this fails, should we fail the entire actor system?
     // warm up the client
-    final BitcoindRpcClient.BlockChainInfo bci = this.client.getBlockChainInfo();
+    final MultiChainDaemonRpcClient.BlockChainInfo bci = this.client.getBlockChainInfo();
     LOG.info("Connected to chain {}", bci.chain());
   }
 

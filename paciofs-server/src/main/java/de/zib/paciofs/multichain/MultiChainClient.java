@@ -5,7 +5,7 @@
  *
  */
 
-package de.zib.paciofs.blockchain.multichain;
+package de.zib.paciofs.multichain;
 
 import com.typesafe.config.Config;
 import de.zib.paciofs.logging.Markers;
@@ -32,7 +32,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
 
   private final Config config;
 
-  private final MultiChaind multiChaind;
+  private final MultiChainDaemon multiChainDaemon;
 
   private String localhostName;
   private String localhostAddress;
@@ -52,14 +52,14 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
 
     // start MultiChain locally if localhost is the target connect
     if ("localhost".equals(this.config.getString(MultiChainOptions.RPC_CONNECT_KEY))) {
-      this.multiChaind = new MultiChaind(this.config);
+      this.multiChainDaemon = new MultiChainDaemon(this.config);
       this.lifecyclePhase = LifecyclePhase.STOPPED;
       this.lifecyclePhaseTransition = new Object();
 
       // we need to start multichaind first and obtain the user info from it
     } else {
       // assume all is well if we connect to a remote MultiChain
-      this.multiChaind = null;
+      this.multiChainDaemon = null;
       this.lifecyclePhase = LifecyclePhase.RUNNING;
       this.lifecyclePhaseTransition = null;
 
@@ -112,12 +112,12 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       return super.query(method, o);
     } catch (GenericRpcException e) {
       // multichaind has died, switch to FAILED
-      if (this.multiChaind != null && !this.multiChaind.isRunning()) {
+      if (this.multiChainDaemon != null && !this.multiChainDaemon.isRunning()) {
         synchronized (this.lifecyclePhaseTransition) {
           LOG.error("multichaind has stopped running: {}", e.getMessage());
           LOG.error(Markers.EXCEPTION, "multichaind has stopped running", e);
           if (this.checkedLifecyclePhaseTransition(LifecyclePhase.FAILED)) {
-            this.multiChaind.waitForTermination();
+            this.multiChainDaemon.waitForTermination();
           }
         }
       }
@@ -147,7 +147,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
   // manages the transition from RUNNING -> STOPPING -> STOPPED in a blocking fashion
   @Override
   public void stop() {
-    if (this.lifecyclePhase == LifecyclePhase.STOPPED || this.multiChaind == null) {
+    if (this.lifecyclePhase == LifecyclePhase.STOPPED || this.multiChainDaemon == null) {
       // all is well, or this is a remote chain which we will not stop
       return;
     }
@@ -166,7 +166,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
         }
 
         // wait for multichaind to fully stop before setting the lifecycle phase
-        this.multiChaind.waitForTermination();
+        this.multiChainDaemon.waitForTermination();
 
         // done
         LOG.info("Stopped multichaind");
@@ -193,12 +193,12 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
       // getBlockChainInfo() query (see below)
       if (this.checkedLifecyclePhaseTransition(LifecyclePhase.STARTING)) {
         // wait until the service is up
-        this.multiChaind.start();
+        this.multiChainDaemon.start();
 
         // now we have all the information of where to direct our RPC calls
         this.setUrl(this.getProtocol(),
-            this.multiChaind.getMultiChainConf().getString(MultiChainOptions.RPC_USER_KEY),
-            this.multiChaind.getMultiChainConf().getString(MultiChainOptions.RPC_PASSWORD_KEY),
+            this.multiChainDaemon.getMultiChainConf().getString(MultiChainOptions.RPC_USER_KEY),
+            this.multiChainDaemon.getMultiChainConf().getString(MultiChainOptions.RPC_PASSWORD_KEY),
             this.config.getString(MultiChainOptions.RPC_CONNECT_KEY),
             this.config.getInt(MultiChainOptions.RPC_PORT_KEY));
 
@@ -208,7 +208,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
         final int maxRetries = this.config.getInt(MultiChainOptions.BACKOFF_RETRIES_KEY);
         int failedRetries = 0;
 
-        // try and get the blockchain info at most a number of maxRetries times
+        // try and get the multichain info at most a number of maxRetries times
         BlockChainInfo bci = null;
         for (; failedRetries < maxRetries; ++failedRetries) {
           try {
@@ -223,7 +223,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
               LOG.debug(
                   "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());
               --failedRetries;
-            } else if (!this.multiChaind.isRunning()) {
+            } else if (!this.multiChainDaemon.isRunning()) {
               // multichaind has crashed
               this.forcedLifecyclePhaseTransition(LifecyclePhase.FAILED);
               throw new RuntimeException("multichaind stopped running");

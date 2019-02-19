@@ -22,7 +22,6 @@ import akka.stream.Materializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
-import de.zib.paciofs.blockchain.Bitcoind;
 import de.zib.paciofs.grpc.PacioFsGrpc;
 import de.zib.paciofs.grpc.PacioFsServiceHandlerFactory;
 import de.zib.paciofs.grpc.PacioFsServiceImpl;
@@ -30,6 +29,7 @@ import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
 import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
+import de.zib.paciofs.multichain.MultiChain;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.NoSuchElementException;
@@ -91,8 +91,8 @@ public class PacioFs {
     final Cluster cluster = Cluster.get(paciofs);
     log.info("Started [{}], cluster.selfAddress = {}", paciofs, cluster.selfAddress());
 
-    // actor for the blockchain
-    paciofs.actorOf(Bitcoind.props(), "bitcoind");
+    // actor for the multichain
+    paciofs.actorOf(MultiChain.props(), "multichain");
 
     // serve the default services
     bindAndHandleAsync(Http.get(paciofs), config, ActorMaterializer.create(paciofs));

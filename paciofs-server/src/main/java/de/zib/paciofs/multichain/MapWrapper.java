@@ -5,7 +5,7 @@
  *
  */
 
-package de.zib.paciofs.blockchain.multichain;
+package de.zib.paciofs.multichain;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

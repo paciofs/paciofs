@@ -5,13 +5,13 @@
  *
  */
 
-package de.zib.paciofs.blockchain.multichain;
+package de.zib.paciofs.multichain;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
-public interface MultiChaindRpcClient extends BitcoindRpcClient {
+public interface MultiChainDaemonRpcClient extends BitcoindRpcClient {
   // selected Bitcoin core RPC errors
   // https://github.com/bitcoin/bitcoin/blob/0.17/src/rpc/protocol.h#L31
   int RPC_IN_WARMUP = -28;

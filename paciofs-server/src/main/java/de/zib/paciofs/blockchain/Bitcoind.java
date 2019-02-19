@@ -63,7 +63,7 @@ public class Bitcoind extends AbstractClusterDomainEventListener {
 
     // shut down the blockchain before the actor
     CoordinatedShutdown.get(this.getContext().getSystem())
-        .addJvmShutdownHook(() -> this.client.stop());
+        .addJvmShutdownHook(this.client::stop);
   }
 
   public static Props props() {

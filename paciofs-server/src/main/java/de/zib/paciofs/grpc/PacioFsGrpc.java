@@ -7,7 +7,6 @@
 
 package de.zib.paciofs.grpc;
 
-import akka.grpc.javadsl.ServiceHandler;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
@@ -20,8 +19,6 @@ import akka.stream.Materializer;
 import akka.stream.TLSClientAuth;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.TextFormat;
-import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
-import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -41,48 +38,37 @@ import org.slf4j.LoggerFactory;
 public class PacioFsGrpc {
   private static final Logger LOG = LoggerFactory.getLogger(PacioFsGrpc.class);
 
-  private static Function<HttpRequest, CompletionStage<HttpResponse>> services;
-
   private PacioFsGrpc() {}
 
-  private static Function<HttpRequest, CompletionStage<HttpResponse>> getDefaultServices(
-      Materializer materializer) {
-    synchronized (PacioFsGrpc.class) {
-      if (services == null) {
-        services = ServiceHandler.concatOrNotFound(
-            PacioFsServiceHandlerFactory.create(new PacioFsServiceImpl(), materializer),
-            PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
-      }
-    }
-
-    return services;
-  }
-
   /**
-   * Binds the default handlers to an HTTP port.
+   * Binds handlers to an HTTP port.
+   * @param handlers handlers to bind
    * @param http Http instance to use
    * @param hostname bind to this hostname
    * @param port bind to this port
    * @param materializer Akka materializer to use
    */
   public static void bindAndHandleAsyncHttp(
-      Http http, String hostname, int port, Materializer materializer) {
-    http.bindAndHandleAsync(getDefaultServices(materializer),
-            ConnectHttp.toHost(hostname, port, UseHttp2.always()), materializer)
+      Function<HttpRequest, CompletionStage<HttpResponse>> handlers, Http http, String hostname,
+      int port, Materializer materializer) {
+    http.bindAndHandleAsync(
+            handlers, ConnectHttp.toHost(hostname, port, UseHttp2.always()), materializer)
         .thenAccept(binding -> LOG.info("gRPC HTTP server bound to: {}", binding.localAddress()));
   }
 
   /**
-   * Binds the default handlers to an HTTPS port.
+   * Binds handlers to an HTTPS port.
+   * @param handlers handlers to bind
    * @param http Http instance to use
    * @param hostname bind to this hostname
    * @param port bind to this port
    * @param materializer Akka materializer to use
    * @param httpsConnectionContext the HTTPS context to use
    */
-  public static void bindAndHandleAsyncHttps(Http http, String hostname, int port,
-      Materializer materializer, HttpsConnectionContext httpsConnectionContext) {
-    http.bindAndHandleAsync(getDefaultServices(materializer),
+  public static void bindAndHandleAsyncHttps(
+      Function<HttpRequest, CompletionStage<HttpResponse>> handlers, Http http, String hostname,
+      int port, Materializer materializer, HttpsConnectionContext httpsConnectionContext) {
+    http.bindAndHandleAsync(handlers,
             ConnectHttp.toHostHttps(hostname, port).withCustomHttpsContext(httpsConnectionContext),
             materializer)
         .thenAccept(binding -> LOG.info("gRPC HTTPS server bound to: {}", binding.localAddress()));

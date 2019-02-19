@@ -10,7 +10,11 @@ package de.zib.paciofs;
 import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 import akka.event.Logging;
+import akka.grpc.javadsl.ServiceHandler;
 import akka.http.javadsl.Http;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
+import akka.japi.Function;
 import akka.management.AkkaManagement;
 import akka.management.cluster.bootstrap.ClusterBootstrap;
 import akka.stream.ActorMaterializer;
@@ -20,11 +24,16 @@ import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import de.zib.paciofs.blockchain.Bitcoind;
 import de.zib.paciofs.grpc.PacioFsGrpc;
+import de.zib.paciofs.grpc.PacioFsServiceHandlerFactory;
+import de.zib.paciofs.grpc.PacioFsServiceImpl;
+import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
+import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,9 +101,14 @@ public class PacioFs {
   /* Utility functions */
 
   private static void bindAndHandleAsync(Http http, Config config, Materializer materializer) {
+    final Function<HttpRequest, CompletionStage<HttpResponse>> handlers =
+        ServiceHandler.concatOrNotFound(
+            PacioFsServiceHandlerFactory.create(new PacioFsServiceImpl(), materializer),
+            PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
+
     // set up HTTP if desired
     try {
-      PacioFsGrpc.bindAndHandleAsyncHttp(http,
+      PacioFsGrpc.bindAndHandleAsyncHttp(handlers, http,
           config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTP_BIND_PORT_KEY), materializer);
     } catch (ConfigException.Missing | ConfigException.WrongType e) {
@@ -112,7 +126,7 @@ public class PacioFs {
         // tolerate missing CA certificates, falls back to system
       }
 
-      PacioFsGrpc.bindAndHandleAsyncHttps(http,
+      PacioFsGrpc.bindAndHandleAsyncHttps(handlers, http,
           config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTPS_BIND_PORT_KEY), materializer,
           PacioFsGrpc.httpsConnectionContext(

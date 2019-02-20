@@ -7,7 +7,7 @@
 
 package de.zib.paciofs.io.posix.grpc;
 
-import de.zib.paciofs.grpc.PacioFsGrpc;
+import de.zib.paciofs.grpc.PacioFsGrpcUtil;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Errno;
@@ -25,18 +25,18 @@ public class PosixIoServiceImpl implements PosixIoService {
 
   @Override
   public CompletionStage<PingResponse> ping(PingRequest in) {
-    PacioFsGrpc.traceRequest(LOG, "ping({})", in);
+    PacioFsGrpcUtil.traceMessages(LOG, "ping({})", in);
 
     final Ping ping = Ping.newBuilder().build();
     final PingResponse out = PingResponse.newBuilder().setPing(ping).build();
 
-    PacioFsGrpc.traceRequest(LOG, "ping({}): {}", in, out);
+    PacioFsGrpcUtil.traceMessages(LOG, "ping({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
   @Override
   public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in) {
-    PacioFsGrpc.traceRequest(LOG, "readDir({})", in);
+    PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final ReadDirResponse.Builder builder = ReadDirResponse.newBuilder();
@@ -49,13 +49,13 @@ public class PosixIoServiceImpl implements PosixIoService {
 
     final ReadDirResponse out = builder.setError(error).build();
 
-    PacioFsGrpc.traceRequest(LOG, "readDir({}): {}", in, out);
+    PacioFsGrpcUtil.traceMessages(LOG, "readDir({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
   @Override
   public CompletionStage<StatResponse> stat(StatRequest in) {
-    PacioFsGrpc.traceRequest(LOG, "stat({})", in);
+    PacioFsGrpcUtil.traceMessages(LOG, "stat({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final Stat.Builder builder = Stat.newBuilder();
@@ -72,7 +72,7 @@ public class PosixIoServiceImpl implements PosixIoService {
     final StatResponse out =
         StatResponse.newBuilder().setStat(builder.build()).setError(error).build();
 
-    PacioFsGrpc.traceRequest(LOG, "stat({}): {}", in, out);
+    PacioFsGrpcUtil.traceMessages(LOG, "stat({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 }

@@ -61,8 +61,18 @@ public class MultiChainJsonRpcClient
   }
 
   @Override
+  public String createStream(String name, boolean open) {
+    return (String) this.query("create", "stream", name, open);
+  }
+
+  @Override
   public Info getInfo() {
     return new InfoMapWrapper((Map<String, ?>) this.query("getinfo"));
+  }
+
+  @Override
+  public void subscribe(String streamRef) {
+    this.query("subscribe", streamRef);
   }
 
   private static class InfoMapWrapper extends MapWrapper implements Info, Serializable {

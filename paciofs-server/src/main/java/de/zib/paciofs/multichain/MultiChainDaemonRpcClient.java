@@ -12,11 +12,11 @@ import java.math.BigDecimal;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public interface MultiChainDaemonRpcClient extends BitcoindRpcClient {
-  // selected Bitcoin core RPC errors
-  // https://github.com/bitcoin/bitcoin/blob/0.17/src/rpc/protocol.h#L31
-  int RPC_IN_WARMUP = -28;
+  String createStream(String name, boolean open);
 
   Info getInfo();
+
+  void subscribe(String streamRef);
 
   interface Info extends Serializable {
     String version();

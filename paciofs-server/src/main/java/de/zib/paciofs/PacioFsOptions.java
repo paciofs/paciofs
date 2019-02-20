@@ -19,5 +19,7 @@ public class PacioFsOptions {
   public static final String HTTPS_SERVER_CERT_PASS_PATH_KEY =
       "paciofs.https.certs.server.pass-path";
 
+  public static final String MULTICHAIN_CLIENT_KEY = "paciofs.multichain-client";
+
   private PacioFsOptions() {}
 }

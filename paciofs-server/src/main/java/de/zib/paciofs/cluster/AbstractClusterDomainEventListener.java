@@ -24,7 +24,7 @@ public abstract class AbstractClusterDomainEventListener extends AbstractActor {
   private final Cluster cluster;
 
   protected AbstractClusterDomainEventListener() {
-    this.cluster = Cluster.get(this.getContext().system());
+    this.cluster = Cluster.get(this.context().system());
   }
 
   @Override

@@ -20,6 +20,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCError;
+import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCErrorCode;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
@@ -218,7 +219,7 @@ public class MultiChainClient extends MultiChainJsonRpcClient {
             break;
           } catch (BitcoinRPCException rpcException) {
             final BitcoinRPCError rpcError = rpcException.getRPCError();
-            if (rpcError != null && rpcError.getCode() == RPC_IN_WARMUP) {
+            if (rpcError != null && rpcError.getCode() == BitcoinRPCErrorCode.RPC_IN_WARMUP) {
               // keep waiting, multichaind is at work and will be with us soon
               LOG.debug(
                   "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.getMessage());

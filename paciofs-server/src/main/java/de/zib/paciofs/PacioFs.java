@@ -7,7 +7,9 @@
 
 package de.zib.paciofs;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.CoordinatedShutdown;
 import akka.cluster.Cluster;
 import akka.event.Logging;
 import akka.grpc.javadsl.ServiceHandler;
@@ -22,7 +24,7 @@ import akka.stream.Materializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
-import de.zib.paciofs.grpc.PacioFsGrpc;
+import de.zib.paciofs.grpc.PacioFsGrpcUtil;
 import de.zib.paciofs.grpc.PacioFsServiceHandlerFactory;
 import de.zib.paciofs.grpc.PacioFsServiceImpl;
 import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
@@ -30,7 +32,10 @@ import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.MultiChain;
+import de.zib.paciofs.multichain.MultiChainClient;
+import de.zib.paciofs.multichain.MultiChainDaemonRpcClient;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
@@ -71,6 +76,8 @@ public class PacioFs {
     // the entire Akka configuration is a bit overwhelming
     log.debug(Markers.CONFIGURATION, "Using configuration: {}", config);
 
+    // TODO switch to typed (remove untyped dependencies (actor, cluster) from pom)
+
     // create the actor system
     final ActorSystem paciofs = ActorSystem.create("paciofs", config);
 
@@ -91,24 +98,31 @@ public class PacioFs {
     final Cluster cluster = Cluster.get(paciofs);
     log.info("Started [{}], cluster.selfAddress = {}", paciofs, cluster.selfAddress());
 
+    // MultiChain client
+    final MultiChainDaemonRpcClient multiChainClient = initializeMultiChainClient(paciofs);
+
     // actor for the multichain
-    paciofs.actorOf(MultiChain.props(), "multichain");
+    final ActorRef multiChainActor =
+        paciofs.actorOf(MultiChain.props(multiChainClient), "multichain");
 
     // serve the default services
-    bindAndHandleAsync(Http.get(paciofs), config, ActorMaterializer.create(paciofs));
+    bindAndHandleAsync(Http.get(paciofs), config, ActorMaterializer.create(paciofs),
+        multiChainActor, multiChainClient);
   }
 
   /* Utility functions */
 
-  private static void bindAndHandleAsync(Http http, Config config, Materializer materializer) {
+  private static void bindAndHandleAsync(Http http, Config config, Materializer materializer,
+      ActorRef multiChainActor, MultiChainDaemonRpcClient multiChainClient) {
     final Function<HttpRequest, CompletionStage<HttpResponse>> handlers =
         ServiceHandler.concatOrNotFound(
-            PacioFsServiceHandlerFactory.create(new PacioFsServiceImpl(), materializer),
+            PacioFsServiceHandlerFactory.create(
+                new PacioFsServiceImpl(multiChainActor, multiChainClient), materializer),
             PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
 
     // set up HTTP if desired
     try {
-      PacioFsGrpc.bindAndHandleAsyncHttp(handlers, http,
+      PacioFsGrpcUtil.bindAndHandleAsyncHttp(handlers, http,
           config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTP_BIND_PORT_KEY), materializer);
     } catch (ConfigException.Missing | ConfigException.WrongType e) {
@@ -126,10 +140,10 @@ public class PacioFs {
         // tolerate missing CA certificates, falls back to system
       }
 
-      PacioFsGrpc.bindAndHandleAsyncHttps(handlers, http,
+      PacioFsGrpcUtil.bindAndHandleAsyncHttps(handlers, http,
           config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTPS_BIND_PORT_KEY), materializer,
-          PacioFsGrpc.httpsConnectionContext(
+          PacioFsGrpcUtil.httpsConnectionContext(
               config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PATH_KEY),
               config.getString(PacioFsOptions.HTTPS_SERVER_CERT_PASS_PATH_KEY), caCertPath,
               caCertPassPath));
@@ -162,6 +176,25 @@ public class PacioFs {
 
     // now trigger initialization of Logback
     log = LoggerFactory.getLogger(PacioFs.class);
+  }
+
+  private static MultiChainDaemonRpcClient initializeMultiChainClient(ActorSystem system) {
+    final MultiChainDaemonRpcClient multiChainClient;
+    try {
+      multiChainClient = new MultiChainClient(
+          system.settings().config().getConfig(PacioFsOptions.MULTICHAIN_CLIENT_KEY));
+    } catch (MalformedURLException e) {
+      throw new RuntimeException("Could not create MultiChain client", e);
+    }
+
+    // shut down MultiChain client before the actor system
+    CoordinatedShutdown.get(system).addJvmShutdownHook(multiChainClient::stop);
+
+    // warm up the client
+    final MultiChainDaemonRpcClient.Info info = multiChainClient.getInfo();
+    log.info("Connected to MultiChain: {}", info.toString());
+
+    return multiChainClient;
   }
 
   private static PacioFsCliOptions parseCommandLine(String[] args) {

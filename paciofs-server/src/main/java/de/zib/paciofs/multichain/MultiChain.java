@@ -7,83 +7,73 @@
 
 package de.zib.paciofs.multichain;
 
-import akka.actor.CoordinatedShutdown;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.cluster.Member;
-import com.typesafe.config.Config;
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.cluster.pubsub.DistributedPubSubMediator;
 import de.zib.paciofs.cluster.AbstractClusterDomainEventListener;
 import de.zib.paciofs.logging.Markers;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
 import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
 public class MultiChain extends AbstractClusterDomainEventListener {
-  private static final String PACIOFS_MUTLICHAIN_CLIENT_KEY = "paciofs.multichain-client";
-  private static final String PACIOFS_MULTICHAIN_CLIENT_CLASS_KEY =
-      PACIOFS_MUTLICHAIN_CLIENT_KEY + ".class";
+  public interface MultiChainCommand {}
+
+  private static class SubscribeToStreamInternal implements MultiChainCommand {
+    public final String creationTxId;
+
+    private SubscribeToStreamInternal(String creationTxId) {
+      this.creationTxId = creationTxId;
+    }
+  }
+
+  public static class SubscribeToStream extends SubscribeToStreamInternal {
+    public SubscribeToStream(String creationTxId) {
+      super(creationTxId);
+    }
+  }
+
+  private static final String STREAM_TOPIC = "stream";
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChain.class);
 
-  private final MultiChainDaemonRpcClient client;
+  private final ActorRef mediator;
 
-  private final Config config;
+  private final MultiChainDaemonRpcClient multiChainClient;
 
-  private MultiChain() {
-    this.config = this.getContext().system().settings().config();
+  private MultiChain(MultiChainDaemonRpcClient multiChainClient) {
+    // for talking to all other MultiChain actors in the cluster
+    this.mediator = DistributedPubSub.get(this.context().system()).mediator();
 
-    // may throw if key is empty or null
-    final String multichainClientClassName =
-        this.config.getString(PACIOFS_MULTICHAIN_CLIENT_CLASS_KEY);
+    // subscribe to events related to streams
+    this.mediator.tell(
+        new DistributedPubSubMediator.Subscribe(STREAM_TOPIC, this.self()), this.self());
 
-    // find the class implementing the BitcoindRpcClient interface
-    final Class<MultiChainDaemonRpcClient> multiChainDaemonRpcClientClass;
-    try {
-      multiChainDaemonRpcClientClass =
-          (Class<MultiChainDaemonRpcClient>) Class.forName(multichainClientClassName);
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException(multichainClientClassName + " not found", e);
-    }
-
-    // obtain an instance from the two argument constructor
-    final Constructor<MultiChainDaemonRpcClient> constructor;
-    try {
-      constructor = multiChainDaemonRpcClientClass.getDeclaredConstructor(Config.class);
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException("Could not find constructor with single argument of type "
-          + Config.class.getName() + " in " + multichainClientClassName);
-    }
-
-    try {
-      this.client = constructor.newInstance(this.config.getConfig(PACIOFS_MUTLICHAIN_CLIENT_KEY));
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException("Could not instantiate " + multichainClientClassName, e);
-    }
-
-    // shut down the multichain before the actor
-    CoordinatedShutdown.get(this.getContext().getSystem()).addJvmShutdownHook(this.client::stop);
+    // for talking to MultiChain itself
+    this.multiChainClient = multiChainClient;
   }
 
-  public static Props props() {
-    return Props.create(MultiChain.class, MultiChain::new);
+  public static Props props(MultiChainDaemonRpcClient multiChainClient) {
+    return Props.create(MultiChain.class, () -> new MultiChain(multiChainClient));
   }
 
   @Override
-  public void preStart() throws Exception {
-    super.preStart();
-
-    // TODO if this fails, should we fail the entire actor system?
-    // warm up the client
-    final MultiChainDaemonRpcClient.BlockChainInfo bci = this.client.getBlockChainInfo();
-    LOG.info("Connected to chain {}", bci.chain());
-  }
-
-  @Override
-  public void postStop() throws Exception {
-    this.client.stop();
-    super.postStop();
+  public Receive createReceive() {
+    return super.createReceive().orElse(
+        this.receiveBuilder()
+            .match(DistributedPubSubMediator.SubscribeAck.class,
+                e -> LOG.info("Subscribed to topic {}", e.subscribe().topic()))
+            .match(SubscribeToStream.class,
+                e
+                -> this.mediator.tell(new DistributedPubSubMediator.Publish(STREAM_TOPIC,
+                                          new SubscribeToStreamInternal(e.creationTxId)),
+                    this.self()))
+            .match(SubscribeToStreamInternal.class,
+                e -> this.multiChainClient.subscribe(e.creationTxId))
+            .build());
   }
 
   @Override
@@ -119,7 +109,7 @@ public class MultiChain extends AbstractClusterDomainEventListener {
   @Override
   protected void memberWeaklyUp(Member member) {
     super.memberWeaklyUp(member);
-    // TODO is weakly up enough to add this node?
+    this.addNode(member);
   }
 
   private void addNode(Member member) {
@@ -129,7 +119,7 @@ public class MultiChain extends AbstractClusterDomainEventListener {
     } else {
       try {
         LOG.trace("Adding node: {}", host.get());
-        this.client.addNode(host.get(), "add");
+        this.multiChainClient.addNode(host.get(), "add");
         LOG.trace("Added node: {}", host.get());
       } catch (GenericRpcException e) {
         LOG.warn("Adding node failed: {}", e.getMessage());
@@ -138,7 +128,7 @@ public class MultiChain extends AbstractClusterDomainEventListener {
     }
 
     // have MultiChain measure latency and backlog
-    this.client.ping();
+    this.multiChainClient.ping();
   }
 
   private void removeNode(Member member) {
@@ -148,7 +138,7 @@ public class MultiChain extends AbstractClusterDomainEventListener {
     } else {
       try {
         LOG.trace("Removing node: {}", host.get());
-        this.client.addNode(host.get(), "remove");
+        this.multiChainClient.addNode(host.get(), "remove");
         LOG.trace("Removed node: {}", host.get());
       } catch (GenericRpcException e) {
         LOG.warn("Removing node failed: {}", e.getMessage());
@@ -157,6 +147,6 @@ public class MultiChain extends AbstractClusterDomainEventListener {
     }
 
     // have MultiChain measure latency and backlog
-    this.client.ping();
+    this.multiChainClient.ping();
   }
 }

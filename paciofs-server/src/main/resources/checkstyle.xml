@@ -250,6 +250,16 @@
             <property name="forbiddenSummaryFragments"
                       value="^@return the *|^This method returns |^A [{]@code [a-zA-Z0-9]+[}]( is a )"/>
         </module>
+        <module name="SuppressionCommentFilter">
+            <property name="checkFormat" value="CyclomaticComplexity"/>
+            <property name="offCommentFormat" value="CHECKSTYLE:CyclomaticComplexity:OFF"/>
+            <property name="onCommentFormat" value="CHECKSTYLE:CyclomaticComplexity:ON"/>
+        </module>
+        <module name="SuppressionCommentFilter">
+            <property name="checkFormat" value="JavaNCSS"/>
+            <property name="offCommentFormat" value="CHECKSTYLE:JavaNCSS:OFF"/>
+            <property name="onCommentFormat" value="CHECKSTYLE:JavaNCSS:ON"/>
+        </module>
         <module name="ThrowsCount"/>
         <module name="TodoComment">
             <property name="format" value="TODO"/>
@@ -259,7 +269,9 @@
         <module name="UnusedImports"/>
         <module name="UpperEll"/>
         <module name="VariableDeclarationUsageDistance"/>
-        <module name="VisibilityModifier"/>
+        <module name="VisibilityModifier">
+            <property name="allowPublicFinalFields" value="true"/>
+        </module>
         <module name="WhitespaceAround">
             <property name="allowEmptyConstructors" value="true"/>
             <property name="allowEmptyMethods" value="true"/>

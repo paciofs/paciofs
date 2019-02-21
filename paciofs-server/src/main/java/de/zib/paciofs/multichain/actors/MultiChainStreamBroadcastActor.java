@@ -47,11 +47,14 @@ public class MultiChainStreamBroadcastActor extends AbstractMultiChainBroadcastA
   public Receive createReceive() {
     final ReceiveBuilder builder = this.receiveBuilder();
 
+    // TODO subscribe / reindex on start
+
     builder.match(SubscribeToStream.class, subscribe -> {
       if (subscribe.broadcast) {
         LOG.trace("Broadcasting stream subscription to {}", subscribe.stream);
         MultiChainStreamBroadcastActor.this.broadcast(
             new SubscribeToStream(false, subscribe.stream));
+        this.sender().tell(subscribe, this.self());
       } else {
         LOG.trace("Subscribing to stream {}", subscribe.stream);
         MultiChainStreamBroadcastActor.this.client.subscribe(subscribe.stream);

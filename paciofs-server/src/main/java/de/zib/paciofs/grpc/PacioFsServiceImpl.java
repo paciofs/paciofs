@@ -17,12 +17,17 @@ import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 
 public class PacioFsServiceImpl implements PacioFsService {
   private static final Logger LOG = LoggerFactory.getLogger(PacioFsServiceImpl.class);
+
+  private static final long MULTICHAIN_BROADCAST_TIMEOUT = 1000;
 
   private final MultiChainRpcClient multiChainClient;
 
@@ -38,6 +43,7 @@ public class PacioFsServiceImpl implements PacioFsService {
   public CompletionStage<CreateVolumeResponse> createVolume(CreateVolumeRequest in) {
     PacioFsGrpcUtil.traceMessages(LOG, "createVolume({})", in);
 
+    // represent volumes as MultiChain streams
     final String createStreamTxId;
     try {
       createStreamTxId = this.multiChainClient.createStream(in.getVolume().getName(), true);
@@ -47,13 +53,24 @@ public class PacioFsServiceImpl implements PacioFsService {
       throw PacioFsGrpcUtil.toGrpcServiceException(e);
     }
 
-    // TODO make request-response instead of fire-and-forget
+    // tell the other MultiChain instances in the cluster to subscribe to the new stream
     final CompletableFuture<Object> subscribeToStreamBroadcast =
         Patterns
             .ask(this.multiChainStreamBroadcastActor,
                 new MultiChainStreamBroadcastActor.SubscribeToStream(createStreamTxId),
-                Duration.ofMillis(1000))
+                Duration.ofMillis(MULTICHAIN_BROADCAST_TIMEOUT))
             .toCompletableFuture();
+
+    try {
+      final Object result =
+          subscribeToStreamBroadcast.get(MULTICHAIN_BROADCAST_TIMEOUT, TimeUnit.MILLISECONDS);
+      if (!(result instanceof MultiChainStreamBroadcastActor.SubscribeToStream)) {
+        LOG.warn("Unexpected result from stream subscription broadcast: {}", result);
+      }
+    } catch (ExecutionException | InterruptedException | TimeoutException e) {
+      LOG.warn("Could not get result from stream subscription broadcast: {}", e.getMessage());
+      LOG.warn(Markers.EXCEPTION, "Could not get result from stream subscription broadcast", e);
+    }
 
     final Volume volume = Volume.newBuilder().build();
     final CreateVolumeResponse out = CreateVolumeResponse.newBuilder().setVolume(volume).build();

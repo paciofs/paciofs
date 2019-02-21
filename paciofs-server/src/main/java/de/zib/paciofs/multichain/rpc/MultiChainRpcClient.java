@@ -5,13 +5,13 @@
  *
  */
 
-package de.zib.paciofs.multichain;
+package de.zib.paciofs.multichain.rpc;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
-public interface MultiChainDaemonRpcClient extends BitcoindRpcClient {
+public interface MultiChainRpcClient extends BitcoindRpcClient {
   String createStream(String name, boolean open);
 
   Info getInfo();

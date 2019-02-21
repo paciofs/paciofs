@@ -7,13 +7,14 @@
 
 package de.zib.paciofs.grpc;
 
-import akka.actor.typed.ActorRef;
-import akka.actor.typed.javadsl.Adapter;
+import akka.actor.ActorRef;
+import akka.pattern.Patterns;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.grpc.messages.Volume;
 import de.zib.paciofs.logging.Markers;
-import de.zib.paciofs.multichain.MultiChain;
-import de.zib.paciofs.multichain.MultiChainDaemonRpcClient;
+import de.zib.paciofs.multichain.actors.MultiChainStreamBroadcastActor;
+import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
@@ -23,14 +24,14 @@ import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 public class PacioFsServiceImpl implements PacioFsService {
   private static final Logger LOG = LoggerFactory.getLogger(PacioFsServiceImpl.class);
 
-  private final ActorRef<MultiChain.MultiChainCommand> multiChainActor;
+  private final MultiChainRpcClient multiChainClient;
 
-  private final MultiChainDaemonRpcClient multiChainClient;
+  private final ActorRef multiChainStreamBroadcastActor;
 
   public PacioFsServiceImpl(
-      akka.actor.ActorRef multiChainActor, MultiChainDaemonRpcClient multiChainClient) {
-    this.multiChainActor = Adapter.toTyped(multiChainActor);
+      MultiChainRpcClient multiChainClient, ActorRef multiChainStreamBroadcastActor) {
     this.multiChainClient = multiChainClient;
+    this.multiChainStreamBroadcastActor = multiChainStreamBroadcastActor;
   }
 
   @Override
@@ -47,7 +48,12 @@ public class PacioFsServiceImpl implements PacioFsService {
     }
 
     // TODO make request-response instead of fire-and-forget
-    this.multiChainActor.tell(new MultiChain.SubscribeToStream(createStreamTxId));
+    final CompletableFuture<Object> subscribeToStreamBroadcast =
+        Patterns
+            .ask(this.multiChainStreamBroadcastActor,
+                new MultiChainStreamBroadcastActor.SubscribeToStream(createStreamTxId),
+                Duration.ofMillis(1000))
+            .toCompletableFuture();
 
     final Volume volume = Volume.newBuilder().build();
     final CreateVolumeResponse out = CreateVolumeResponse.newBuilder().setVolume(volume).build();

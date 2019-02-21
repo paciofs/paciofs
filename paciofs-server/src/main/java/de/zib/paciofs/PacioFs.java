@@ -31,11 +31,11 @@ import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
 import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
-import de.zib.paciofs.multichain.MultiChain;
-import de.zib.paciofs.multichain.MultiChainClient;
-import de.zib.paciofs.multichain.MultiChainDaemonRpcClient;
+import de.zib.paciofs.multichain.MultiChainClientFactory;
+import de.zib.paciofs.multichain.actors.MultiChainClusterMemberEventActor;
+import de.zib.paciofs.multichain.actors.MultiChainStreamBroadcastActor;
+import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
@@ -76,8 +76,6 @@ public class PacioFs {
     // the entire Akka configuration is a bit overwhelming
     log.debug(Markers.CONFIGURATION, "Using configuration: {}", config);
 
-    // TODO switch to typed (remove untyped dependencies (actor, cluster) from pom)
-
     // create the actor system
     final ActorSystem paciofs = ActorSystem.create("paciofs", config);
 
@@ -99,25 +97,30 @@ public class PacioFs {
     log.info("Started [{}], cluster.selfAddress = {}", paciofs, cluster.selfAddress());
 
     // MultiChain client
-    final MultiChainDaemonRpcClient multiChainClient = initializeMultiChainClient(paciofs);
+    final MultiChainRpcClient multiChainClient = initializeMultiChainClient(paciofs);
 
-    // actor for the multichain
-    final ActorRef multiChainActor =
-        paciofs.actorOf(MultiChain.props(multiChainClient), "multichain");
+    // have MultiChain react to cluster events
+    paciofs.actorOf(
+        MultiChainClusterMemberEventActor.props(multiChainClient), "multichainClusterMemberEvent");
+
+    // MultiChain actor that can do broadcasts for streams across the cluster
+    final ActorRef multiChainStreamBroadcastActor = paciofs.actorOf(
+        MultiChainStreamBroadcastActor.props(multiChainClient), "multichainStreamBroadcast");
 
     // serve the default services
     bindAndHandleAsync(Http.get(paciofs), config, ActorMaterializer.create(paciofs),
-        multiChainActor, multiChainClient);
+        multiChainClient, multiChainStreamBroadcastActor);
   }
 
   /* Utility functions */
 
   private static void bindAndHandleAsync(Http http, Config config, Materializer materializer,
-      ActorRef multiChainActor, MultiChainDaemonRpcClient multiChainClient) {
+      MultiChainRpcClient multiChainClient, ActorRef multiChainStreamBroadcastActor) {
     final Function<HttpRequest, CompletionStage<HttpResponse>> handlers =
         ServiceHandler.concatOrNotFound(
             PacioFsServiceHandlerFactory.create(
-                new PacioFsServiceImpl(multiChainActor, multiChainClient), materializer),
+                new PacioFsServiceImpl(multiChainClient, multiChainStreamBroadcastActor),
+                materializer),
             PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
 
     // set up HTTP if desired
@@ -178,20 +181,16 @@ public class PacioFs {
     log = LoggerFactory.getLogger(PacioFs.class);
   }
 
-  private static MultiChainDaemonRpcClient initializeMultiChainClient(ActorSystem system) {
-    final MultiChainDaemonRpcClient multiChainClient;
-    try {
-      multiChainClient = new MultiChainClient(
-          system.settings().config().getConfig(PacioFsOptions.MULTICHAIN_CLIENT_KEY));
-    } catch (MalformedURLException e) {
-      throw new RuntimeException("Could not create MultiChain client", e);
-    }
+  private static MultiChainRpcClient initializeMultiChainClient(ActorSystem system) {
+    final MultiChainRpcClient multiChainClient = new MultiChainClientFactory(
+        system.settings().config().getConfig(PacioFsOptions.MULTICHAIN_CLIENT_KEY))
+                                                     .create();
 
     // shut down MultiChain client before the actor system
     CoordinatedShutdown.get(system).addJvmShutdownHook(multiChainClient::stop);
 
     // warm up the client
-    final MultiChainDaemonRpcClient.Info info = multiChainClient.getInfo();
+    final MultiChainRpcClient.Info info = multiChainClient.getInfo();
     log.info("Connected to MultiChain: {}", info.toString());
 
     return multiChainClient;

@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get --quiet update \
   && apt-get --quiet --yes install --no-install-recommends \
-
+  \
   # system dependencies
   curl \
   unzip \

@@ -53,6 +53,12 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic.version}</version>
         </dependency>
+        <!-- our fork on jitpack.io -->
+        <dependency>
+            <groupId>com.github.paciofs</groupId>
+            <artifactId>commons-exec</artifactId>
+            <version>${commons-exec.version}</version>
+        </dependency>
         <!-- explicit dependency on protobuf -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -157,11 +163,6 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
             <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.paciofs</groupId>
-            <artifactId>commons-exec</artifactId>
-            <version>${commons-exec.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>

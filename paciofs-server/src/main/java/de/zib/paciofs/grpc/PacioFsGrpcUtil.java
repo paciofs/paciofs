@@ -248,7 +248,7 @@ public class PacioFsGrpcUtil {
       for (int i = 0; i < messages.length; ++i) {
         messageStrings[i] = TextFormat.shortDebugString(messages[i]);
       }
-      log.trace(formatString, messageStrings);
+      log.trace(formatString, (Object[]) messageStrings);
     }
   }
 

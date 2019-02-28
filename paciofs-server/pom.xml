@@ -36,7 +36,7 @@
         <akka.http.version>10.1.7+19-2443640a</akka.http.version>
         <akka.management.version>0.20.0</akka.management.version>
         <akka.version>2.5.19</akka.version>
-        <bitcoin-rpc-client.version>1.1.0</bitcoin-rpc-client.version>
+        <bitcoin-rpc-client.version>1.1.1-SNAPSHOT</bitcoin-rpc-client.version>
         <commons-cli.version>1.4</commons-cli.version>
         <!-- need unreleased version that fixes [EXEC-71] -->
         <!-- https://github.com/apache/commons-exec/commit/42eb77c321f7dc17aaff45e45ac1179256517005 -->
@@ -58,6 +58,12 @@
             <groupId>com.github.paciofs</groupId>
             <artifactId>commons-exec</artifactId>
             <version>${commons-exec.version}</version>
+        </dependency>
+        <!-- our fork on jitpack.io -->
+        <dependency>
+            <groupId>com.github.paciofs</groupId>
+            <artifactId>bitcoin-rpc-client</artifactId>
+            <version>${bitcoin-rpc-client.version}</version>
         </dependency>
         <!-- explicit dependency on protobuf -->
         <dependency>
@@ -169,11 +175,6 @@
             <artifactId>org.eclipse.jgit</artifactId>
             <version>${jgit.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>wf.bitcoin</groupId>
-            <artifactId>bitcoin-rpc-client</artifactId>
-            <version>${bitcoin-rpc-client.version}</version>
         </dependency>
     </dependencies>
 

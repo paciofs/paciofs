@@ -31,7 +31,7 @@ public interface MultiChainRpcClient extends BitcoindRpcClient {
 
     String protocol();
 
-    short port();
+    int port();
 
     long setupBlocks();
 

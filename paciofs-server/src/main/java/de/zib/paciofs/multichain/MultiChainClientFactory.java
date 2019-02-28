@@ -11,29 +11,21 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.rpc.MultiChainJsonRpcClient;
-import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.net.ssl.HttpsURLConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCError;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCErrorCode;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
-import wf.bitcoin.krotjson.Base64Coder;
 
 public class MultiChainClientFactory {
   /**
@@ -46,12 +38,6 @@ public class MultiChainClientFactory {
    */
   private static class LocalClient extends MultiChainJsonRpcClient {
     private static final Logger LOG = LoggerFactory.getLogger(LocalClient.class);
-
-    private static final int STREAM_BUFFER_SIZE = 1024;
-
-    // custom auth because we only know the credentials after MultiChain has started, which is after
-    // instantiation time
-    private String auth;
 
     private final Config config;
 
@@ -102,9 +88,7 @@ public class MultiChainClientFactory {
       // The command parameter should be one of add (to manually queue a node for the next
       // available slot), remove (to remove a node), or onetry (to immediately connect to a node
       // even if a slot is not available).
-      LOG.trace("{}'ing {}", command, nodeWithPort);
       super.addNode(nodeWithPort, command);
-      LOG.trace("{}'ed {}", command, nodeWithPort);
     }
 
     @Override
@@ -112,14 +96,7 @@ public class MultiChainClientFactory {
       this.ensureRunning();
 
       try {
-        if (LOG.isTraceEnabled()) {
-          MultiChainClientFactory.traceQuery(LOG, method, o);
-          final Object result = this.doQuery(method, o);
-          MultiChainClientFactory.traceResult(LOG, result);
-          return result;
-        }
-
-        return this.doQuery(method, o);
+        return super.query(method, o);
       } catch (GenericRpcException e) {
         // multichaind has died, switch to FAILED
         if (!this.multiChainDaemon.isRunning()) {
@@ -177,45 +154,6 @@ public class MultiChainClientFactory {
 
       LOG.debug("Illegal lifecycle phase transition: {} -> {}", this.multiChainLifecyclePhase, to);
       return false;
-    }
-
-    /*
-     * from the 1.1.0 release commit
-     * https://github.com/Polve/bitcoin-rpc-client/blob/a0005e146e863b4cb2610fb0257da25da0b70a11/src/main/java/wf/bitcoin/javabitcoindrpcclient/BitcoinJSONRPCClient.java#L209
-     * fully override so we can add our authentication after (and not during) instantiation
-     */
-    private Object doQuery(String method, Object... o) throws GenericRpcException {
-      try {
-        final HttpURLConnection connection = (HttpURLConnection) this.rpcURL.openConnection();
-        connection.setDoOutput(true);
-        connection.setDoInput(true);
-
-        if (connection instanceof HttpsURLConnection) {
-          if (this.getHostnameVerifier() != null) {
-            ((HttpsURLConnection) connection).setHostnameVerifier(this.getHostnameVerifier());
-          }
-          if (this.getSslSocketFactory() != null) {
-            ((HttpsURLConnection) connection).setSSLSocketFactory(this.getSslSocketFactory());
-          }
-        }
-        connection.setRequestProperty("Authorization", "Basic " + this.auth);
-
-        final byte[] r = this.prepareRequest(method, o);
-        connection.getOutputStream().write(r);
-        connection.getOutputStream().close();
-
-        final int responseCode = connection.getResponseCode();
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-          final InputStream errorStream = connection.getErrorStream();
-          throw new BitcoinRPCException(method, Arrays.deepToString(o), responseCode,
-              connection.getResponseMessage(),
-              errorStream == null ? null : new String(this.loadStream(errorStream), QUERY_CHARSET));
-        }
-
-        return this.loadResponse(connection.getInputStream(), "1", true);
-      } catch (IOException ex) {
-        throw new BitcoinRPCException(method, Arrays.deepToString(o), ex);
-      }
     }
 
     // manages the transition from STOPPED -> STARTING -> RUNNING in a blocking fashion
@@ -302,31 +240,6 @@ public class MultiChainClientFactory {
       }
     }
 
-    /*
-     * from the 1.1.0 release commit
-     * https://github.com/Polve/bitcoin-rpc-client/blob/a0005e146e863b4cb2610fb0257da25da0b70a11/src/main/java/wf/bitcoin/javabitcoindrpcclient/BitcoinJSONRPCClient.java#L209
-     * fully override so we can add our authentication after (and not during) instantiation
-     */
-    private byte[] loadStream(InputStream in) throws IOException {
-      try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-        final byte[] buffer = new byte[STREAM_BUFFER_SIZE];
-        for (;;) {
-          final int read = in.read(buffer);
-          if (read == -1) {
-            break;
-          } else if (read == 0) {
-            throw new IOException("Read timed out");
-          }
-
-          baos.write(buffer, 0, read);
-        }
-
-        in.close();
-
-        return baos.toByteArray();
-      }
-    }
-
     private void setAuth() {
       // build the user:password information
       String userInfo;
@@ -336,7 +249,6 @@ public class MultiChainClientFactory {
             this.multiChainDaemon.getMultiChainConf().getString(MultiChainOptions.RPC_USER_KEY);
       } catch (ConfigException.Missing e) {
         // no user given, do not use authentication
-        this.auth = null;
         return;
       }
 
@@ -348,31 +260,16 @@ public class MultiChainClientFactory {
         // no password given, proceed without it
       }
 
-      // encode the auth information
-      this.auth = String.valueOf(Base64Coder.encode(userInfo.getBytes(QUERY_CHARSET)));
+      super.setAuth(userInfo);
     }
   }
 
   private static class RemoteClient extends MultiChainJsonRpcClient {
-    private static final Logger LOG = LoggerFactory.getLogger(RemoteClient.class);
-
     private RemoteClient(String protocol, Config config) throws MalformedURLException {
       super(new URL(protocol + "://" + config.getString(MultiChainOptions.RPC_USER_KEY) + ":"
           + config.getString(MultiChainOptions.RPC_PASSWORD_KEY) + "@"
           + config.getString(MultiChainOptions.RPC_CONNECT_KEY) + ":"
           + config.getInt(MultiChainOptions.RPC_PORT_KEY)));
-    }
-
-    @Override
-    public Object query(String method, Object... o) throws GenericRpcException {
-      if (LOG.isTraceEnabled()) {
-        MultiChainClientFactory.traceQuery(LOG, method, o);
-        final Object result = super.query(method, o);
-        MultiChainClientFactory.traceResult(LOG, result);
-        return result;
-      }
-
-      return super.query(method, o);
     }
   }
 
@@ -453,13 +350,5 @@ public class MultiChainClientFactory {
 
   private String getProtocol() {
     return this.config.hasPath(MultiChainOptions.RPC_SSL_KEY) ? "https" : "http";
-  }
-
-  private static void traceQuery(Logger log, String method, Object... params) {
-    log.trace("Query: {}{}", method, params);
-  }
-
-  private static void traceResult(Logger log, Object result) {
-    log.trace("Result: {}", result);
   }
 }

@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.util.Map;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient;
+import wf.bitcoin.javabitcoindrpcclient.MapWrapper;
 
 /**
  * Exposes some of MultiChain's custom commands.
@@ -79,8 +80,8 @@ public class MultiChainJsonRpcClient extends BitcoinJSONRPCClient implements Mul
     }
 
     @Override
-    public short port() {
-      return this.mapShort("port");
+    public int port() {
+      return this.mapInt("port");
     }
 
     @Override

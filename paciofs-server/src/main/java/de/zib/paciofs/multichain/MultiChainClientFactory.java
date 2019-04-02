@@ -331,7 +331,7 @@ public class MultiChainClientFactory {
    * Depending on the configuration, creates a local or remote client.
    * @return the constructed client
    */
-  public MultiChainRpcClient create() {
+  public MultiChainJsonRpcClient create() {
     if (this.multiChainDaemon != null) {
       try {
         return new LocalClient(this.getProtocol(), this.config, this.multiChainDaemon,

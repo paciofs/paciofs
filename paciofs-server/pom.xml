@@ -437,7 +437,7 @@
                             </systemProperties>
                             <arguments>
                                 <argument>--config</argument>
-                                <argument>${project.basedir}/src/test/resources/debug.conf</argument>
+                                <argument>${project.basedir}/src/test/resources/local.conf</argument>
                             </arguments>
                         </configuration>
                     </execution>

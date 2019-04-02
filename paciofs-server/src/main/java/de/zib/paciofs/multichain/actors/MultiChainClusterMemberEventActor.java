@@ -14,7 +14,7 @@ import akka.cluster.ClusterEvent;
 import akka.cluster.Member;
 import akka.japi.pf.ReceiveBuilder;
 import de.zib.paciofs.logging.Markers;
-import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import de.zib.paciofs.multichain.abstractions.MultiChainCluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
@@ -37,16 +37,16 @@ public class MultiChainClusterMemberEventActor extends AbstractActor {
 
   private final Cluster cluster;
 
-  private final MultiChainRpcClient client;
+  private final MultiChainCluster multiChainCluster;
 
-  private MultiChainClusterMemberEventActor(MultiChainRpcClient client) {
+  private MultiChainClusterMemberEventActor(MultiChainCluster multiChainCluster) {
     this.cluster = Cluster.get(this.context().system());
-    this.client = client;
+    this.multiChainCluster = multiChainCluster;
   }
 
-  public static Props props(MultiChainRpcClient client) {
+  public static Props props(MultiChainCluster multiChainCluster) {
     return Props.create(MultiChainClusterMemberEventActor.class,
-        () -> new MultiChainClusterMemberEventActor(client));
+        () -> new MultiChainClusterMemberEventActor(multiChainCluster));
   }
 
   @Override
@@ -98,15 +98,21 @@ public class MultiChainClusterMemberEventActor extends AbstractActor {
     } else {
       try {
         LOG.trace("Node {}: {}", command.verb, host.get());
-        this.client.addNode(host.get(), command.verb);
+        switch (command) {
+          case ADD:
+            this.multiChainCluster.addNode(host.get());
+            break;
+          case REMOVE:
+            this.multiChainCluster.removeNode(host.get());
+            break;
+          default:
+            throw new IllegalArgumentException(command.name());
+        }
         LOG.trace("Node {} successful: {}", command.verb, host.get());
       } catch (GenericRpcException e) {
         LOG.warn("Node {} failed: {}", command.verb, e.getMessage());
         LOG.warn(Markers.EXCEPTION, "Node " + command.verb + " failed", e);
       }
     }
-
-    // have MultiChain measure latency and backlog
-    this.client.ping();
   }
 }

@@ -7,69 +7,89 @@
 
 package de.zib.paciofs.grpc;
 
-import akka.actor.ActorRef;
-import akka.pattern.Patterns;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.grpc.messages.Volume;
-import de.zib.paciofs.logging.Markers;
-import de.zib.paciofs.multichain.actors.MultiChainStreamBroadcastActor;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
-import java.time.Duration;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
+import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public class PacioFsServiceImpl implements PacioFsService {
   private static final Logger LOG = LoggerFactory.getLogger(PacioFsServiceImpl.class);
 
-  private static final long MULTICHAIN_BROADCAST_TIMEOUT = 1000;
+  // fee to pay for OP_RETURN transactions
+  private static final BigDecimal OP_RETURN_TRANSACTION_FEE = new BigDecimal(0);
+
+  private static final Charset CHARSET = Charset.forName("UTF-8");
+
+  private static final byte[] PACIOFS = "PACI".getBytes(CHARSET);
+  private static final byte[] VOLUME_CREATE = "VOCR".getBytes(CHARSET);
 
   private final MultiChainRpcClient multiChainClient;
 
-  private final ActorRef multiChainStreamBroadcastActor;
+  private final String changeAddress;
 
-  public PacioFsServiceImpl(
-      MultiChainRpcClient multiChainClient, ActorRef multiChainStreamBroadcastActor) {
+  public PacioFsServiceImpl(MultiChainRpcClient multiChainClient) {
     this.multiChainClient = multiChainClient;
-    this.multiChainStreamBroadcastActor = multiChainStreamBroadcastActor;
+    this.changeAddress = this.multiChainClient.getNewAddress();
   }
 
   @Override
   public CompletionStage<CreateVolumeResponse> createVolume(CreateVolumeRequest in) {
     PacioFsGrpcUtil.traceMessages(LOG, "createVolume({})", in);
 
-    // represent volumes as MultiChain streams
-    final String createStreamTxId;
-    try {
-      createStreamTxId = this.multiChainClient.createStream(in.getVolume().getName(), true);
-    } catch (BitcoinRPCException e) {
-      LOG.debug("Error creating stream: {}", e.getMessage());
-      LOG.debug(Markers.EXCEPTION, "Error creating stream", e);
-      throw PacioFsGrpcUtil.toGrpcServiceException(e);
+    // obtain all unspent transaction outputs (UTXOs) for this wallet, meaning we can spend them
+    final List<BitcoindRpcClient.Unspent> unspents = this.multiChainClient.listUnspent(0);
+
+    final String volumeName = in.getVolume().getName();
+
+    // find a fitting UTXO and create input and output
+    List<BitcoindRpcClient.TxInput> input = null;
+    List<BitcoindRpcClient.TxOutput> output = null;
+    for (BitcoindRpcClient.Unspent unspent : unspents) {
+      if (unspent.amount().compareTo(OP_RETURN_TRANSACTION_FEE) >= 0 && unspent.spendable()) {
+        // use this UTXO as spendable input
+        input = Collections.singletonList(new BitcoindRpcClient.BasicTxInput(
+            unspent.txid(), unspent.vout(), unspent.scriptPubKey()));
+
+        // send to our change address
+        output = Collections.singletonList(new BitcoindRpcClient.BasicTxOutput(this.changeAddress,
+            unspent.amount().subtract(OP_RETURN_TRANSACTION_FEE), createVolumeData(volumeName)));
+
+        break;
+      }
     }
 
-    // tell the other MultiChain instances in the cluster to subscribe to the new stream
-    final CompletableFuture<Object> subscribeToStreamBroadcast =
-        Patterns
-            .ask(this.multiChainStreamBroadcastActor,
-                new MultiChainStreamBroadcastActor.SubscribeToStream(createStreamTxId),
-                Duration.ofMillis(MULTICHAIN_BROADCAST_TIMEOUT))
-            .toCompletableFuture();
+    // wallet did not contain any spendable unspent transaction output
+    if (input == null) {
+      throw PacioFsGrpcUtil.toGrpcServiceException(
+          new BitcoinRPCException("No spendable UTXO with amount >= " + OP_RETURN_TRANSACTION_FEE));
+    }
 
-    try {
-      final Object result =
-          subscribeToStreamBroadcast.get(MULTICHAIN_BROADCAST_TIMEOUT, TimeUnit.MILLISECONDS);
-      if (!(result instanceof MultiChainStreamBroadcastActor.SubscribeToStream)) {
-        LOG.warn("Unexpected result from stream subscription broadcast: {}", result);
-      }
-    } catch (ExecutionException | InterruptedException | TimeoutException e) {
-      LOG.warn("Could not get result from stream subscription broadcast: {}", e.getMessage());
-      LOG.warn(Markers.EXCEPTION, "Could not get result from stream subscription broadcast", e);
+    // build the raw transaction
+    final String rawTransactionHex = this.multiChainClient.createRawTransaction(input, output);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Creating volume {} with raw transaction: {}", volumeName,
+          this.multiChainClient.decodeRawTransaction(rawTransactionHex));
+    }
+
+    // sign the raw transaction
+    final String signedRawTransactionHex =
+        this.multiChainClient.signRawTransaction(rawTransactionHex, input, null);
+
+    // finally submit the transaction
+    final String creationTransactionId =
+        this.multiChainClient.sendRawTransaction(signedRawTransactionHex);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Created volume {} with raw transaction: {}", volumeName,
+          this.multiChainClient.getRawTransaction(creationTransactionId));
     }
 
     final Volume volume = Volume.newBuilder().build();
@@ -88,5 +108,25 @@ public class PacioFsServiceImpl implements PacioFsService {
 
     PacioFsGrpcUtil.traceMessages(LOG, "ping({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
+  }
+
+  private static byte[] createVolumeData(String volumeName) {
+    return concatArrays(PACIOFS, VOLUME_CREATE, volumeName.getBytes(CHARSET));
+  }
+
+  private static byte[] concatArrays(byte[]... arrays) {
+    int length = 0;
+    for (byte[] a : arrays) {
+      length += a.length;
+    }
+
+    final byte[] result = new byte[length];
+    int currentLength = 0;
+    for (byte[] a : arrays) {
+      System.arraycopy(a, 0, result, currentLength, a.length);
+      currentLength += a.length;
+    }
+
+    return result;
   }
 }

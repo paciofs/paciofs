@@ -7,7 +7,6 @@
 
 package de.zib.paciofs;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.CoordinatedShutdown;
 import akka.cluster.Cluster;
@@ -32,15 +31,19 @@ import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.MultiChainClientFactory;
+import de.zib.paciofs.multichain.abstractions.MultiChainCluster;
+import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
 import de.zib.paciofs.multichain.actors.MultiChainClusterMemberEventActor;
-import de.zib.paciofs.multichain.actors.MultiChainStreamBroadcastActor;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.JavaConverters;
 
 public class PacioFs {
   private static Logger log;
@@ -99,33 +102,37 @@ public class PacioFs {
     // MultiChain client
     final MultiChainRpcClient multiChainClient = initializeMultiChainClient(paciofs);
 
+    // cluster as seen by received transactions on MultiChain
+    final MultiChainCluster multiChainCluster = new MultiChainCluster(multiChainClient);
+
+    // file system as seen by received transactions on MultiChain
+    final MultiChainFileSystem multiChainFileSystem =
+        new MultiChainFileSystem(multiChainClient, multiChainCluster);
+
     // have MultiChain react to cluster events
     paciofs.actorOf(
-        MultiChainClusterMemberEventActor.props(multiChainClient), "multichainClusterMemberEvent");
-
-    // MultiChain actor that can do broadcasts for streams across the cluster
-    final ActorRef multiChainStreamBroadcastActor = paciofs.actorOf(
-        MultiChainStreamBroadcastActor.props(multiChainClient), "multichainStreamBroadcast");
+        MultiChainClusterMemberEventActor.props(multiChainCluster), "multichainClusterMemberEvent");
 
     // serve the default services
-    bindAndHandleAsync(Http.get(paciofs), config, ActorMaterializer.create(paciofs),
-        multiChainClient, multiChainStreamBroadcastActor);
+    bindAndHandleAsync(
+        Http.get(paciofs), config, ActorMaterializer.create(paciofs), multiChainClient);
   }
 
   /* Utility functions */
 
-  private static void bindAndHandleAsync(Http http, Config config, Materializer materializer,
-      MultiChainRpcClient multiChainClient, ActorRef multiChainStreamBroadcastActor) {
-    final Function<HttpRequest, CompletionStage<HttpResponse>> handlers =
-        ServiceHandler.concatOrNotFound(
-            PacioFsServiceHandlerFactory.create(
-                new PacioFsServiceImpl(multiChainClient, multiChainStreamBroadcastActor),
-                materializer),
-            PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
+  private static void bindAndHandleAsync(
+      Http http, Config config, Materializer materializer, MultiChainRpcClient multiChainClient) {
+    // concat the handlers
+    final List<Function<HttpRequest, CompletionStage<HttpResponse>>> handlers = new ArrayList<>();
+    handlers.add(PacioFsServiceHandlerFactory.create(
+        new PacioFsServiceImpl(multiChainClient), materializer));
+    handlers.add(PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
+    final Function<HttpRequest, CompletionStage<HttpResponse>> combinedHandler =
+        ServiceHandler.concatOrNotFound(JavaConverters.collectionAsScalaIterable(handlers).toSeq());
 
     // set up HTTP if desired
     try {
-      PacioFsGrpcUtil.bindAndHandleAsyncHttp(handlers, http,
+      PacioFsGrpcUtil.bindAndHandleAsyncHttp(combinedHandler, http,
           config.getString(PacioFsOptions.HTTP_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTP_BIND_PORT_KEY), materializer);
     } catch (ConfigException.Missing | ConfigException.WrongType e) {
@@ -143,7 +150,7 @@ public class PacioFs {
         // tolerate missing CA certificates, falls back to system
       }
 
-      PacioFsGrpcUtil.bindAndHandleAsyncHttps(handlers, http,
+      PacioFsGrpcUtil.bindAndHandleAsyncHttps(combinedHandler, http,
           config.getString(PacioFsOptions.HTTPS_BIND_HOSTNAME_KEY),
           config.getInt(PacioFsOptions.HTTPS_BIND_PORT_KEY), materializer,
           PacioFsGrpcUtil.httpsConnectionContext(

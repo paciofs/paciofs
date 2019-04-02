@@ -17,7 +17,7 @@ matrix:
         # cmake-<VERSION>-Linux-x86_64/
         - CMAKE_STRIP_COMPONENTS=1
         - GO_DIST=linux
-        - MULTICHAIN_VERSION=2.0-beta-2
+        - MULTICHAIN_VERSION=2.0-release
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
 
     - os: osx
@@ -36,9 +36,9 @@ matrix:
         # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/
         - CMAKE_STRIP_COMPONENTS=3
         - GO_DIST=darwin
-        - MULTICHAIN_VERSION=2.0-dev
-        - MULTICHAIN_TAG=20190207T085107
-        - MULTICHAIN_HASH=ffaa0a7
+        - MULTICHAIN_VERSION=2.0-release
+        - MULTICHAIN_TAG=20190325T123159
+        - MULTICHAIN_HASH=b78a904
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-${MULTICHAIN_HASH}-osx.tar.gz
 
     - os: linux

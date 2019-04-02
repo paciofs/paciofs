@@ -12,11 +12,7 @@ import java.math.BigDecimal;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public interface MultiChainRpcClient extends BitcoindRpcClient {
-  String createStream(String name, boolean open);
-
   Info getInfo();
-
-  void subscribe(String streamRef);
 
   interface Info extends Serializable {
     String version();

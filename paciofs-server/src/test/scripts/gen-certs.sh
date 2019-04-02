@@ -14,7 +14,7 @@ rm *.pass
 rm *.pem
 rm -rf ./paciofsCA/*
 
-# index database
+# processBlocks database
 touch ./paciofsCA/index.txt
 
 # serial number file

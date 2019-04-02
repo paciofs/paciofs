@@ -10,36 +10,70 @@ package de.zib.paciofs.multichain.rpc;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient;
+import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 import wf.bitcoin.javabitcoindrpcclient.MapWrapper;
+import wf.bitcoin.krotjson.HexCoder;
 
 /**
  * Exposes some of MultiChain's custom commands.
  * @see <a href="https://www.multichain.com/developers/json-rpc-api/">JSON RPC API</a>
  */
 public class MultiChainJsonRpcClient extends BitcoinJSONRPCClient implements MultiChainRpcClient {
-  public MultiChainJsonRpcClient() {
-    super();
-  }
-
   public MultiChainJsonRpcClient(URL url) {
     super(url);
   }
 
   @Override
-  public String createStream(String name, boolean open) {
-    return (String) this.query("create", "stream", name, open);
+  public String createRawTransaction(List<TxInput> inputs, List<TxOutput> outputs)
+      throws GenericRpcException {
+    // figure out how many outputs have data attached
+    int dataCount = 0;
+    for (TxOutput output : outputs) {
+      if (output.data() != null) {
+        ++dataCount;
+      }
+    }
+
+    // shortcut if no data was attached anywhere
+    if (dataCount == 0) {
+      return super.createRawTransaction(inputs, outputs);
+    }
+
+    // rebuild outputs without data, because we append data separately
+    final List<TxOutput> outputsWithoutData = new ArrayList<>(outputs.size());
+
+    // hex encoded data values
+    final String[] data = new String[dataCount];
+
+    // obtain hex encoding of data of each of the outputs
+    int i = 0;
+    for (TxOutput output : outputs) {
+      if (output.data() != null) {
+        data[i++] = HexCoder.encode(output.data());
+      }
+
+      // remove data from output
+      outputsWithoutData.add(new BasicTxOutput(output.address(), output.amount()));
+    }
+
+    // the initial raw transaction without data
+    String rawTx = super.createRawTransaction(inputs, outputsWithoutData);
+
+    // append each data to the raw transaction
+    for (String d : data) {
+      rawTx = (String) this.query("appendrawdata", rawTx, d);
+    }
+
+    return rawTx;
   }
 
   @Override
   public Info getInfo() {
     return new InfoMapWrapper((Map<String, ?>) this.query("getinfo"));
-  }
-
-  @Override
-  public void subscribe(String streamRef) {
-    this.query("subscribe", streamRef);
   }
 
   private static class InfoMapWrapper extends MapWrapper implements Info, Serializable {

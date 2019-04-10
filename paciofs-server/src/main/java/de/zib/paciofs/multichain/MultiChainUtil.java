@@ -49,7 +49,7 @@ public class MultiChainUtil {
    * @param out transaction output to check
    * @return decoded data for OP_RETURN, null otherwise
    */
-  public static byte[] getOpReturnData(BitcoindRpcClient.RawTransaction.Out out) {
+  public static byte[] getRawTransactionData(BitcoindRpcClient.RawTransaction.Out out) {
     final String asm = out.scriptPubKey().asm();
     if (!asm.startsWith(OP_RETURN)) {
       return null;
@@ -58,7 +58,7 @@ public class MultiChainUtil {
     return HexCoder.decode(asm.substring(OP_RETURN.length()).trim());
   }
 
-  public static String sendTransaction(MultiChainRpcClient client, Logger traceLog,
+  public static String sendRawTransaction(MultiChainRpcClient client, Logger traceLog,
       int utxoMinConfirmations, BigDecimal amount, String address, byte[] data) {
     // get this wallet's UTXOs with a certain number of confirmations
     final List<BitcoindRpcClient.Unspent> utxos = client.listUnspent(utxoMinConfirmations);

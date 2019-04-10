@@ -8,12 +8,14 @@
 package de.zib.paciofs.multichain.abstractions;
 
 import de.zib.paciofs.grpc.messages.Volume;
+import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
-public class MultiChainFileSystem {
+public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainFileSystem.class);
 
   private static final BigDecimal FILE_SYSTEM_OP_RETURN_FEE = new BigDecimal(1);
@@ -34,4 +36,14 @@ public class MultiChainFileSystem {
   }
 
   public void createVolume(Volume volume) {}
+
+  @Override
+  public void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx: {}", rawTransaction.txId());
+  }
+
+  @Override
+  public void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx for removal: {}", rawTransaction.txId());
+  }
 }

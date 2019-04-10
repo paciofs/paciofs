@@ -33,7 +33,7 @@ import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.MultiChainClientFactory;
 import de.zib.paciofs.multichain.abstractions.MultiChainCluster;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
-import de.zib.paciofs.multichain.actors.MultiChainClusterMemberEventActor;
+import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -111,7 +111,8 @@ public class PacioFs {
 
     // have MultiChain react to cluster events
     paciofs.actorOf(
-        MultiChainClusterMemberEventActor.props(multiChainCluster), "multichainClusterMemberEvent");
+        MultiChainActor.props(multiChainClient, multiChainCluster, multiChainFileSystem),
+        "multichain");
 
     // serve the default services
     bindAndHandleAsync(

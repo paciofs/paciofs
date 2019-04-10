@@ -8,14 +8,16 @@
 package de.zib.paciofs.multichain.abstractions;
 
 import de.zib.paciofs.multichain.MultiChainUtil;
+import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.math.BigDecimal;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
-public class MultiChainCluster {
+public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainCluster.class);
 
   private static final BigDecimal CLUSTER_OP_RETURN_FEE = new BigDecimal(1);
@@ -54,8 +56,8 @@ public class MultiChainCluster {
     }
 
     // TODO handle exceptions
-    MultiChainUtil.sendTransaction(this.client, LOG, 0, CLUSTER_OP_RETURN_FEE, this.changeAddress,
-        MultiChainUtil.encodeRawTransactionData(NODE_ADD + node.getAddress()));
+    MultiChainUtil.sendRawTransaction(this.client, LOG, 0, CLUSTER_OP_RETURN_FEE,
+        this.changeAddress, MultiChainUtil.encodeRawTransactionData(NODE_ADD + node.getAddress()));
 
     // TODO check return value and warn
     this.nodes.add(node);
@@ -74,10 +76,21 @@ public class MultiChainCluster {
     }
 
     // TODO handle exceptions
-    MultiChainUtil.sendTransaction(this.client, LOG, 0, CLUSTER_OP_RETURN_FEE, this.changeAddress,
+    MultiChainUtil.sendRawTransaction(this.client, LOG, 0, CLUSTER_OP_RETURN_FEE,
+        this.changeAddress,
         MultiChainUtil.encodeRawTransactionData(NODE_REMOVE + node.getAddress()));
 
     // TODO check return value and warn
     this.nodes.remove(node);
+  }
+
+  @Override
+  public void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx: {}", rawTransaction.txId());
+  }
+
+  @Override
+  public void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx for removal: {}", rawTransaction.txId());
   }
 }

@@ -7,74 +7,111 @@
 
 package de.zib.paciofs.multichain;
 
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import com.google.protobuf.InvalidProtocolBufferException;
+import de.zib.paciofs.multichain.internal.MultiChainCommand;
+import de.zib.paciofs.multichain.internal.MultiChainRawTransactionDataHeader;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 import wf.bitcoin.krotjson.HexCoder;
 
 public class MultiChainUtil {
-  private static final String OP_RETURN = "OP_RETURN";
-  private static final int OP_RETURN_MAX_BYTES = 80;
+  // magic number in every raw transaction's data header
+  private static final int HEADER_MAGIC = 'P' << 24 | 'A' << 16 | 'C' << 8 | 'I';
 
-  private static final Charset UTF8 = Charset.forName("UTF-8");
+  private final MultiChainRpcClient client;
 
-  private MultiChainUtil() {}
+  private final BigDecimal amount;
 
-  public static String decodeRawTransactionData(byte[] data) {
-    return new String(data, UTF8);
+  private final String changeAddress;
+
+  private final int utxoMinConfirmations;
+
+  private final Logger log;
+
+  public MultiChainUtil(
+      MultiChainRpcClient client, BigDecimal amount, int utxoMinConfirmations, Logger log) {
+    this.client = client;
+    this.changeAddress = this.client.getNewAddress();
+    this.amount = amount;
+    this.utxoMinConfirmations = utxoMinConfirmations;
+    this.log = log;
   }
 
-  /**
-   * Encodes string data to be embedded in a transaction output.
-   * @param data data to encode
-   * @return the encoded data
-   */
-  public static byte[] encodeRawTransactionData(String data) {
-    final byte[] bytes = data.getBytes(UTF8);
-    if (bytes.length > OP_RETURN_MAX_BYTES) {
-      throw new IllegalArgumentException("UTF-8 encoding of '" + data + "' is larger than "
-          + OP_RETURN_MAX_BYTES + " bytes: " + bytes.length);
+  public void processRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction,
+      BiConsumer<MultiChainCommand, byte[]> consumer) {
+    // TODO build fixed-size FIFO cache of raw transactions
+    for (BitcoindRpcClient.RawTransaction.Out out : rawTransaction.vOut()) {
+      if (out.scriptPubKey() != null && "nulldata".equals(out.scriptPubKey().type())) {
+        final CodedInputStream stream = CodedInputStream.newInstance(
+            HexCoder.decode(out.scriptPubKey().asm().substring("OP_RETURN ".length())));
+        try {
+          // limit to header size to avoid reading past the end
+          final int limit = stream.pushLimit(stream.readUInt32());
+          final MultiChainRawTransactionDataHeader header =
+              MultiChainRawTransactionDataHeader.parseFrom(stream);
+          stream.popLimit(limit);
+
+          if (header.getMagic() == HEADER_MAGIC) {
+            // read array with appropriate length
+            consumer.accept(header.getCommand(), stream.readRawBytes(stream.readUInt32()));
+          }
+        } catch (InvalidProtocolBufferException e) {
+          // invalid header, no raw transaction we can process
+        } catch (IOException e) {
+          throw new RuntimeException("Error reading raw transaction data", e);
+        }
+      }
     }
-
-    return bytes;
   }
 
-  /**
-   * If the transaction output is an OP_RETURN, returns the decoded data.
-   * @param out transaction output to check
-   * @return decoded data for OP_RETURN, null otherwise
-   */
-  public static byte[] getRawTransactionData(BitcoindRpcClient.RawTransaction.Out out) {
-    final String asm = out.scriptPubKey().asm();
-    if (!asm.startsWith(OP_RETURN)) {
-      return null;
-    }
-
-    return HexCoder.decode(asm.substring(OP_RETURN.length()).trim());
-  }
-
-  public static String sendRawTransaction(MultiChainRpcClient client, Logger traceLog,
-      int utxoMinConfirmations, BigDecimal amount, String address, byte[] data) {
+  public String sendRawTransaction(MultiChainCommand command, byte[] data) {
     // get this wallet's UTXOs with a certain number of confirmations
-    final List<BitcoindRpcClient.Unspent> utxos = client.listUnspent(utxoMinConfirmations);
+    final List<BitcoindRpcClient.Unspent> utxos =
+        this.client.listUnspent(this.utxoMinConfirmations);
 
     // find a fitting UTXO and create input and output
     List<BitcoindRpcClient.TxInput> input = null;
     List<BitcoindRpcClient.TxOutput> output = null;
     for (BitcoindRpcClient.Unspent utxo : utxos) {
-      if (utxo.amount().compareTo(amount) >= 0 && utxo.spendable()) {
+      if (utxo.amount().compareTo(this.amount) >= 0 && utxo.spendable()) {
         // use this UTXO as spendable input
         input = Collections.singletonList(
             new BitcoindRpcClient.BasicTxInput(utxo.txid(), utxo.vout(), utxo.scriptPubKey()));
 
+        // build the header so we know the size
+        final MultiChainRawTransactionDataHeader header =
+            MultiChainRawTransactionDataHeader.newBuilder()
+                .setMagic(HEADER_MAGIC)
+                .setCommand(command)
+                .build();
+
+        // build the data array
+        final byte[] out = new byte[CodedOutputStream.computeMessageSizeNoTag(header)
+            + CodedOutputStream.computeByteArraySizeNoTag(data)];
+        try {
+          final CodedOutputStream stream = CodedOutputStream.newInstance(out);
+
+          // both methods prepend lengths as uint32 fields
+          stream.writeMessageNoTag(header);
+          stream.writeByteArrayNoTag(data);
+
+          stream.flush();
+        } catch (IOException e) {
+          throw new RuntimeException("Error writing raw transaction data", e);
+        }
+
         // send to our change address
-        output = Collections.singletonList(
-            new BitcoindRpcClient.BasicTxOutput(address, utxo.amount().subtract(amount), data));
+        output = Collections.singletonList(new BitcoindRpcClient.BasicTxOutput(
+            this.changeAddress, utxo.amount().subtract(this.amount), out));
 
         break;
       }
@@ -82,23 +119,23 @@ public class MultiChainUtil {
 
     // wallet did not contain any spendable unspent transaction output
     if (input == null) {
-      throw new BitcoinRPCException("No spendable UTXO with amount >= " + amount);
+      throw new BitcoinRPCException("No spendable UTXO with amount >= " + this.amount);
     }
 
     // build the raw transaction
-    final String rawTransactionHex = client.createRawTransaction(input, output);
-    if (traceLog != null && traceLog.isTraceEnabled()) {
-      traceLog.trace("Raw transaction: {}", client.decodeRawTransaction(rawTransactionHex));
+    final String rawTransactionHex = this.client.createRawTransaction(input, output);
+    if (this.log.isTraceEnabled()) {
+      this.log.trace("Raw transaction: {}", this.client.decodeRawTransaction(rawTransactionHex));
     }
 
     // sign the raw transaction
     final String signedRawTransactionHex =
-        client.signRawTransaction(rawTransactionHex, input, null);
+        this.client.signRawTransaction(rawTransactionHex, input, null);
 
     // finally submit the transaction
-    final String transactionId = client.sendRawTransaction(signedRawTransactionHex);
-    if (traceLog != null && traceLog.isTraceEnabled()) {
-      traceLog.trace("Sent raw transaction: {}", client.getRawTransaction(transactionId));
+    final String transactionId = this.client.sendRawTransaction(signedRawTransactionHex);
+    if (this.log.isTraceEnabled()) {
+      this.log.trace("Sent raw transaction: {}", this.client.getRawTransaction(transactionId));
     }
 
     return transactionId;

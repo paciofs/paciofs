@@ -116,18 +116,19 @@ public class PacioFs {
 
     // serve the default services
     bindAndHandleAsync(
-        Http.get(paciofs), config, ActorMaterializer.create(paciofs), multiChainClient);
+        Http.get(paciofs), config, ActorMaterializer.create(paciofs), multiChainFileSystem);
   }
 
   /* Utility functions */
 
-  private static void bindAndHandleAsync(
-      Http http, Config config, Materializer materializer, MultiChainRpcClient multiChainClient) {
+  private static void bindAndHandleAsync(Http http, Config config, Materializer materializer,
+      MultiChainFileSystem multiChainFileSystem) {
     // concat the handlers
     final List<Function<HttpRequest, CompletionStage<HttpResponse>>> handlers = new ArrayList<>();
     handlers.add(PacioFsServiceHandlerFactory.create(
-        new PacioFsServiceImpl(multiChainClient), materializer));
-    handlers.add(PosixIoServiceHandlerFactory.create(new PosixIoServiceImpl(), materializer));
+        new PacioFsServiceImpl(multiChainFileSystem), materializer));
+    handlers.add(PosixIoServiceHandlerFactory.create(
+        new PosixIoServiceImpl(multiChainFileSystem), materializer));
     final Function<HttpRequest, CompletionStage<HttpResponse>> combinedHandler =
         ServiceHandler.concatOrNotFound(JavaConverters.collectionAsScalaIterable(handlers).toSeq());
 

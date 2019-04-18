@@ -13,6 +13,7 @@ import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Errno;
 import de.zib.paciofs.io.posix.grpc.messages.Mode;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
+import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class PosixIoServiceImpl implements PosixIoService {
   private static final Logger LOG = LoggerFactory.getLogger(PosixIoServiceImpl.class);
 
-  public PosixIoServiceImpl() {}
+  public PosixIoServiceImpl(MultiChainFileSystem fileSystem) {}
 
   @Override
   public CompletionStage<PingResponse> ping(PingRequest in) {

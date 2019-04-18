@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "de.zib.paciofs.multichain.internal";
+
+package paciofs.multichain.internal;
+
+enum MultiChainCommand {
+  MCC_EMPTY = 0;
+
+  MCC_NODE_ADD = 1;
+
+  MCC_NODE_REMOVE = 2;
+
+  MCC_VOLUME_CREATE = 3;
+
+  MCC_VOLUME_DELETE = 4;
+}

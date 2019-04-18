@@ -5,8 +5,8 @@ option java_package = "de.zib.paciofs.grpc.messages";
 
 package paciofs.grpc.messages;
 
-message Volume {
-  string name = 1;
+message Node {
+  string address = 1;
 
   string creation_tx_id = 2;
 }

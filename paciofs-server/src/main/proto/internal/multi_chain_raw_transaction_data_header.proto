@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "de.zib.paciofs.multichain.internal";
+
+package paciofs.multichain.internal;
+
+import "internal/multi_chain_command.proto";
+
+message MultiChainRawTransactionDataHeader {
+  // Always 1346454345
+  // "P" << 24 | "A" << 16 | "C" << 8 | "I"
+  uint32 magic = 1;
+
+  // Specifies what to do
+  MultiChainCommand command = 2;
+}

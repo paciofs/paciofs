@@ -60,6 +60,11 @@
         <appender-ref ref="async-stdout" />
     </logger>
 
+    <!-- special logger for BitCoin client -->
+    <logger name="wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient" level="${paciofs.multichain-client.multichain.log-level}" additivity="false">
+        <appender-ref ref="async-stdout" />
+    </logger>
+
     <root level="${paciofs.log-level}">
         <appender-ref ref="async-stdout" />
     </root>

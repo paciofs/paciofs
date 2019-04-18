@@ -30,14 +30,16 @@ public class MultiChainActor extends AbstractActorWithTimers {
   }
 
   private static final class MultiChainEndpoint {
-    public final String endpoint;
+    final String endpoint;
 
-    public MultiChainEndpoint(String endpoint) {
+    MultiChainEndpoint(String endpoint) {
       this.endpoint = endpoint;
     }
   }
 
-  private static final class MultiChainQuery {}
+  private static final class MultiChainQuery {
+    MultiChainQuery() {}
+  }
 
   private static final String TOPIC_MULTICHAIN_ENDPOINTS = "multichain-endpoints";
 

@@ -41,6 +41,8 @@ public class MultiChainActor extends AbstractActorWithTimers {
     MultiChainQuery() {}
   }
 
+  private static final int QUERY_INTERVAL = 3000;
+
   private static final String TOPIC_MULTICHAIN_ENDPOINTS = "multichain-endpoints";
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainActor.class);
@@ -63,6 +65,12 @@ public class MultiChainActor extends AbstractActorWithTimers {
   // array of recipients of new raw transactions
   private final RawTransactionConsumer[] rawTransactionConsumers;
 
+  /**
+   * Construct a MultiChain actor, which listens for other actors and connects them to the local
+   * MultiChain instance. It periodically queries MultiChain for new blocks.
+   * @param multiChainClient the MultiChain client to use
+   * @param consumers the list of consumers to notify on new blocks
+   */
   public MultiChainActor(
       MultiChainRpcClient multiChainClient, RawTransactionConsumer... consumers) {
     this.mediator = DistributedPubSub.get(this.context().system()).mediator();
@@ -228,6 +236,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
     }
 
     // schedule the next invocation
-    this.timers().startSingleTimer(this.multiChainQueryTimerKey, query, Duration.ofMillis(3000));
+    this.timers().startSingleTimer(
+        this.multiChainQueryTimerKey, query, Duration.ofMillis(QUERY_INTERVAL));
   }
 }

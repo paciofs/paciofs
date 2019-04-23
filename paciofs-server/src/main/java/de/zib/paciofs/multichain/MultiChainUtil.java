@@ -25,7 +25,8 @@ import wf.bitcoin.krotjson.HexCoder;
 
 public class MultiChainUtil {
   // magic number in every raw transaction's data header
-  private static final int HEADER_MAGIC = 'P' << 24 | 'A' << 16 | 'C' << 8 | 'I';
+  // 'P' << 24 | 'A' << 16 | 'C' << 8 | 'I';
+  private static final int HEADER_MAGIC = 1346454345;
 
   private final MultiChainRpcClient client;
 
@@ -37,6 +38,13 @@ public class MultiChainUtil {
 
   private final Logger log;
 
+  /**
+   * Constructs a utility around a MultiChain client, providing some added functionality.
+   * @param client the MultiChain client to wrap
+   * @param amount the amount to send in each transaction
+   * @param utxoMinConfirmations the number of confirmations before a UTXO is considered spendable
+   * @param log the logger to use
+   */
   public MultiChainUtil(
       MultiChainRpcClient client, BigDecimal amount, int utxoMinConfirmations, Logger log) {
     this.client = client;
@@ -46,6 +54,13 @@ public class MultiChainUtil {
     this.log = log;
   }
 
+  /**
+   * Takes a raw transaction and iterates over all outputs. If an output is found that contains
+   * encoded data, extracts the corresponding command and passes it to the consumer, along with the
+   * data.
+   * @param rawTransaction the raw transaction to iterate over
+   * @param consumer callback taking a command along with data
+   */
   public void processRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction,
       BiConsumer<MultiChainCommand, byte[]> consumer) {
     // TODO build fixed-size FIFO cache of raw transactions
@@ -73,6 +88,12 @@ public class MultiChainUtil {
     }
   }
 
+  /**
+   * Builds, signs and sends a raw transaction.
+   * @param command the command to prepend to the data
+   * @param data the actual data to add to OP_RETURN
+   * @return the transaction id
+   */
   public String sendRawTransaction(MultiChainCommand command, byte[] data) {
     // get this wallet's UTXOs with a certain number of confirmations
     final List<BitcoindRpcClient.Unspent> utxos =

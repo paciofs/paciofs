@@ -32,12 +32,22 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
   private final Map<String, Volume> volumes;
 
+  /**
+   * Construct a file system view on top of MultiChain.
+   * @param client the MultiChain client to use
+   * @param cluster the MultiChainCluster view to use
+   */
   public MultiChainFileSystem(MultiChainRpcClient client, MultiChainCluster cluster) {
     this.clientUtil = new MultiChainUtil(client, FILE_SYSTEM_OP_RETURN_FEE, 0, LOG);
     this.cluster = cluster;
     this.volumes = new ConcurrentHashMap<>();
   }
 
+  /**
+   * Create a volume, sending it to MultiChain.
+   * @param volume the volume to create
+   * @return the created volume, along with its MultiChain transaction id
+   */
   public Volume createVolume(Volume volume) {
     // TODO check cluster for readiness
     Volume created = this.volumes.merge(volume.getName(), volume, (old, toAdd) -> {

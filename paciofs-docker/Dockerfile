@@ -66,24 +66,6 @@ RUN wget --output-document multichain.tar.gz --quiet https://www.multichain.com/
   && rm multichain.tar.gz
 ENV MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
-# install sbt for akka-http
-ENV SBT_VERSION="1.2.8"
-RUN wget --output-document sbt.tgz --quiet https://piccolo.link/sbt-${SBT_VERSION}.tgz \
-  && tar --directory /usr/local --extract --file sbt.tgz \
-  && rm sbt.tgz
-ENV PATH="/usr/local/sbt/bin:${PATH}"
-
-# install custom version of akka-http
-ENV AKKA_HTTP_HASH="2443640a8c6e8883280b1c51c923bc98145b8c4a"
-RUN wget --output-document akka-http.zip --quiet https://github.com/akka/akka-http/archive/${AKKA_HTTP_HASH}.zip \
-  && unzip akka-http.zip \
-  && rm akka-http.zip \
-  && cd akka-http-${AKKA_HTTP_HASH} \
-  && sbt -Dakka.scaladoc.diagrams=false publishM2 \
-  && grep "val current" $(find ./akka-http-core -name 'Version.scala') | grep -o "\".*\"" | cut -d '"' -f 2 > /tmp/akka.http.version \
-  && cd ../ \
-  && rm -rf akka-http-${AKKA_HTTP_HASH}
-
 # install PacioFS dependencies
 WORKDIR /paciofs
 COPY ./pom.xml ./pom.xml
@@ -91,14 +73,14 @@ COPY ./paciofs-csi/pom.xml ./paciofs-csi/pom.xml
 COPY ./paciofs-fuse/pom.xml ./paciofs-fuse/pom.xml
 COPY ./paciofs-kubernetes/pom.xml ./paciofs-kubernetes/pom.xml
 COPY ./paciofs-server/pom.xml ./paciofs-server/pom.xml
-RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --define silent=true --define akka.http.version=$(cat /tmp/akka.http.version) --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION}
+RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --define silent=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION}
 
 # build PacioFS
 COPY ./paciofs-csi ./paciofs-csi/
 COPY ./paciofs-fuse ./paciofs-fuse/
 COPY ./paciofs-kubernetes ./paciofs-kubernetes/
 COPY ./paciofs-server ./paciofs-server/
-RUN mvn --activate-profiles docker --define akka.http.version=$(cat /tmp/akka.http.version) --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} clean install
+RUN mvn --activate-profiles docker --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} clean install
 
 # run PacioFS
 ENTRYPOINT [ "java", "-jar", "/paciofs/paciofs-server/target/paciofs-server-1.0.0-SNAPSHOT-allinone.jar" ]

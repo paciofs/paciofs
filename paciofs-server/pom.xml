@@ -31,9 +31,7 @@
 
     <properties>
         <akka.grpc.version>0.4.2</akka.grpc.version>
-        <!-- adds native ALPN on JDK 9+ -->
-        <!-- https://github.com/akka/akka-http/tree/2443640a8c6e8883280b1c51c923bc98145b8c4a -->
-        <akka.http.version>10.1.7+19-2443640a</akka.http.version>
+        <akka.http.version>10.1.8</akka.http.version>
         <akka.management.version>0.20.0</akka.management.version>
         <akka.version>2.5.19</akka.version>
         <bitcoin-rpc-client.version>f0d23f862d</bitcoin-rpc-client.version>

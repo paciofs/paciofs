@@ -49,7 +49,6 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
    * @param node the node to add
    */
   public Node addNode(Node node) {
-    // TODO check cluster state
     Node added = this.nodes.merge(node.getAddress(), node, (old, toAdd) -> {
       if ("".equals(old.getCreationTxId()) && !"".equals(toAdd.getCreationTxId())) {
         // if the new node has a creation transaction ID and the old one does not, then update
@@ -86,22 +85,33 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
     throw new UnsupportedOperationException();
   }
 
+  public boolean ready() {
+    // we are ready if our node has a creation transaction ID
+    return !"".equals(this.self.getCreationTxId());
+  }
+
   @Override
   public void consumeRawTransaction(final BitcoindRpcClient.RawTransaction rawTransaction) {
     LOG.trace("Received raw tx: {}", rawTransaction.txId());
 
     // add ourselves to the cluster upon receiving the first transaction
-    // TODO synchronize
     if (this.self == null) {
-      final InetAddress localhost;
-      try {
-        localhost = InetAddress.getLocalHost();
-      } catch (UnknownHostException e) {
-        throw new RuntimeException("Could not get localhost", e);
+      synchronized (this) {
+        if (this.self == null) {
+          final InetAddress localhost;
+          try {
+            localhost = InetAddress.getLocalHost();
+          } catch (UnknownHostException e) {
+            throw new RuntimeException("Could not get localhost", e);
+          }
+          final Node node = Node.newBuilder().setAddress(localhost.getHostAddress()).build();
+          LOG.info("Adding self ({}) to cluster", TextFormat.shortDebugString(node));
+
+          // this will send a transaction which we will receive later on
+          this.addNode(node);
+          this.self = node;
+        }
       }
-      this.self = Node.newBuilder().setAddress(localhost.getHostAddress()).build();
-      LOG.info("Adding self ({}) to cluster", TextFormat.shortDebugString(this.self));
-      this.addNode(this.self);
     }
 
     this.clientUtil.processRawTransaction(rawTransaction, (command, data) -> {

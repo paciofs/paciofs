@@ -175,7 +175,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
     LOG.trace("Querying chain");
 
     // get the most recent block of the current best chain
-    final BitcoindRpcClient.Block bestBlock =
+    BitcoindRpcClient.Block bestBlock =
         this.multiChainClient.getBlock(this.multiChainClient.getBestBlockHash());
 
     // sanity check
@@ -235,8 +235,12 @@ public class MultiChainActor extends AbstractActorWithTimers {
       }
     }
 
-    // schedule the next invocation
-    this.timers().startSingleTimer(
-        this.multiChainQueryTimerKey, query, Duration.ofMillis(QUERY_INTERVAL));
+    // get the best block again to see if it has changed in the meantime
+    bestBlock = this.multiChainClient.getBlock(this.multiChainClient.getBestBlockHash());
+
+    // schedule the next invocation immediately if the best block has changed, otherwise wait a bit
+    this.timers().startSingleTimer(this.multiChainQueryTimerKey, query,
+        bestBlock.hash().equals(this.multiChainBestBlock.hash()) ? Duration.ofMillis(QUERY_INTERVAL)
+                                                                 : Duration.ZERO);
   }
 }

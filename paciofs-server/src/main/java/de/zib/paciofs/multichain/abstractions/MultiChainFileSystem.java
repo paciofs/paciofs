@@ -50,6 +50,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    */
   public Volume createVolume(Volume volume) {
     // TODO check cluster for readiness
+    // TODO check for same name of volume
     Volume created = this.volumes.merge(volume.getName(), volume, (old, toAdd) -> {
       if ("".equals(old.getCreationTxId()) && !"".equals(toAdd.getCreationTxId())) {
         // if the new volume has a creation transaction ID and the old one does not, then update

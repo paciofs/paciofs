@@ -10,6 +10,7 @@ import "messages/errno.proto";
 import "messages/ping.proto";
 import "messages/dir.proto";
 import "messages/stat.proto";
+import "messages/mode.proto";
 
 message PingRequest {
   paciofs.grpc.messages.Ping ping = 1;
@@ -37,8 +38,18 @@ message ReadDirResponse {
   messages.Errno error = 2;
 }
 
+message MkDirRequest {
+  string path = 1;
+  uint32 mode = 2;
+}
+
+message MkDirResponse {
+  messages.Errno error = 1;
+}
+
 service PosixIoService {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
   rpc Stat(StatRequest) returns (StatResponse);
+  rpc MkDir(MkDirRequest) returns (MkDirResponse);
 }

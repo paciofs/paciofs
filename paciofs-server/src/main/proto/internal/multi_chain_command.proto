@@ -15,4 +15,6 @@ enum MultiChainCommand {
   MCC_VOLUME_CREATE = 3;
 
   MCC_VOLUME_DELETE = 4;
+
+  MCC_IO_MKDIR = 5;
 }

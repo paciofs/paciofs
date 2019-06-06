@@ -85,4 +85,22 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     PacioFsGrpcUtil.traceMessages(LOG, "stat({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
+
+  @Override
+  public CompletionStage<MkDirResponse> mkDir(MkDirRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "mkDir({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final MkDirResponse.Builder builder = MkDirResponse.newBuilder();
+    if (!this.multiChainFileSystem.mkDir(in.getPath())) {
+      LOG.warn(Markers.EXCEPTION, "Could not create directory {}", in.getPath());
+      // TODO this is not accurate, find out proper reason
+      error = Errno.ERRNO_EIO;
+    }
+
+    final MkDirResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "mkDir({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
 }

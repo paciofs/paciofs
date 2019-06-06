@@ -172,6 +172,31 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     return builder.build();
   }
 
+  /**
+   * Create a directory.
+   * @param path path to the directory, volume:/path/to/dir
+   * @return true if the directory was created, false otherwise
+   */
+  public boolean mkDir(String path) {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final File directory = new File(volumeRoot, cleanedPath);
+
+    final boolean success = directory.mkdir();
+    if (success) {
+      LOG.info("Directory {} was created in volume {}", cleanedPath, volume.getName());
+      this.clientUtil.sendRawTransaction(
+          MultiChainCommand.MCC_IO_MKDIR, MultiChainUtil.encodeString(path));
+    } else {
+      LOG.warn("Directory {} could not be created in volume {}", cleanedPath, volume.getName());
+    }
+
+    return success;
+  }
+
   @Override
   public void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
     LOG.trace("Received raw tx: {}", rawTransaction.txId());
@@ -190,6 +215,11 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
           case MCC_VOLUME_DELETE: {
             final Volume volume = Volume.parseFrom(data);
             this.deleteVolume(volume);
+            break;
+          }
+          case MCC_IO_MKDIR: {
+            final String path = MultiChainUtil.decodeString(data);
+            this.mkDir(path);
             break;
           }
           default:

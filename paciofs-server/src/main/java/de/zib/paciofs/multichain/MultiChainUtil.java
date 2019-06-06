@@ -28,13 +28,13 @@ public class MultiChainUtil {
   // 'P' << 24 | 'A' << 16 | 'C' << 8 | 'I';
   private static final int HEADER_MAGIC = 1346454345;
 
+  private static final int UTXO_MIN_CONFIRMATIONS = 0;
+
   private final MultiChainRpcClient client;
 
   private final BigDecimal amount;
 
   private final String changeAddress;
-
-  private final int utxoMinConfirmations;
 
   private final Logger log;
 
@@ -42,15 +42,12 @@ public class MultiChainUtil {
    * Constructs a utility around a MultiChain client, providing some added functionality.
    * @param client the MultiChain client to wrap
    * @param amount the amount to send in each transaction
-   * @param utxoMinConfirmations the number of confirmations before a UTXO is considered spendable
    * @param log the logger to use
    */
-  public MultiChainUtil(
-      MultiChainRpcClient client, BigDecimal amount, int utxoMinConfirmations, Logger log) {
+  public MultiChainUtil(MultiChainRpcClient client, BigDecimal amount, Logger log) {
     this.client = client;
     this.changeAddress = this.client.getNewAddress();
     this.amount = amount;
-    this.utxoMinConfirmations = utxoMinConfirmations;
     this.log = log;
   }
 
@@ -96,8 +93,7 @@ public class MultiChainUtil {
    */
   public String sendRawTransaction(MultiChainCommand command, byte[] data) {
     // get this wallet's UTXOs with a certain number of confirmations
-    final List<BitcoindRpcClient.Unspent> utxos =
-        this.client.listUnspent(this.utxoMinConfirmations);
+    final List<BitcoindRpcClient.Unspent> utxos = this.client.listUnspent(UTXO_MIN_CONFIRMATIONS);
 
     // find a fitting UTXO and create input and output
     List<BitcoindRpcClient.TxInput> input = null;

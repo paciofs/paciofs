@@ -44,7 +44,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    */
   public MultiChainFileSystem(
       MultiChainRpcClient client, MultiChainCluster cluster, String baseDir) {
-    this.clientUtil = new MultiChainUtil(client, FILE_SYSTEM_OP_RETURN_FEE, 0, LOG);
+    this.clientUtil = new MultiChainUtil(client, FILE_SYSTEM_OP_RETURN_FEE, LOG);
     this.cluster = cluster;
     this.volumes = new ConcurrentHashMap<>();
     this.volumeRoots = new ConcurrentHashMap<>();

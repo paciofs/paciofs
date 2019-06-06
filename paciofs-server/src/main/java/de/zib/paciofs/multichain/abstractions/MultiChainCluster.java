@@ -39,7 +39,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
    * @param client the MultiChain client to use
    */
   public MultiChainCluster(MultiChainRpcClient client) {
-    this.clientUtil = new MultiChainUtil(client, CLUSTER_OP_RETURN_FEE, 0, LOG);
+    this.clientUtil = new MultiChainUtil(client, CLUSTER_OP_RETURN_FEE, LOG);
     this.nodes = new ConcurrentHashMap<>();
   }
 

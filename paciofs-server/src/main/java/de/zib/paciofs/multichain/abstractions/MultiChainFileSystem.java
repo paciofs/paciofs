@@ -11,6 +11,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import de.zib.paciofs.grpc.messages.Volume;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
+import de.zib.paciofs.io.posix.grpc.messages.Mode;
+import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
@@ -128,6 +130,46 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     }
 
     return dirEntries;
+  }
+
+  /**
+   * Get information for a file.
+   * @param path path to the file, volume:/path/to/file
+   * @param user user ID to use in the returned stat
+   * @param group group ID to use in the returned stat
+   * @return the file information
+   * @throws FileNotFoundException if the file does not exist
+   */
+  public Stat stat(String path, int user, int group) throws FileNotFoundException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final File file = new File(volumeRoot, cleanedPath);
+    if (!file.exists()) {
+      throw new FileNotFoundException(
+          "File " + cleanedPath + " on volume " + volume.getName() + " does not exist");
+    }
+
+    // TODO fill all stat fields
+    final Stat.Builder builder = Stat.newBuilder();
+
+    // TODO fix: all files belong to each calling user
+    builder.setUid(user);
+    builder.setGid(group);
+
+    if (file.isDirectory()) {
+      // drwxr-xr-x for directories
+      builder.setMode(Mode.MODE_S_IFDIR_VALUE | Mode.MODE_S_IRWXU_VALUE | Mode.MODE_S_IRGRP_VALUE
+          | Mode.MODE_S_IXGRP_VALUE | Mode.MODE_S_IROTH_VALUE | Mode.MODE_S_IXOTH_VALUE);
+    } else {
+      // -rw-r--r-- for files
+      builder.setMode(Mode.MODE_S_IRUSR_VALUE | Mode.MODE_S_IWUSR_VALUE | Mode.MODE_S_IRGRP_VALUE
+          | Mode.MODE_S_IROTH_VALUE);
+    }
+
+    return builder.build();
   }
 
   @Override

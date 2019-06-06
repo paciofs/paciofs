@@ -12,7 +12,6 @@ import de.zib.paciofs.grpc.PacioFsGrpcUtil;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Errno;
-import de.zib.paciofs.io.posix.grpc.messages.Mode;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
@@ -68,19 +67,20 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     PacioFsGrpcUtil.traceMessages(LOG, "stat({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;
-    final Stat.Builder builder = Stat.newBuilder();
-    if ("/".equals(in.getPath())) {
-      // directory | rwxr-xr-x
-      builder.setMode(Mode.MODE_S_IFDIR_VALUE | Mode.MODE_S_IRWXU_VALUE | Mode.MODE_S_IRGRP_VALUE
-          | Mode.MODE_S_IXGRP_VALUE | Mode.MODE_S_IROTH_VALUE | Mode.MODE_S_IXOTH_VALUE);
-      // . and ..
-      builder.setNlink(2);
-    } else {
+    final StatResponse.Builder builder = StatResponse.newBuilder();
+    try {
+      // TODO check for missing metadata
+      final int user = Integer.parseInt(metadata.getText("x-user").get());
+      final int group = Integer.parseInt(metadata.getText("x-group").get());
+
+      final Stat stat = this.multiChainFileSystem.stat(in.getPath(), user, group);
+      builder.setStat(stat);
+    } catch (FileNotFoundException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not stat file {}", in.getPath(), e);
       error = Errno.ERRNO_ENOENT;
     }
 
-    final StatResponse out =
-        StatResponse.newBuilder().setStat(builder.build()).setError(error).build();
+    final StatResponse out = builder.setError(error).build();
 
     PacioFsGrpcUtil.traceMessages(LOG, "stat({}): {}", in, out);
     return CompletableFuture.completedFuture(out);

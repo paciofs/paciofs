@@ -7,6 +7,7 @@
 
 package de.zib.paciofs.io.posix.grpc;
 
+import akka.grpc.javadsl.Metadata;
 import de.zib.paciofs.grpc.PacioFsGrpcUtil;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
@@ -19,13 +20,13 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PosixIoServiceImpl implements PosixIoService {
+public class PosixIoServiceImpl implements PosixIoServicePowerApi {
   private static final Logger LOG = LoggerFactory.getLogger(PosixIoServiceImpl.class);
 
   public PosixIoServiceImpl(MultiChainFileSystem fileSystem) {}
 
   @Override
-  public CompletionStage<PingResponse> ping(PingRequest in) {
+  public CompletionStage<PingResponse> ping(PingRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "ping({})", in);
 
     final Ping ping = Ping.newBuilder().build();
@@ -36,7 +37,7 @@ public class PosixIoServiceImpl implements PosixIoService {
   }
 
   @Override
-  public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in) {
+  public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;
@@ -55,7 +56,7 @@ public class PosixIoServiceImpl implements PosixIoService {
   }
 
   @Override
-  public CompletionStage<StatResponse> stat(StatRequest in) {
+  public CompletionStage<StatResponse> stat(StatRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "stat({})", in);
 
     Errno error = Errno.ERRNO_ESUCCESS;

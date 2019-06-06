@@ -7,6 +7,7 @@
 
 package de.zib.paciofs.grpc;
 
+import akka.grpc.javadsl.Metadata;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.grpc.messages.Volume;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
@@ -15,7 +16,7 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PacioFsServiceImpl implements PacioFsService {
+public class PacioFsServiceImpl implements PacioFsServicePowerApi {
   private static final Logger LOG = LoggerFactory.getLogger(PacioFsServiceImpl.class);
 
   private final MultiChainFileSystem multiChainFileSystem;
@@ -25,7 +26,8 @@ public class PacioFsServiceImpl implements PacioFsService {
   }
 
   @Override
-  public CompletionStage<CreateVolumeResponse> createVolume(CreateVolumeRequest in) {
+  public CompletionStage<CreateVolumeResponse> createVolume(
+      CreateVolumeRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "createVolume({})", in);
 
     final Volume volume = this.multiChainFileSystem.createVolume(in.getVolume());
@@ -36,7 +38,7 @@ public class PacioFsServiceImpl implements PacioFsService {
   }
 
   @Override
-  public CompletionStage<PingResponse> ping(PingRequest in) {
+  public CompletionStage<PingResponse> ping(PingRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "ping({})", in);
 
     final Ping ping = Ping.newBuilder().build();

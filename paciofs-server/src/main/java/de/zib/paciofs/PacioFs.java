@@ -24,10 +24,10 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import de.zib.paciofs.grpc.PacioFsGrpcUtil;
-import de.zib.paciofs.grpc.PacioFsServiceHandlerFactory;
 import de.zib.paciofs.grpc.PacioFsServiceImpl;
-import de.zib.paciofs.io.posix.grpc.PosixIoServiceHandlerFactory;
+import de.zib.paciofs.grpc.PacioFsServicePowerApiHandlerFactory;
 import de.zib.paciofs.io.posix.grpc.PosixIoServiceImpl;
+import de.zib.paciofs.io.posix.grpc.PosixIoServicePowerApiHandlerFactory;
 import de.zib.paciofs.logging.LogbackPropertyDefiners;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.MultiChainClientFactory;
@@ -115,20 +115,21 @@ public class PacioFs {
         "multichain");
 
     // serve the default services
-    bindAndHandleAsync(
-        Http.get(paciofs), config, ActorMaterializer.create(paciofs), multiChainFileSystem);
+    bindAndHandleAsync(Http.get(paciofs), config, paciofs, multiChainFileSystem);
   }
 
   /* Utility functions */
 
-  private static void bindAndHandleAsync(Http http, Config config, Materializer materializer,
-      MultiChainFileSystem multiChainFileSystem) {
+  private static void bindAndHandleAsync(
+      Http http, Config config, ActorSystem system, MultiChainFileSystem multiChainFileSystem) {
+    final Materializer materializer = ActorMaterializer.create(system);
+
     // concat the handlers
     final List<Function<HttpRequest, CompletionStage<HttpResponse>>> handlers = new ArrayList<>();
-    handlers.add(PacioFsServiceHandlerFactory.create(
-        new PacioFsServiceImpl(multiChainFileSystem), materializer));
-    handlers.add(PosixIoServiceHandlerFactory.create(
-        new PosixIoServiceImpl(multiChainFileSystem), materializer));
+    handlers.add(PacioFsServicePowerApiHandlerFactory.create(
+        new PacioFsServiceImpl(multiChainFileSystem), materializer, system));
+    handlers.add(PosixIoServicePowerApiHandlerFactory.create(
+        new PosixIoServiceImpl(multiChainFileSystem), materializer, system));
     final Function<HttpRequest, CompletionStage<HttpResponse>> combinedHandler =
         ServiceHandler.concatOrNotFound(JavaConverters.collectionAsScalaIterable(handlers).toSeq());
 

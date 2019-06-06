@@ -30,7 +30,7 @@
     </repositories>
 
     <properties>
-        <akka.grpc.version>0.4.2</akka.grpc.version>
+        <akka.grpc.version>0.6.2</akka.grpc.version>
         <akka.http.version>10.1.8</akka.http.version>
         <akka.management.version>0.20.0</akka.management.version>
         <akka.version>2.5.19</akka.version>
@@ -413,6 +413,10 @@
                                 <argument>--java_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>
                                 <argument>--grpc_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>
                                 <argument>--plugin=protoc-gen-grpc=${project.build.directory}/akka-grpc.sh</argument>
+                                <argument>--grpc_opt=language=java</argument>
+                                <argument>--grpc_opt=generate_client=false</argument>
+                                <argument>--grpc_opt=generate_server=true</argument>
+                                <argument>--grpc_opt=server_power_apis=true</argument>
                             </arguments>
                         </configuration>
                     </execution>

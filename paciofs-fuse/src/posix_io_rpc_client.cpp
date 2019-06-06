@@ -67,7 +67,7 @@ bool PosixIoRpcClient::Ping() {
 messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
                                           std::vector<messages::Dir> &dirs) {
   ReadDirRequest request;
-  request.set_path(path);
+  request.set_path(PreparePath(path));
   logger_.Trace([request](auto &out) {
     out << "ReadDir(" << request.ShortDebugString() << ")";
   });
@@ -107,7 +107,7 @@ messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
 messages::Errno PosixIoRpcClient::Stat(std::string const &path,
                                        messages::Stat &stat) {
   StatRequest request;
-  request.set_path(path);
+  request.set_path(PreparePath(path));
   logger_.Trace([request](auto &out) {
     out << "Stat(" << request.ShortDebugString() << ")";
   });
@@ -139,6 +139,22 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
 
     return messages::ERRNO_EIO;
   }
+}
+
+std::string const PosixIoRpcClient::PreparePath(std::string const &path) const {
+  std::string prepared_path = path;
+  prepared_path = MakeAbsolute(prepared_path);
+  prepared_path = PrefixVolumeName(prepared_path);
+  return prepared_path;
+}
+
+std::string const PosixIoRpcClient::MakeAbsolute(std::string const &path) {
+  return path;
+}
+
+std::string const PosixIoRpcClient::PrefixVolumeName(
+    std::string const &path) const {
+  return volume_name_ + ":" + path;
 }
 
 }  // namespace grpc

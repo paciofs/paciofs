@@ -41,6 +41,12 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
   messages::Errno Stat(std::string const& path, messages::Stat& stat);
 
  private:
+  std::string const PreparePath(std::string const& path) const;
+
+  static std::string const MakeAbsolute(std::string const& path);
+
+  std::string const PrefixVolumeName(std::string const& path) const;
+
   std::string volume_name_;
   paciofs::logging::Logger logger_;
 };

@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef RPC_CLIENT
-#define RPC_CLIENT
+#ifndef RPC_CLIENT_H
+#define RPC_CLIENT_H
 
 #include <grpcpp/grpcpp.h>
 #include <string>
@@ -45,4 +45,4 @@ class RpcClient {
 }  // namespace grpc
 }  // namespace paciofs
 
-#endif  // RPC_CLIENT
+#endif  // RPC_CLIENT_H

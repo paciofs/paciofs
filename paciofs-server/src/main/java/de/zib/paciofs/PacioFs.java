@@ -44,6 +44,8 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
+import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
+import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public class PacioFs {
   private static Logger log;
@@ -101,6 +103,7 @@ public class PacioFs {
 
     // MultiChain client
     final MultiChainRpcClient multiChainClient = initializeMultiChainClient(paciofs);
+    waitForUtxos(multiChainClient);
 
     // cluster as seen by received transactions on MultiChain
     final MultiChainCluster multiChainCluster = new MultiChainCluster(multiChainClient);
@@ -204,6 +207,40 @@ public class PacioFs {
     log.info("Connected to MultiChain: {}", info.toString());
 
     return multiChainClient;
+  }
+
+  private static void waitForUtxos(MultiChainRpcClient multiChainClient) {
+    final long backoffMilliseconds = 50;
+    final int maxAttempts = 10;
+    final int utxoMinConfirmations = 0;
+
+    int unspent = 0;
+    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+      try {
+        log.info("Waiting for UTXOs, attempt {} of {}", attempt + 1, maxAttempts);
+        final List<BitcoindRpcClient.Unspent> utxos =
+            multiChainClient.listUnspent(utxoMinConfirmations);
+        unspent = utxos.size();
+      } catch (BitcoinRPCException e) {
+        // handle the same way as if zero UTXOs had been returned
+      }
+
+      if (unspent > 0) {
+        log.info("Got {} UTXO(s)", unspent);
+        break;
+      }
+
+      try {
+        // exponential backoff that doubles with every attempt
+        Thread.sleep(backoffMilliseconds * (long) Math.pow(2, attempt));
+      } catch (InterruptedException e) {
+        log.warn("Interrupted while waiting for UTXOs", e);
+      }
+    }
+
+    if (unspent == 0) {
+      throw new RuntimeException("No UTXOs after " + maxAttempts + " attempts");
+    }
   }
 
   private static PacioFsCliOptions parseCommandLine(String[] args) {

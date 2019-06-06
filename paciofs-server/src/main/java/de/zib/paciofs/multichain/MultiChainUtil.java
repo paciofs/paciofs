@@ -15,6 +15,7 @@ import de.zib.paciofs.multichain.internal.MultiChainRawTransactionDataHeader;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -24,6 +25,8 @@ import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 import wf.bitcoin.krotjson.HexCoder;
 
 public class MultiChainUtil {
+  private static final Charset UTF8 = Charset.forName("UTF-8");
+
   // magic number in every raw transaction's data header
   // 'P' << 24 | 'A' << 16 | 'C' << 8 | 'I';
   private static final int HEADER_MAGIC = 1346454345;
@@ -49,6 +52,14 @@ public class MultiChainUtil {
     this.changeAddress = this.client.getNewAddress();
     this.amount = amount;
     this.log = log;
+  }
+
+  public static byte[] encodeString(String string) {
+    return string.getBytes(UTF8);
+  }
+
+  public static String decodeString(byte[] bytes) {
+    return new String(bytes, UTF8);
   }
 
   /**

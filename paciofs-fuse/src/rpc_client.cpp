@@ -11,6 +11,8 @@
 #include "posix_io.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -20,8 +22,10 @@ namespace grpc {
 
 template <typename Service>
 RpcClient<Service>::RpcClient(std::string const &target)
-    : RpcClient(::grpc::CreateChannel(target,
-                                      ::grpc::InsecureChannelCredentials())) {}
+    : RpcClient(
+          ::grpc::CreateChannel(target, ::grpc::InsecureChannelCredentials())) {
+  CreateMetadata();
+}
 
 template <typename Service>
 RpcClient<Service>::RpcClient(std::string const &target,
@@ -39,6 +43,8 @@ RpcClient<Service>::RpcClient(std::string const &target,
     ssl.pem_root_certs = ReadPem(root_certs);
   }
 
+  CreateMetadata();
+
   stub_ = Service::NewStub(
       ::grpc::CreateChannel(target, ::grpc::SslCredentials(ssl)));
 }
@@ -54,6 +60,22 @@ std::string RpcClient<Service>::ReadPem(std::string const &path) {
   in.open(path);
   sstr << in.rdbuf();
   return sstr.str();
+}
+
+template <typename Service>
+void RpcClient<Service>::CreateMetadata() {
+  // TODO stop using the current user and group so all files can belong to us
+  metadata_user_ = std::to_string(getuid());
+  metadata_group_ = std::to_string(getgid());
+}
+
+template <typename Service>
+void RpcClient<Service>::SetMetadata(::grpc::ClientContext &context) {
+  // We do not use call credentials because they get dropped automatically if
+  // the channel is insecure for obvious reasons. So do not put any sensitive
+  // information here.
+  context.AddMetadata("x-user", metadata_user_);
+  context.AddMetadata("x-group", metadata_group_);
 }
 
 template class RpcClient<PacioFsService>;

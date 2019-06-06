@@ -36,6 +36,7 @@ bool PacioFsRpcClient::CreateVolume(std::string const &name) {
 
   CreateVolumeResponse response;
   ::grpc::ClientContext context;
+  SetMetadata(context);
   ::grpc::Status status = stub_->CreateVolume(&context, request, &response);
 
   if (status.ok()) {
@@ -62,6 +63,7 @@ bool PacioFsRpcClient::Ping() {
 
   PingResponse response;
   ::grpc::ClientContext context;
+  SetMetadata(context);
   ::grpc::Status status = stub_->Ping(&context, request, &response);
 
   if (status.ok()) {

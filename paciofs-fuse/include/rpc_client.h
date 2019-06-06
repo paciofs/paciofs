@@ -30,8 +30,16 @@ class RpcClient {
 
   std::string ReadPem(std::string const& path);
 
+  void CreateMetadata();
+
+  // sent in each request as metadata
+  std::string metadata_user_;
+  std::string metadata_group_;
+
  protected:
   std::unique_ptr<typename Service::Stub> stub_;
+
+  void SetMetadata(::grpc::ClientContext& context);
 };
 
 }  // namespace grpc

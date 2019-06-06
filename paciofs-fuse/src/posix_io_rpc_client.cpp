@@ -45,6 +45,7 @@ bool PosixIoRpcClient::Ping() {
 
   PingResponse response;
   ::grpc::ClientContext context;
+  SetMetadata(context);
   ::grpc::Status status = stub_->Ping(&context, request, &response);
 
   if (status.ok()) {
@@ -73,6 +74,7 @@ messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
 
   ReadDirResponse response;
   ::grpc::ClientContext context;
+  SetMetadata(context);
   ::grpc::Status status = stub_->ReadDir(&context, request, &response);
 
   if (status.ok()) {
@@ -112,6 +114,7 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
 
   StatResponse response;
   ::grpc::ClientContext context;
+  SetMetadata(context);
   ::grpc::Status status = stub_->Stat(&context, request, &response);
 
   if (status.ok()) {

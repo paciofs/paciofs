@@ -14,7 +14,10 @@ import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Errno;
 import de.zib.paciofs.io.posix.grpc.messages.Mode;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
+import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
+import java.io.FileNotFoundException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
@@ -23,7 +26,11 @@ import org.slf4j.LoggerFactory;
 public class PosixIoServiceImpl implements PosixIoServicePowerApi {
   private static final Logger LOG = LoggerFactory.getLogger(PosixIoServiceImpl.class);
 
-  public PosixIoServiceImpl(MultiChainFileSystem fileSystem) {}
+  private final MultiChainFileSystem multiChainFileSystem;
+
+  public PosixIoServiceImpl(MultiChainFileSystem fileSystem) {
+    this.multiChainFileSystem = fileSystem;
+  }
 
   @Override
   public CompletionStage<PingResponse> ping(PingRequest in, Metadata metadata) {
@@ -42,10 +49,11 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final ReadDirResponse.Builder builder = ReadDirResponse.newBuilder();
-    if ("/".equals(in.getPath())) {
-      builder.addDirs(Dir.newBuilder().setName(".").build());
-      builder.addDirs(Dir.newBuilder().setName("..").build());
-    } else {
+    try {
+      final List<Dir> entries = this.multiChainFileSystem.readDir(in.getPath());
+      builder.addAllDirs(entries);
+    } catch (FileNotFoundException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not read directory {}", in.getPath(), e);
       error = Errno.ERRNO_ENOENT;
     }
 

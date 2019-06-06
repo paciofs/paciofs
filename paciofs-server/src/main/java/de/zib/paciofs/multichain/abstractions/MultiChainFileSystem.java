@@ -10,12 +10,16 @@ package de.zib.paciofs.multichain.abstractions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import de.zib.paciofs.grpc.messages.Volume;
+import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -98,6 +102,34 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * List the contents of a directory.
+   * @param path path to the directory: volume:/path/to/dir
+   * @return list of entries in that directory, can be zero-length
+   * @throws FileNotFoundException if path does not exist or is not a directory
+   */
+  public List<Dir> readDir(String path) throws FileNotFoundException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final File directory = new File(volumeRoot, cleanedPath);
+    if (!directory.exists() || !directory.isDirectory()) {
+      throw new FileNotFoundException("Path " + cleanedPath + " on volume " + volume.getName()
+          + " does not exist or is not a directory");
+    }
+
+    final List<Dir> dirEntries = new ArrayList<>();
+    dirEntries.add(Dir.newBuilder().setName(".").build());
+    dirEntries.add(Dir.newBuilder().setName("..").build());
+    for (File entry : directory.listFiles()) {
+      dirEntries.add(Dir.newBuilder().setName(entry.getName()).build());
+    }
+
+    return dirEntries;
+  }
+
   @Override
   public void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
     LOG.trace("Received raw tx: {}", rawTransaction.txId());
@@ -132,5 +164,27 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   @Override
   public void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
     LOG.trace("Received raw tx for removal: {}", rawTransaction.txId());
+  }
+
+  private Volume getVolumeFromPath(String path) {
+    if (!path.contains(":")) {
+      throw new IllegalArgumentException("No volume specified in path: " + path);
+    }
+
+    final String volumeName = path.split(":")[0];
+    final Volume volume = this.volumes.get(volumeName);
+    if (volume == null) {
+      throw new IllegalArgumentException("Volume does not exist: " + volumeName);
+    }
+
+    return volume;
+  }
+
+  private static String removeVolumeFromPath(String path) {
+    if (!path.contains(":")) {
+      throw new IllegalArgumentException("No volume specified in path: " + path);
+    }
+
+    return path.split(":")[1];
   }
 }

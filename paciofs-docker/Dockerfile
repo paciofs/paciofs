@@ -60,7 +60,7 @@ RUN git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git \
   && cd ../../../ && rm -rf ./grpc
 
 # install MultiChain
-ENV MULTICHAIN_VERSION="2.0-beta-2"
+ENV MULTICHAIN_VERSION="2.0.2"
 RUN wget --output-document multichain.tar.gz --quiet https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz \
   && tar --directory /usr/local --extract --file multichain.tar.gz \
   && rm multichain.tar.gz

@@ -23,10 +23,12 @@ namespace grpc {
 class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
  public:
   // uses insecure channel credentials
-  explicit PosixIoRpcClient(std::string const& target);
+  explicit PosixIoRpcClient(std::string const& target,
+                            std::string const& volume_name);
 
   // uses TLS
   explicit PosixIoRpcClient(std::string const& target,
+                            std::string const& volume_name,
                             std::string const& cert_chain,
                             std::string const& private_key,
                             std::string const& root_certs);
@@ -39,6 +41,7 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
   messages::Errno Stat(std::string const& path, messages::Stat& stat);
 
  private:
+  std::string volume_name_;
   paciofs::logging::Logger logger_;
 };
 

@@ -21,16 +21,20 @@ namespace io {
 namespace posix {
 namespace grpc {
 
-PosixIoRpcClient::PosixIoRpcClient(std::string const &target)
+PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
+                                   std::string const &volume_name)
     : paciofs::grpc::RpcClient<PosixIoService>(target),
+      volume_name_(volume_name),
       logger_(paciofs::logging::Logger()) {}
 
 PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
+                                   std::string const &volume_name,
                                    std::string const &cert_chain,
                                    std::string const &private_key,
                                    std::string const &root_certs)
     : paciofs::grpc::RpcClient<PosixIoService>(target, cert_chain, private_key,
                                                root_certs),
+      volume_name_(volume_name),
       logger_(paciofs::logging::Logger()) {}
 
 bool PosixIoRpcClient::Ping() {

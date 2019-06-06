@@ -21,7 +21,8 @@ namespace options {
 MountOptions::MountOptions()
     : paciofs::options::Options(),
       fuse_options_(std::vector<std::string>()),
-      mount_point_("") {
+      mount_point_(""),
+      volume_name_("") {
   namespace bpo = boost::program_options;
 
   bpo::options_description mount_options("Mount Options");
@@ -53,10 +54,15 @@ MountOptions::MountOptions()
       "mount-point",
       bpo::value<std::string>(&mount_point_)->value_name("path")->required(),
       "existing empty directory for mounting PacioFS");
+  mount_options.add_options()(
+      "volume-name",
+      bpo::value<std::string>(&volume_name_)->value_name("name")->required(),
+      "name of the volume to mount");
 
   options_.add(mount_options);
 
   positional_.add("mount-point", 1);
+  positional_.add("volume-name", 1);
 }
 
 MountOptions::~MountOptions() {}
@@ -66,6 +72,8 @@ std::vector<std::string> const& MountOptions::FuseOptions() const {
 }
 
 std::string const& MountOptions::MountPoint() const { return mount_point_; }
+
+std::string const& MountOptions::VolumeName() const { return volume_name_; }
 
 }  // namespace options
 }  // namespace mount

@@ -27,9 +27,12 @@ class MountOptions : public paciofs::options::Options {
 
   std::string const& MountPoint() const;
 
+  std::string const& VolumeName() const;
+
  private:
   std::vector<std::string> fuse_options_;
   std::string mount_point_;
+  std::string volume_name_;
 };
 
 }  // namespace options

@@ -141,6 +141,38 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
   }
 }
 
+messages::Errno PosixIoRpcClient::MkDir(std::string const &path,
+                                        google::protobuf::uint32 mode) {
+  MkDirRequest request;
+  request.set_path(PreparePath(path));
+  request.set_mode(mode);
+  logger_.Trace([request](auto &out) {
+    out << "MkDir(" << request.ShortDebugString() << ")";
+  });
+
+  MkDirResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->MkDir(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "MkDir(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    return response.error();
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "MkDir(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
 std::string const PosixIoRpcClient::PreparePath(std::string const &path) const {
   std::string prepared_path = path;
   prepared_path = MakeAbsolute(prepared_path);

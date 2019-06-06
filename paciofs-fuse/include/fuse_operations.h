@@ -26,4 +26,6 @@ int PfsGetAttr(const char *path, struct stat *buf);
 int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi);
 
+int PfsMkDir(const char *path, mode_t mode);
+
 #endif  // FUSE_OPERATIONS_H

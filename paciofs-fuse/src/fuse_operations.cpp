@@ -27,10 +27,13 @@ static int ToErrno(paciofs::io::posix::grpc::messages::Errno error);
 
 // same for mode
 #ifdef VERBATIM_MODE
+#define FROM_MODE(mode) (mode)
 #define TO_MODE(mode) (mode)
 #else
+#define FROM_MODE(mode) FromMode(mode)
 #define TO_MODE(mode) ToMode(mode)
-static unsigned int ToMode(google::protobuf::uint32 mode);
+static google::protobuf::uint32 FromMode(mode_t mode);
+static mode_t ToMode(google::protobuf::uint32 mode);
 #endif  // VERBATIM_MODE
 
 static struct fuse_operations_context g_context = {nullptr};
@@ -42,6 +45,7 @@ void InitializeFuseOperations(
 
   operations.getattr = PfsGetAttr;
   operations.readdir = PfsReadDir;
+  operations.mkdir = PfsMkDir;
 }
 
 int PfsGetAttr(const char *path, struct stat *buf) {
@@ -97,6 +101,18 @@ int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   for (messages::Dir const &dir : dirs) {
     filler(buf, dir.name().c_str(), nullptr, 0);
+  }
+
+  return 0;
+}
+
+int PfsMkDir(const char *path, mode_t mode) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error = g_context.rpc_client->MkDir(path, FromMode(mode));
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
   }
 
   return 0;
@@ -274,7 +290,69 @@ static int ToErrno(paciofs::io::posix::grpc::messages::Errno error) {
 #endif  // VERBATIM_ERRNO
 
 #ifndef VERBATIM_MODE
-static unsigned int ToMode(google::protobuf::uint32 mode) {
+static google::protobuf::uint32 FromMode(mode_t mode) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  google::protobuf::uint32 m = 0;
+  if ((mode & S_IFBLK) == S_IFBLK) {
+    m |= messages::MODE_S_IFBLK;
+  }
+  if ((mode & S_IFCHR) == S_IFCHR) {
+    m |= messages::MODE_S_IFCHR;
+  }
+  if ((mode & S_IFIFO) == S_IFIFO) {
+    m |= messages::MODE_S_IFIFO;
+  }
+  if ((mode & S_IFREG) == S_IFREG) {
+    m |= messages::MODE_S_IFREG;
+  }
+  if ((mode & S_IFDIR) == S_IFDIR) {
+    m |= messages::MODE_S_IFDIR;
+  }
+  if ((mode & S_IFLNK) == S_IFLNK) {
+    m |= messages::MODE_S_IFLNK;
+  }
+  if ((mode & S_IRUSR) == S_IRUSR) {
+    m |= messages::MODE_S_IRUSR;
+  }
+  if ((mode & S_IWUSR) == S_IWUSR) {
+    m |= messages::MODE_S_IWUSR;
+  }
+  if ((mode & S_IXUSR) == S_IXUSR) {
+    m |= messages::MODE_S_IXUSR;
+  }
+  if ((mode & S_IRGRP) == S_IRGRP) {
+    m |= messages::MODE_S_IRGRP;
+  }
+  if ((mode & S_IWGRP) == S_IWGRP) {
+    m |= messages::MODE_S_IWGRP;
+  }
+  if ((mode & S_IXGRP) == S_IXGRP) {
+    m |= messages::MODE_S_IXGRP;
+  }
+  if ((mode & S_IROTH) == S_IROTH) {
+    m |= messages::MODE_S_IROTH;
+  }
+  if ((mode & S_IWOTH) == S_IWOTH) {
+    m |= messages::MODE_S_IWOTH;
+  }
+  if ((mode & S_IXOTH) == S_IXOTH) {
+    m |= messages::MODE_S_IXOTH;
+  }
+  if ((mode & S_ISUID) == S_ISUID) {
+    m |= messages::MODE_S_ISUID;
+  }
+  if ((mode & S_ISGID) == S_ISGID) {
+    m |= messages::MODE_S_ISGID;
+  }
+  if ((mode & S_ISVTX) == S_ISVTX) {
+    m |= messages::MODE_S_ISVTX;
+  }
+
+  return m;
+}
+
+static mode_t ToMode(google::protobuf::uint32 mode) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   unsigned int m = 0;

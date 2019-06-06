@@ -72,6 +72,14 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     if (created == volume) {
       LOG.info("Volume {} was added to cluster", TextFormat.shortDebugString(volume));
 
+      // TODO replace with mkDir and set permissions of / in the volume to the creating user
+      // optimistically create the directory and add an entry in the map
+      final File volumeRoot = new File(this.baseDir, volume.getName());
+      if (!volumeRoot.mkdirs()) {
+        LOG.warn("Could not create directory {} for volume {}", volumeRoot, volume.getName());
+      }
+      this.volumeRoots.put(volume, volumeRoot);
+
       if ("".equals(volume.getCreationTxId())) {
         // send the volume to the chain as we have not seen it before
         final String txId = this.clientUtil.sendRawTransaction(

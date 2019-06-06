@@ -109,8 +109,8 @@ public class PacioFs {
     final MultiChainCluster multiChainCluster = new MultiChainCluster(multiChainClient);
 
     // file system as seen by received transactions on MultiChain
-    final MultiChainFileSystem multiChainFileSystem =
-        new MultiChainFileSystem(multiChainClient, multiChainCluster);
+    final MultiChainFileSystem multiChainFileSystem = new MultiChainFileSystem(
+        multiChainClient, multiChainCluster, config.getString(PacioFsOptions.BASEDIR));
 
     // have MultiChain react to cluster events
     paciofs.actorOf(

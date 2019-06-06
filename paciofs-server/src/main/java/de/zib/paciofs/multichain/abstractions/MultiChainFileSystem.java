@@ -14,6 +14,7 @@ import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import java.io.File;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,15 +33,22 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
   private final Map<String, Volume> volumes;
 
+  private final Map<Volume, File> volumeRoots;
+
+  private final File baseDir;
+
   /**
    * Construct a file system view on top of MultiChain.
    * @param client the MultiChain client to use
    * @param cluster the MultiChainCluster view to use
    */
-  public MultiChainFileSystem(MultiChainRpcClient client, MultiChainCluster cluster) {
+  public MultiChainFileSystem(
+      MultiChainRpcClient client, MultiChainCluster cluster, String baseDir) {
     this.clientUtil = new MultiChainUtil(client, FILE_SYSTEM_OP_RETURN_FEE, 0, LOG);
     this.cluster = cluster;
     this.volumes = new ConcurrentHashMap<>();
+    this.volumeRoots = new ConcurrentHashMap<>();
+    this.baseDir = new File(baseDir);
   }
 
   /**

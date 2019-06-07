@@ -140,9 +140,9 @@ public class MultiChainActor extends AbstractActorWithTimers {
           this.multiChainEndpoint =
               localAddresses.get(0).address() + ":" + localAddresses.get(0).port();
           if (localAddresses.size() > 1) {
-            LOG.warn("MultiChain has {} local addresses, broadcasting only: {}",
-                localAddresses.size(), this.multiChainEndpoint);
+            LOG.warn("MultiChain has {} local addresses", localAddresses.size());
           }
+          LOG.debug("Broadcasting MultiChain address {}", this.multiChainEndpoint);
 
           // broadcast the address, so other actors can tell their MultiChain clients about it
           this.mediator.tell(new DistributedPubSubMediator.Publish(TOPIC_MULTICHAIN_ENDPOINTS,

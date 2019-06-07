@@ -84,4 +84,4 @@ RUN mvn --activate-profiles docker --define protobuf.version=${PROTOBUF_VERSION}
 
 # run PacioFS
 ENTRYPOINT [ "java", "-jar", "/paciofs/paciofs-server/target/paciofs-server-1.0.0-SNAPSHOT-allinone.jar" ]
-CMD [ "--config", "/paciofs/paciofs-server/src/test/resources/debug.conf" ]
+CMD [ "--config", "/paciofs/paciofs-server/src/test/resources/local.conf" ]

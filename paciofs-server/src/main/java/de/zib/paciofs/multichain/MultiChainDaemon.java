@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class MultiChainDaemon {
   private static final String OPTION_DAEMON = "daemon";
   private static final String OPTION_DATADIR = "datadir";
-  private static final String OPTION_RPCALLOW = "rpcallow";
+  private static final String OPTION_RPCALLOWIP = "rpcallowip";
   private static final String OPTION_RPCUSER = "rpcuser";
   private static final String OPTION_RPCPASSWORD = "rpcpassword";
   private static final String OPTION_SERVER = "server";
@@ -207,7 +207,7 @@ public class MultiChainDaemon {
       switch (key) {
         case OPTION_DAEMON:
           // we are running multichaind in the background anyway, fall-through
-        case OPTION_RPCALLOW:
+        case OPTION_RPCALLOWIP:
           // we only allow localhost, fall-through
         case OPTION_RPCUSER:
           // we use multichaind generated rpcuser, fall-through
@@ -234,13 +234,11 @@ public class MultiChainDaemon {
     cmd.addArgument(buildCommandLineOption(OPTION_SERVER, ""));
 
     // only allow RPC commands from our host
-    cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, "localhost"));
     try {
       final InetAddress localHost = InetAddress.getLocalHost();
-      cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, localHost.getHostName()));
-      cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOW, localHost.getHostAddress()));
+      cmd.addArgument(buildCommandLineOption(OPTION_RPCALLOWIP, localHost.getHostAddress()));
     } catch (UnknownHostException e) {
-      LOG.warn("Could not add all -{} options: {}", OPTION_RPCALLOW, e.getMessage());
+      LOG.warn("Could not add -{} option: {}", OPTION_RPCALLOWIP, e.getMessage());
       LOG.warn(Markers.EXCEPTION, "Could not get localhost", e);
     }
   }

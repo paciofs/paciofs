@@ -61,7 +61,7 @@
     </logger>
 
     <!-- special logger for BitCoin client -->
-    <logger name="wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient" level="${paciofs.multichain-client.multichain.log-level}" additivity="false">
+    <logger name="wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient" level="${paciofs.multichain-client.multichain.bitcoinrpc.log-level}" additivity="false">
         <appender-ref ref="async-stdout" />
     </logger>
 

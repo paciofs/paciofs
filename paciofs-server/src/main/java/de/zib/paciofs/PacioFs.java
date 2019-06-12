@@ -36,6 +36,7 @@ import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
@@ -196,7 +197,7 @@ public class PacioFs {
 
   private static MultiChainRpcClient initializeMultiChainClient(ActorSystem system) {
     final MultiChainRpcClient multiChainClient = new MultiChainClientFactory(
-        system.settings().config().getConfig(PacioFsOptions.MULTICHAIN_CLIENT_KEY))
+        system.settings().config().getConfig(PacioFsOptions.MULTICHAIN_KEY))
                                                      .create();
 
     // shut down MultiChain client before the actor system
@@ -210,23 +211,27 @@ public class PacioFs {
   }
 
   private static void waitForUtxos(MultiChainRpcClient multiChainClient) {
-    final long backoffMilliseconds = 50;
+    final long backoffMilliseconds = 15000;
     final int maxAttempts = 10;
     final int utxoMinConfirmations = 0;
 
-    int unspent = 0;
+    BigDecimal unspent = BigDecimal.ZERO;
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
       try {
         log.info("Waiting for UTXOs, attempt {} of {}", attempt + 1, maxAttempts);
         final List<BitcoindRpcClient.Unspent> utxos =
             multiChainClient.listUnspent(utxoMinConfirmations);
-        unspent = utxos.size();
+        for (BitcoindRpcClient.Unspent utxo : utxos) {
+          if (utxo.spendable()) {
+            unspent = unspent.add(utxo.amount());
+          }
+        }
       } catch (BitcoinRPCException e) {
         // handle the same way as if zero UTXOs had been returned
       }
 
-      if (unspent > 0) {
-        log.info("Got {} UTXO(s)", unspent);
+      if (unspent.compareTo(BigDecimal.ZERO) > 0) {
+        log.info("Got {} to spend from UTXOs", unspent);
         break;
       }
 
@@ -238,7 +243,7 @@ public class PacioFs {
       }
     }
 
-    if (unspent == 0) {
+    if (unspent == BigDecimal.ZERO) {
       throw new RuntimeException("No UTXOs after " + maxAttempts + " attempts");
     }
   }

@@ -33,12 +33,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MultiChainDaemon {
-  private static final String OPTION_DAEMON = "daemon";
+  // options passed to multichaind
   private static final String OPTION_DATADIR = "datadir";
   private static final String OPTION_RPCALLOWIP = "rpcallowip";
-  private static final String OPTION_RPCUSER = "rpcuser";
-  private static final String OPTION_RPCPASSWORD = "rpcpassword";
+  private static final String OPTION_RPCPORT = "rpcport";
   private static final String OPTION_SERVER = "server";
+
+  // keys used in multichain.conf
+  private static final String RPC_USER_KEY = "rpcuser";
+  private static final String RPC_PASSWORD_KEY = "rpcpassword";
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainDaemon.class);
 
@@ -62,19 +65,30 @@ public class MultiChainDaemon {
     final CommandLine cmd =
         new CommandLine(new File(this.config.getString(MultiChainOptions.HOME_KEY), "multichaind"));
 
-    // the only positional arguments are the name of the chain and the protocol
-    // version
-    cmd.addArgument(this.config.getString(MultiChainOptions.CHAIN_NAME_KEY));
+    final Config options = this.config.getConfig(MultiChainOptions.DAEMON_OPTIONS_KEY);
+
+    // create data directory if necessary
+    final File datadir = new File(options.getString(OPTION_DATADIR));
+    if (!datadir.exists()) {
+      LOG.info("Creating multichaind -datadir: {}", datadir.toString());
+      if (!datadir.mkdirs()) {
+        throw new RuntimeException(
+            "Could not create multichaind -" + OPTION_DATADIR + ": " + datadir.toString());
+      }
+
+      // if we had to create the data directory, we need to specify a node to clone the chain from
+      cmd.addArgument(this.config.getString(MultiChainOptions.CHAIN_NAME_KEY) + "@"
+          + this.config.getString(MultiChainOptions.SEED_NODE_KEY));
+    } else {
+      // otherwise the name of the chain is sufficient
+      cmd.addArgument(this.config.getString(MultiChainOptions.CHAIN_NAME_KEY));
+    }
+
+    // add the protocol version as second position argument
     cmd.addArgument(this.config.getString(MultiChainOptions.PROTOCOL_VERSION_KEY));
 
     // multichaind-specific options
     this.addMultiChaindOptions(cmd);
-
-    // make sure all directories and configuration files exist
-    this.initializeBlockchain();
-
-    // read multichain.conf that was generated for this chain
-    this.readMultiChainConf();
 
     // the executor we use to run multichaind in
     final Executor executor = new DefaultExecutor() {
@@ -136,61 +150,31 @@ public class MultiChainDaemon {
     return this.watchdog != null && this.watchdog.isWatching();
   }
 
-  public Config getMultiChainConf() {
-    return this.multiChainConf;
+  public String getRpcUser() {
+    return this.getMultiChainConf().getString(RPC_USER_KEY);
   }
 
-  private void initializeBlockchain() {
-    final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
+  public String getRpcPassword() {
+    return this.getMultiChainConf().getString(RPC_PASSWORD_KEY);
+  }
 
-    // data directory needs to exist before creating the chain
-    final File datadir = new File(options.getString(OPTION_DATADIR));
-    if (!datadir.exists()) {
-      LOG.info("Creating multichaind -datadir: {}", datadir.toString());
-      if (!datadir.mkdirs()) {
-        throw new RuntimeException(
-            "Could not create multichaind -" + OPTION_DATADIR + ": " + datadir.toString());
-      }
-    }
+  public int getRpcPort() {
+    return this.config.getConfig(MultiChainOptions.DAEMON_OPTIONS_KEY).getInt(OPTION_RPCPORT);
+  }
 
-    final String chainName = this.config.getString(MultiChainOptions.CHAIN_NAME_KEY);
-    final File chaindir = new File(datadir, chainName);
-    if (!chaindir.exists()) {
-      // see multichain-util -?
-      final CommandLine cmd = new CommandLine(
-          new File(this.config.getString(MultiChainOptions.HOME_KEY), "multichain-util"));
-
-      // all required positional arguments
-      cmd.addArgument("create");
-      cmd.addArgument(chainName);
-      cmd.addArgument(this.config.getString(MultiChainOptions.PROTOCOL_VERSION_KEY));
-
-      // multichain-util-specific options
-      this.addMultiChainUtilOptions(cmd);
-
-      final Executor executor = new DefaultExecutor() {
-        @Override
-        protected Thread createThread(Runnable runnable, String name) {
-          return super.createThread(runnable, "multichain-util.executor");
+  private Config getMultiChainConf() {
+    if (this.multiChainConf == null || this.multiChainConf.isEmpty()) {
+      synchronized (this) {
+        if (this.multiChainConf == null || this.multiChainConf.isEmpty()) {
+          final Config options = this.config.getConfig(MultiChainOptions.DAEMON_OPTIONS_KEY);
+          final File datadir = new File(options.getString(OPTION_DATADIR),
+              this.config.getString(MultiChainOptions.CHAIN_NAME_KEY));
+          this.multiChainConf = ConfigFactory.parseFile(new File(datadir, "multichain.conf"));
         }
-      };
-
-      LOG.info("Running multichain-util: {}", String.join(" ", cmd.toStrings()));
-      try {
-        // synchronous execution
-        final int exitValue = executor.execute(cmd);
-        LOG.info("multichain-util completed with exit code: {}", exitValue);
-      } catch (IOException e) {
-        throw new RuntimeException("multichain-util failed", e);
       }
     }
-  }
 
-  private void readMultiChainConf() {
-    final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
-    final File datadir = new File(
-        options.getString(OPTION_DATADIR), this.config.getString(MultiChainOptions.CHAIN_NAME_KEY));
-    this.multiChainConf = ConfigFactory.parseFile(new File(datadir, "multichain.conf"));
+    return this.multiChainConf;
   }
 
   private void addMultiChaindOptions(CommandLine cmd) {
@@ -205,18 +189,6 @@ public class MultiChainDaemon {
       String value = entry.getValue().unwrapped().toString();
 
       switch (key) {
-        case OPTION_DAEMON:
-          // we are running multichaind in the background anyway, fall-through
-        case OPTION_RPCALLOWIP:
-          // we only allow localhost, fall-through
-        case OPTION_RPCUSER:
-          // we use multichaind generated rpcuser, fall-through
-        case OPTION_RPCPASSWORD:
-          // we use multichaind generated rpcpassword, fall-through
-        case OPTION_SERVER:
-          // we add the server option ourselves
-          LOG.debug("Ignoring -{} multichaind option", key);
-          break;
         case OPTION_DATADIR:
           // add substitution and replace value with placeholder for
           // substitution
@@ -241,27 +213,6 @@ public class MultiChainDaemon {
       LOG.warn("Could not add -{} option: {}", OPTION_RPCALLOWIP, e.getMessage());
       LOG.warn(Markers.EXCEPTION, "Could not get localhost", e);
     }
-  }
-
-  private void addMultiChainUtilOptions(CommandLine cmd) {
-    final Config options = this.config.getConfig(MultiChainOptions.UTIL_OPTIONS_KEY);
-    final File datadir = new File(options.getString(OPTION_DATADIR));
-
-    // build remaining options like above
-    final Map<String, Object> substitutions = new HashMap<>();
-    for (Map.Entry<String, ConfigValue> entry : options.entrySet()) {
-      final String key = entry.getKey();
-      String value = entry.getValue().unwrapped().toString();
-
-      // the only option we have to handle here
-      if (OPTION_DATADIR.equals(key)) {
-        substitutions.put(key, datadir);
-        value = buildCommandLineSubstitution(key);
-      }
-
-      cmd.addArgument(buildCommandLineOption(key, value));
-    }
-    cmd.setSubstitutionMap(substitutions);
   }
 
   private static String buildCommandLineOption(String option, String argument) {

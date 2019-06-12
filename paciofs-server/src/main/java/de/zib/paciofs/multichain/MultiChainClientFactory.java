@@ -11,10 +11,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.rpc.MultiChainJsonRpcClient;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,10 +39,6 @@ public class MultiChainClientFactory {
 
     private final Config config;
 
-    private String localhostName;
-
-    private String localhostAddress;
-
     private final MultiChainDaemon multiChainDaemon;
 
     private LifecyclePhase multiChainLifecyclePhase;
@@ -55,40 +49,13 @@ public class MultiChainClientFactory {
         LifecyclePhase lifecyclePhase, Object lifecyclePhaseTransition)
         throws MalformedURLException {
       // construct URL without credentials
-      super(new URL(protocol + "://localhost:" + config.getInt(MultiChainOptions.RPC_PORT_KEY)));
+      super(new URL(protocol + "://localhost:" + multiChainDaemon.getRpcPort()));
 
       this.config = config;
-
-      try {
-        final InetAddress localhost = InetAddress.getLocalHost();
-        this.localhostAddress = localhost.getHostAddress();
-        this.localhostName = localhost.getHostName();
-      } catch (UnknownHostException e) {
-        this.localhostAddress = "";
-        this.localhostName = "";
-        LOG.warn("Could not get localhost: {}", e.getMessage());
-        LOG.warn(Markers.EXCEPTION, "Could not get localhost", e);
-      }
 
       this.multiChainDaemon = multiChainDaemon;
       this.multiChainLifecyclePhase = lifecyclePhase;
       this.multiChainLifecyclePhaseTransition = lifecyclePhaseTransition;
-    }
-
-    @Override
-    public void addNode(String node, String command) throws GenericRpcException {
-      if (node.equals(this.localhostAddress) || node.equals(this.localhostName)) {
-        LOG.debug("Not {}'ing {} because it is this node", command, node);
-        return;
-      }
-
-      final String nodeWithPort = node + ":" + this.config.getInt(MultiChainOptions.PORT_KEY);
-
-      // https://www.multichain.com/developers/json-rpc-api/
-      // The command parameter should be one of add (to manually queue a node for the next
-      // available slot), remove (to remove a node), or onetry (to immediately connect to a node
-      // even if a slot is not available).
-      super.addNode(nodeWithPort, command);
     }
 
     @Override
@@ -172,9 +139,6 @@ public class MultiChainClientFactory {
           // wait until the service is up
           this.multiChainDaemon.start();
 
-          // now we set get the credentials from MultiChain
-          this.setAuth();
-
           // wait at most backoff * (2^maxRetries - 1) milliseconds
           // e.g. 50 * (2^10 -1) = 51150 milliseconds
           long backoff = this.config.getLong(MultiChainOptions.BACKOFF_MILLISECONDS_KEY);
@@ -184,6 +148,10 @@ public class MultiChainClientFactory {
           // try and get the multichain info at most a number of maxRetries times
           BlockChainInfo bci = null;
           for (; failedRetries < maxRetries; ++failedRetries) {
+            // reset the authentication info every try, as MultiChain generates the credentials some
+            // time during startup
+            this.setAuth();
+
             try {
               // causes one recursion step via query(), however this step will fail the above
               // checkedLifecyclePhaseTransition to STARTING and therefore return early
@@ -244,32 +212,21 @@ public class MultiChainClientFactory {
       // build the user:password information
       String userInfo;
 
+      // TODO we should not know about ConfigException here
       try {
-        userInfo =
-            this.multiChainDaemon.getMultiChainConf().getString(MultiChainOptions.RPC_USER_KEY);
+        userInfo = this.multiChainDaemon.getRpcUser();
       } catch (ConfigException.Missing e) {
-        // no user given, do not use authentication
+        LOG.info("No RPC user given, not using RPC authentication: {}", e.getMessage());
         return;
       }
 
       try {
-        userInfo += ":"
-            + this.multiChainDaemon.getMultiChainConf().getString(
-                MultiChainOptions.RPC_PASSWORD_KEY);
+        userInfo += ":" + this.multiChainDaemon.getRpcPassword();
       } catch (ConfigException.Missing e) {
-        // no password given, proceed without it
+        LOG.info("No RPC password given, proceeding without it: {}", e.getMessage());
       }
 
       super.setAuth(userInfo);
-    }
-  }
-
-  private static class RemoteClient extends MultiChainJsonRpcClient {
-    private RemoteClient(String protocol, Config config) throws MalformedURLException {
-      super(new URL(protocol + "://" + config.getString(MultiChainOptions.RPC_USER_KEY) + ":"
-          + config.getString(MultiChainOptions.RPC_PASSWORD_KEY) + "@"
-          + config.getString(MultiChainOptions.RPC_CONNECT_KEY) + ":"
-          + config.getInt(MultiChainOptions.RPC_PORT_KEY)));
     }
   }
 
@@ -289,25 +246,9 @@ public class MultiChainClientFactory {
    */
   public MultiChainClientFactory(Config config) {
     this.config = config;
-
-    String rpcConnect = "";
-    try {
-      rpcConnect = this.config.getString(MultiChainOptions.RPC_CONNECT_KEY);
-    } catch (ConfigException.Missing e) {
-      // handle not specified the same as empty
-    }
-
-    if ("".equals(rpcConnect)) {
-      // start MultiChain locally if the target connect is empty
-      this.multiChainDaemon = new MultiChainDaemon(this.config);
-      this.multiChainLifecyclePhase = LifecyclePhase.STOPPED;
-      this.multiChainLifecyclePhaseTransition = new Object();
-    } else {
-      // assume all is well if we connect to a remote MultiChain
-      this.multiChainDaemon = null;
-      this.multiChainLifecyclePhase = LifecyclePhase.RUNNING;
-      this.multiChainLifecyclePhaseTransition = null;
-    }
+    this.multiChainDaemon = new MultiChainDaemon(this.config);
+    this.multiChainLifecyclePhase = LifecyclePhase.STOPPED;
+    this.multiChainLifecyclePhaseTransition = new Object();
   }
 
   static {
@@ -332,23 +273,11 @@ public class MultiChainClientFactory {
    * @return the constructed client
    */
   public MultiChainJsonRpcClient create() {
-    if (this.multiChainDaemon != null) {
-      try {
-        return new LocalClient(this.getProtocol(), this.config, this.multiChainDaemon,
-            this.multiChainLifecyclePhase, this.multiChainLifecyclePhaseTransition);
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Could not create local MultiChain client", e);
-      }
-    } else {
-      try {
-        return new RemoteClient(this.getProtocol(), this.config);
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Could not create remote MultiChain client", e);
-      }
+    try {
+      return new LocalClient("http", this.config, this.multiChainDaemon,
+          this.multiChainLifecyclePhase, this.multiChainLifecyclePhaseTransition);
+    } catch (MalformedURLException e) {
+      throw new RuntimeException("Could not create local MultiChain client", e);
     }
-  }
-
-  private String getProtocol() {
-    return this.config.hasPath(MultiChainOptions.RPC_SSL_KEY) ? "https" : "http";
   }
 }

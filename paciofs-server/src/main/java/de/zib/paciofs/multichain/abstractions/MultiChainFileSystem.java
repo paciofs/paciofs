@@ -31,7 +31,8 @@ import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainFileSystem.class);
 
-  private static final BigDecimal FILE_SYSTEM_OP_RETURN_FEE = new BigDecimal(1);
+  // TODO read this from params.dat : native-currency-multiple
+  private static final BigDecimal FILE_SYSTEM_OP_RETURN_FEE = new BigDecimal(1.0 / 100000000.0);
 
   private final MultiChainUtil clientUtil;
 

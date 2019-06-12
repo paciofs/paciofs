@@ -8,16 +8,12 @@
 package de.zib.paciofs.multichain.actors;
 
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.cluster.pubsub.DistributedPubSub;
-import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.japi.pf.ReceiveBuilder;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.time.Duration;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
@@ -29,38 +25,19 @@ public class MultiChainActor extends AbstractActorWithTimers {
     void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction);
   }
 
-  private static final class MultiChainEndpoint {
-    final String endpoint;
-
-    MultiChainEndpoint(String endpoint) {
-      this.endpoint = endpoint;
-    }
-  }
-
   private static final class MultiChainQuery {
     MultiChainQuery() {}
   }
 
   private static final int QUERY_INTERVAL = 3000;
 
-  private static final String TOPIC_MULTICHAIN_ENDPOINTS = "multichain-endpoints";
-
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainActor.class);
-
-  // used for distributed publish/subscribe
-  private final ActorRef mediator;
 
   // keep track of the most recent block in the best chain
   private BitcoindRpcClient.Block multiChainBestBlock;
 
   // our primary MultiChain instance that we interact with
   private final MultiChainRpcClient multiChainClient;
-
-  // the first address that the MultiChain client listens on
-  private String multiChainEndpoint;
-
-  // key for the timer we use to schedule querying of the chain
-  private final Object multiChainQueryTimerKey;
 
   // array of recipients of new raw transactions
   private final RawTransactionConsumer[] rawTransactionConsumers;
@@ -73,9 +50,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
    */
   public MultiChainActor(
       MultiChainRpcClient multiChainClient, RawTransactionConsumer... consumers) {
-    this.mediator = DistributedPubSub.get(this.context().system()).mediator();
     this.multiChainClient = multiChainClient;
-    this.multiChainQueryTimerKey = new Object();
     this.rawTransactionConsumers = consumers;
 
     // best block at initialization is the genesis block
@@ -90,84 +65,18 @@ public class MultiChainActor extends AbstractActorWithTimers {
   public void preStart() throws Exception {
     super.preStart();
 
-    // subscribe to the topic that receives MultiChain endpoints of other actors
-    this.mediator.tell(
-        new DistributedPubSubMediator.Subscribe(TOPIC_MULTICHAIN_ENDPOINTS, this.self()),
-        this.self());
-
     // kick off constant querying of the blockchain
-    this.timers().startSingleTimer(
-        this.multiChainQueryTimerKey, new MultiChainQuery(), Duration.ZERO);
-  }
-
-  @Override
-  public void postStop() throws Exception {
-    this.mediator.tell(
-        new DistributedPubSubMediator.Unsubscribe(TOPIC_MULTICHAIN_ENDPOINTS, this.self()),
-        this.self());
-    super.postStop();
+    this.timers().startSingleTimer(new Object(), new MultiChainQuery(), Duration.ZERO);
   }
 
   @Override
   public Receive createReceive() {
     final ReceiveBuilder builder = this.receiveBuilder();
 
-    // once this actor is up and running, it receives the subscription notification
-    builder.match(DistributedPubSubMediator.SubscribeAck.class, MultiChainActor.this::subscribeAck);
-    builder.match(
-        DistributedPubSubMediator.UnsubscribeAck.class, MultiChainActor.this::unsubscribeAck);
-
-    // nodes broadcast the first address their MultiChain instance listens on
-    builder.match(MultiChainEndpoint.class, MultiChainActor.this::multiChainEndpoint);
-
     // query the blockchain for new blocks and transactions
     builder.match(MultiChainQuery.class, MultiChainActor.this::multiChainQuery);
 
     return builder.build();
-  }
-
-  private void subscribeAck(DistributedPubSubMediator.SubscribeAck ack) {
-    switch (ack.subscribe().topic()) {
-      // broadcast the first address the MultiChain client listens on
-      case TOPIC_MULTICHAIN_ENDPOINTS:
-        // obtain the networking information of the client
-        final BitcoindRpcClient.NetworkInfo networkInfo = this.multiChainClient.getNetworkInfo();
-        final List<BitcoindRpcClient.LocalAddress> localAddresses = networkInfo.localAddresses();
-        if (localAddresses.size() == 0) {
-          throw new RuntimeException("MultiChain does not listen on any local addresses");
-        } else {
-          // remember our address
-          this.multiChainEndpoint =
-              localAddresses.get(0).address() + ":" + localAddresses.get(0).port();
-          if (localAddresses.size() > 1) {
-            LOG.warn("MultiChain has {} local addresses", localAddresses.size());
-          }
-          LOG.debug("Broadcasting MultiChain address {}", this.multiChainEndpoint);
-
-          // broadcast the address, so other actors can tell their MultiChain clients about it
-          this.mediator.tell(new DistributedPubSubMediator.Publish(TOPIC_MULTICHAIN_ENDPOINTS,
-                                 new MultiChainEndpoint(this.multiChainEndpoint)),
-              this.self());
-        }
-        break;
-      default:
-        throw new IllegalArgumentException(ack.subscribe().topic());
-    }
-
-    LOG.debug("Subscribed to topic {}", ack.subscribe().topic());
-  }
-
-  private void unsubscribeAck(DistributedPubSubMediator.UnsubscribeAck ack) {
-    LOG.debug("Unsubscribed from topic {}", ack.unsubscribe().topic());
-  }
-
-  private void multiChainEndpoint(MultiChainEndpoint endpoint) {
-    // we receive our own broadcast as well, so guard against adding ourselves
-    if (!endpoint.endpoint.equals(this.multiChainEndpoint)) {
-      // tell our MultiChain client about the other actor's client
-      LOG.trace("Adding MultiChain endpoint {}", endpoint.endpoint);
-      this.multiChainClient.addNode(endpoint.endpoint, "add");
-    }
   }
 
   private void multiChainQuery(MultiChainQuery query) {
@@ -239,7 +148,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
     bestBlock = this.multiChainClient.getBlock(this.multiChainClient.getBestBlockHash());
 
     // schedule the next invocation immediately if the best block has changed, otherwise wait a bit
-    this.timers().startSingleTimer(this.multiChainQueryTimerKey, query,
+    this.timers().startSingleTimer(new Object(), query,
         bestBlock.hash().equals(this.multiChainBestBlock.hash()) ? Duration.ofMillis(QUERY_INTERVAL)
                                                                  : Duration.ZERO);
   }

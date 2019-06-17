@@ -187,9 +187,10 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
     final boolean success = directory.mkdir();
     if (success) {
-      LOG.info("Directory {} was created in volume {}", cleanedPath, volume.getName());
-      this.clientUtil.sendRawTransaction(
+      final String txId = this.clientUtil.sendRawTransaction(
           MultiChainCommand.MCC_IO_MKDIR, MultiChainUtil.encodeString(path));
+      LOG.info("Directory {} was created in volume {} (transaction id: {})", cleanedPath,
+          volume.getName(), txId);
     } else {
       LOG.warn("Directory {} could not be created in volume {}", cleanedPath, volume.getName());
     }

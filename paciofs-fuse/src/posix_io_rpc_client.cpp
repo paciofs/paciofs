@@ -64,34 +64,6 @@ bool PosixIoRpcClient::Ping() {
   return status.ok();
 }
 
-  request.set_path(PreparePath(path));
-  logger_.Trace([request](auto &out) {
-  });
-
-  ::grpc::ClientContext context;
-  SetMetadata(context);
-
-  if (status.ok()) {
-    logger_.Trace([request, response](auto &out) {
-          << "): " << response.ShortDebugString();
-    });
-
-    messages::Errno error = response.error();
-    if (error != messages::ERRNO_ESUCCESS) {
-      return error;
-    }
-
-    return messages::ERRNO_ESUCCESS;
-  } else {
-    logger_.Warning([request, status](auto &out) {
-          << "): " << status.error_message() << " (" << status.error_code()
-          << ")";
-    });
-
-    return messages::ERRNO_EIO;
-  }
-}
-
 messages::Errno PosixIoRpcClient::Stat(std::string const &path,
                                        messages::Stat &stat) {
   StatRequest request;
@@ -121,6 +93,28 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
   } else {
     logger_.Warning([request, status](auto &out) {
       out << "Stat(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
+  request.set_path(PreparePath(path));
+  logger_.Trace([request](auto &out) {
+  });
+
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+          << "): " << response.ShortDebugString();
+    });
+
+  } else {
+    logger_.Warning([request, status](auto &out) {
           << "): " << status.error_message() << " (" << status.error_code()
           << ")";
     });

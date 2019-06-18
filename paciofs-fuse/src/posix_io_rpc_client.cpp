@@ -167,6 +167,72 @@ messages::Errno PosixIoRpcClient::MkDir(std::string const &path,
   }
 }
 
+messages::Errno PosixIoRpcClient::ChMod(std::string const &path,
+                                        google::protobuf::uint32 mode) {
+  ChModRequest request;
+  request.set_path(PreparePath(path));
+  request.set_mode(mode);
+  logger_.Trace([request](auto &out) {
+    out << "ChMod(" << request.ShortDebugString() << ")";
+  });
+
+  ChModResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->ChMod(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "ChMod(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    return response.error();
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "ChMod(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
+messages::Errno PosixIoRpcClient::ChOwn(std::string const &path,
+                                        google::protobuf::uint32 uid,
+                                        google::protobuf::uint32 gid) {
+  ChOwnRequest request;
+  request.set_path(PreparePath(path));
+  request.set_uid(uid);
+  request.set_gid(gid);
+  logger_.Trace([request](auto &out) {
+    out << "ChOwn(" << request.ShortDebugString() << ")";
+  });
+
+  ChOwnResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->ChOwn(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "ChOwn(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    return response.error();
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "ChOwn(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
 messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
                                           std::vector<messages::Dir> &dirs) {
   ReadDirRequest request;

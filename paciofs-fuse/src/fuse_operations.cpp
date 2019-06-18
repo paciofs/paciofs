@@ -46,6 +46,8 @@ void InitializeFuseOperations(
   operations.getattr = PfsGetAttr;
   operations.mknod = PfsMkNod;
   operations.mkdir = PfsMkDir;
+  operations.chmod = PfsChMod;
+  operations.chown = PfsChOwn;
   operations.readdir = PfsReadDir;
 }
 
@@ -106,6 +108,30 @@ int PfsMkDir(const char *path, mode_t mode) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   messages::Errno error = g_context.rpc_client->MkDir(path, FromMode(mode));
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
+  }
+
+  return 0;
+}
+
+int PfsChMod(const char *path, mode_t mode) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error = g_context.rpc_client->ChMod(path, mode);
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
+  }
+
+  return 0;
+}
+
+int PfsChOwn(const char *path, uid_t uid, gid_t gid) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error = g_context.rpc_client->ChOwn(path, uid, gid);
 
   if (error != messages::ERRNO_ESUCCESS) {
     return -TO_ERRNO(error);

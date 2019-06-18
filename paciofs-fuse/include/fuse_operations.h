@@ -27,6 +27,10 @@ int PfsMkNod(const char *path, mode_t mode, dev_t dev);
 
 int PfsMkDir(const char *path, mode_t mode);
 
+int PfsChMod(const char *path, mode_t mode);
+
+int PfsChOwn(const char *path, uid_t uid, gid_t gid);
+
 int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi);
 

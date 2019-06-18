@@ -33,6 +33,9 @@ int PfsChOwn(const char *path, uid_t uid, gid_t gid);
 
 int PfsOpen(const char *path, struct fuse_file_info *fi);
 
+int PfsRead(const char *path, char *buf, size_t size, off_t offset,
+            struct fuse_file_info *fi);
+
 int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi);
 

@@ -273,6 +273,51 @@ messages::Errno PosixIoRpcClient::Open(std::string const &path,
   }
 }
 
+messages::Errno PosixIoRpcClient::Read(std::string const &path, char *buf,
+                                       google::protobuf::uint32 size,
+                                       google::protobuf::int64 offset,
+                                       google::protobuf::uint64 fh,
+                                       google::protobuf::uint32 &n) {
+  ReadRequest request;
+  request.set_path(PreparePath(path));
+  request.set_size(size);
+  request.set_offset(offset);
+  request.set_fh(fh);
+  logger_.Trace([request](auto &out) {
+    out << "Read(" << request.ShortDebugString() << ")";
+  });
+
+  ReadResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->Read(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "Read(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    if (response.n() == -1) {
+      // end of file
+      n = 0;
+    } else {
+      n = response.n();
+      strncpy(buf, response.buf().c_str(), n);
+    }
+
+    return messages::ERRNO_ESUCCESS;
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "Read(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
 messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
                                           std::vector<messages::Dir> &dirs) {
   ReadDirRequest request;

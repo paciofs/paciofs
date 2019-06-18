@@ -50,6 +50,12 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
   messages::Errno Open(std::string const& path, google::protobuf::int32 flags,
                        google::protobuf::uint64& fh);
 
+  messages::Errno Read(std::string const& path, char* buf,
+                       google::protobuf::uint32 size,
+                       google::protobuf::int64 offset,
+                       google::protobuf::uint64 fh,
+                       google::protobuf::uint32& n);
+
   messages::Errno ReadDir(std::string const& path,
                           std::vector<messages::Dir>& dirs);
 

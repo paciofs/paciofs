@@ -76,6 +76,19 @@ message OpenResponse {
   uint64 fh = 2;
 }
 
+message ReadRequest {
+  string path = 1;
+  uint32 size = 2;
+  int64 offset = 3;
+  uint64 fh = 4;
+}
+
+message ReadResponse {
+  messages.Errno error = 1;
+  bytes buf = 2;
+  uint32 n = 3;
+}
+
 message ReadDirRequest {
   string path = 1;
 }
@@ -93,5 +106,6 @@ service PosixIoService {
   rpc ChMod(ChModRequest) returns (ChModResponse);
   rpc ChOwn(ChOwnRequest) returns (ChOwnResponse);
   rpc Open(OpenRequest) returns (OpenResponse);
+  rpc Read(ReadRequest) returns (ReadResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
 }

@@ -8,6 +8,7 @@
 package de.zib.paciofs.io.posix.grpc;
 
 import akka.grpc.javadsl.Metadata;
+import com.google.protobuf.ByteString;
 import de.zib.paciofs.grpc.PacioFsGrpcUtil;
 import de.zib.paciofs.grpc.messages.Ping;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
@@ -17,6 +18,7 @@ import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -164,6 +166,30 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     final OpenResponse out = builder.setError(error).build();
 
     PacioFsGrpcUtil.traceMessages(LOG, "open({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
+  public CompletionStage<ReadResponse> read(ReadRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "read({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final ReadResponse.Builder builder = ReadResponse.newBuilder();
+    try {
+      final ByteBuffer destination = ByteBuffer.allocateDirect(in.getSize());
+      final int n =
+          this.multiChainFileSystem.read(in.getPath(), destination, in.getOffset(), in.getFh());
+      builder.setBuf(ByteString.copyFrom(destination));
+      builder.setN(n);
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not read file {}", in.getPath(), e);
+      error = Errno.ERRNO_EIO;
+    }
+
+    final ReadResponse out = builder.setError(error).build();
+
+    // TODO do not trace the entire output
+    PacioFsGrpcUtil.traceMessages(LOG, "read({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 

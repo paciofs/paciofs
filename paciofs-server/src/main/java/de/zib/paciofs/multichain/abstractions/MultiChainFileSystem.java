@@ -24,6 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -272,6 +274,29 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
     // TODO use a more meaningful file handle
     return path.hashCode();
+  }
+
+  /**
+   * Read from a file.
+   * @param path path to the file: volume:/path/to/file
+   * @param destination buffer to read contents into
+   * @param offset position in the file
+   * @param fh file handle as returned by {{@link #open(String, int)}}
+   * @return the number of bytes read, -1 on EOF
+   * @throws IOException if the path does not exist or on IO errors
+   */
+  public int read(String path, ByteBuffer destination, long offset, long fh) throws IOException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final RandomAccessFile file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "r");
+
+    final FileChannel channel = file.getChannel();
+    final int n = channel.read(destination, offset);
+    channel.close();
+    return n;
   }
 
   /**

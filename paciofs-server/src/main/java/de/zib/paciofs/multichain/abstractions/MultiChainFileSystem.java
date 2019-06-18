@@ -22,6 +22,7 @@ import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -155,6 +156,45 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   /**
+   * Create a file.
+   * @param path path to the file to create, volume:/path/to/file
+   * @param mode file creation mode
+   * @param dev major and minor version for device special files
+   * @return true if the file was created, false otherwise
+   * @throws IOException if any error occurs when writing the file
+   */
+  public boolean mkNod(String path, int mode, int dev) throws IOException {
+    if ((mode & Mode.MODE_S_IFREG_VALUE) != Mode.MODE_S_IFREG_VALUE) {
+      throw new IllegalArgumentException("Can only create regular files");
+    }
+
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final File file = new File(volumeRoot, cleanedPath);
+
+    if (file.exists()) {
+      return false;
+    }
+
+    // touch the file
+    new RandomAccessFile(file, "rw").close();
+
+    final MultiChainData data = new MultiChainData();
+    data.writeString(path);
+    data.writeInt(mode);
+    data.writeInt(dev);
+
+    final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKNOD, data);
+    LOG.info("Node {} was created in volume {} (transaction id: {})", cleanedPath, volume.getName(),
+        txId);
+
+    return true;
+  }
+
+  /**
    * Create a directory.
    * @param path path to the directory, volume:/path/to/dir
    * @param mode directory creation mode
@@ -240,6 +280,13 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
           case MCC_VOLUME_DELETE: {
             final Volume volume = Volume.parseFrom(data.readByteArray());
             this.deleteVolume(volume);
+            break;
+          }
+          case MCC_IO_MKNOD: {
+            final String path = data.readString();
+            final int mode = data.readInt();
+            final int dev = data.readInt();
+            this.mkNod(path, mode, dev);
             break;
           }
           case MCC_IO_MKDIR: {

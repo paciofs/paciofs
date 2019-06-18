@@ -28,9 +28,14 @@ message StatResponse {
   messages.Errno error = 2;
 }
 
+message MkNodRequest {
   string path = 1;
+  uint32 mode = 2;
+  sint32 dev = 3;
 }
 
+message MkNodResponse {
+  messages.Errno error = 1;
 }
 
 message MkDirRequest {
@@ -54,6 +59,7 @@ message ReadDirResponse {
 service PosixIoService {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc Stat(StatRequest) returns (StatResponse);
+  rpc MkNod(MkNodRequest) returns (MkNodResponse);
   rpc MkDir(MkDirRequest) returns (MkDirResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
 }

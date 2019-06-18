@@ -71,6 +71,31 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
   }
 
   @Override
+  public CompletionStage<MkNodResponse> mkNod(MkNodRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "mkNod({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final MkNodResponse.Builder builder = MkNodResponse.newBuilder();
+
+    try {
+      if (!this.multiChainFileSystem.mkNod(in.getPath(), in.getMode(), in.getDev())) {
+        LOG.warn("Could not create node {}", in.getPath());
+        // TODO this is not accurate, find out proper reason
+        error = Errno.ERRNO_EIO;
+      }
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not create node {}", in.getPath(), e);
+      // TODO this is not accurate, find out proper reason
+      error = Errno.ERRNO_EIO;
+    }
+
+    final MkNodResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "mkNod({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
   public CompletionStage<MkDirResponse> mkDir(MkDirRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "mkDir({})", in);
 

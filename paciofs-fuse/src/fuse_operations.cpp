@@ -50,6 +50,7 @@ void InitializeFuseOperations(
   operations.chown = PfsChOwn;
   operations.open = PfsOpen;
   operations.read = PfsRead;
+  operations.write = PfsWrite;
   operations.readdir = PfsReadDir;
 }
 
@@ -161,6 +162,21 @@ int PfsRead(const char *path, char *buf, size_t size, off_t offset,
   google::protobuf::uint32 n;
   messages::Errno error =
       g_context.rpc_client->Read(path, buf, size, offset, fi->fh, n);
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
+  }
+
+  return n;
+}
+
+int PfsWrite(const char *path, const char *buf, size_t size, off_t offset,
+             struct fuse_file_info *fi) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  google::protobuf::uint32 n;
+  messages::Errno error =
+      g_context.rpc_client->Write(path, buf, size, offset, fi->fh, n);
 
   if (error != messages::ERRNO_ESUCCESS) {
     return -TO_ERRNO(error);

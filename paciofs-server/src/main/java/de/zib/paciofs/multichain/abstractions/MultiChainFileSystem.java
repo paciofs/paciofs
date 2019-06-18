@@ -111,9 +111,9 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param user user ID to use in the returned stat
    * @param group group ID to use in the returned stat
    * @return the file information
-   * @throws FileNotFoundException if the file does not exist
+   * @throws IOException if the file does not exist or the file type is not supported
    */
-  public Stat stat(String path, int user, int group) throws FileNotFoundException {
+  public Stat stat(String path, int user, int group) throws IOException {
     final Volume volume = this.getVolumeFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
 
@@ -136,10 +136,14 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
       // drwxr-xr-x for directories
       builder.setMode(Mode.MODE_S_IFDIR_VALUE | Mode.MODE_S_IRWXU_VALUE | Mode.MODE_S_IRGRP_VALUE
           | Mode.MODE_S_IXGRP_VALUE | Mode.MODE_S_IROTH_VALUE | Mode.MODE_S_IXOTH_VALUE);
+    } else if (file.isFile()) {
+      // -rw-r--r-- for regular files
+      builder.setMode(Mode.MODE_S_IFREG_VALUE | Mode.MODE_S_IRUSR_VALUE | Mode.MODE_S_IWUSR_VALUE
+          | Mode.MODE_S_IRGRP_VALUE | Mode.MODE_S_IROTH_VALUE);
+
+      builder.setSize(file.length());
     } else {
-      // -rw-r--r-- for files
-      builder.setMode(Mode.MODE_S_IRUSR_VALUE | Mode.MODE_S_IWUSR_VALUE | Mode.MODE_S_IRGRP_VALUE
-          | Mode.MODE_S_IROTH_VALUE);
+      throw new IOException("Illegal file type for " + cleanedPath);
     }
 
     return builder.build();

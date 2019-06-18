@@ -59,6 +59,9 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     } catch (FileNotFoundException e) {
       LOG.warn(Markers.EXCEPTION, "Could not stat file {}", in.getPath(), e);
       error = Errno.ERRNO_ENOENT;
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not stat file {}", in.getPath(), e);
+      error = Errno.ERRNO_EIO;
     }
 
     final StatResponse out = builder.setError(error).build();

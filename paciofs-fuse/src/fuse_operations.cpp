@@ -44,8 +44,8 @@ void InitializeFuseOperations(
   g_context.rpc_client = rpc_client;
 
   operations.getattr = PfsGetAttr;
-  operations.readdir = PfsReadDir;
   operations.mkdir = PfsMkDir;
+  operations.readdir = PfsReadDir;
 }
 
 int PfsGetAttr(const char *path, struct stat *buf) {
@@ -88,6 +88,28 @@ int PfsGetAttr(const char *path, struct stat *buf) {
   return 0;
 }
 
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error =
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
+  }
+
+  return 0;
+}
+
+int PfsMkDir(const char *path, mode_t mode) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error = g_context.rpc_client->MkDir(path, FromMode(mode));
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
+  }
+
+  return 0;
+}
+
 int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi) {
   namespace messages = paciofs::io::posix::grpc::messages;
@@ -101,18 +123,6 @@ int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   for (messages::Dir const &dir : dirs) {
     filler(buf, dir.name().c_str(), nullptr, 0);
-  }
-
-  return 0;
-}
-
-int PfsMkDir(const char *path, mode_t mode) {
-  namespace messages = paciofs::io::posix::grpc::messages;
-
-  messages::Errno error = g_context.rpc_client->MkDir(path, FromMode(mode));
-
-  if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
   }
 
   return 0;

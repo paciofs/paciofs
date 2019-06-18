@@ -64,22 +64,15 @@ bool PosixIoRpcClient::Ping() {
   return status.ok();
 }
 
-messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
-                                          std::vector<messages::Dir> &dirs) {
-  ReadDirRequest request;
   request.set_path(PreparePath(path));
   logger_.Trace([request](auto &out) {
-    out << "ReadDir(" << request.ShortDebugString() << ")";
   });
 
-  ReadDirResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->ReadDir(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
-      out << "ReadDir(" << request.ShortDebugString()
           << "): " << response.ShortDebugString();
     });
 
@@ -88,14 +81,9 @@ messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
       return error;
     }
 
-    for (int i = 0; i < response.dirs_size(); ++i) {
-      dirs.push_back(response.dirs(i));
-    }
-
     return messages::ERRNO_ESUCCESS;
   } else {
     logger_.Warning([request, status](auto &out) {
-      out << "ReadDir(" << request.ShortDebugString()
           << "): " << status.error_message() << " (" << status.error_code()
           << ")";
     });
@@ -165,6 +153,46 @@ messages::Errno PosixIoRpcClient::MkDir(std::string const &path,
   } else {
     logger_.Warning([request, status](auto &out) {
       out << "MkDir(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
+messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
+                                          std::vector<messages::Dir> &dirs) {
+  ReadDirRequest request;
+  request.set_path(PreparePath(path));
+  logger_.Trace([request](auto &out) {
+    out << "ReadDir(" << request.ShortDebugString() << ")";
+  });
+
+  ReadDirResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->ReadDir(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "ReadDir(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    messages::Errno error = response.error();
+    if (error != messages::ERRNO_ESUCCESS) {
+      return error;
+    }
+
+    for (int i = 0; i < response.dirs_size(); ++i) {
+      dirs.push_back(response.dirs(i));
+    }
+
+    return messages::ERRNO_ESUCCESS;
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "ReadDir(" << request.ShortDebugString()
           << "): " << status.error_message() << " (" << status.error_code()
           << ")";
     });

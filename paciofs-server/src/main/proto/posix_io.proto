@@ -89,6 +89,19 @@ message ReadResponse {
   uint32 n = 3;
 }
 
+message WriteRequest {
+  string path = 1;
+  bytes buf = 2;
+  uint32 size = 3;
+  int64 offset = 4;
+  uint64 fh = 5;
+}
+
+message WriteResponse {
+  messages.Errno error = 1;
+  uint32 n = 2;
+}
+
 message ReadDirRequest {
   string path = 1;
 }
@@ -107,5 +120,6 @@ service PosixIoService {
   rpc ChOwn(ChOwnRequest) returns (ChOwnResponse);
   rpc Open(OpenRequest) returns (OpenResponse);
   rpc Read(ReadRequest) returns (ReadResponse);
+  rpc Write(WriteRequest) returns (WriteResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
 }

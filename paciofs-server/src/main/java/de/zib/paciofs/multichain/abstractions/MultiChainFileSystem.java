@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
@@ -296,6 +298,42 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     final FileChannel channel = file.getChannel();
     final int n = channel.read(destination, offset);
     channel.close();
+    return n;
+  }
+
+  /**
+   * Write to a file.
+   * @param path path to the file: volume:/path/to/file
+   * @param source buffer to write contents from
+   * @param offset position in the file
+   * @param fh file handle as returned by {{@link #open(String, int)}}
+   * @return the number of bytes written
+   * @throws IOException if the path does not exist or on IO errors
+   */
+  public int write(String path, ByteBuffer source, long offset, long fh) throws IOException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final RandomAccessFile file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "rw");
+
+    final FileChannel channel = file.getChannel();
+    final int n = channel.write(source.slice(), offset);
+    channel.close();
+
+    final byte[] sha256 = DigestUtils.digest(DigestUtils.getSha256Digest(), source.slice());
+
+    final MultiChainData data = new MultiChainData();
+    data.writeString(path);
+    data.writeLong(offset);
+    data.writeInt(n);
+    data.writeByteArray(sha256);
+
+    final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_WRITE, data);
+    LOG.info("Wrote {} bytes (sha256: {}) to file {} on volume {} (transaction id: {})", n,
+        Hex.encodeHexString(sha256, true), cleanedPath, volume.getName(), txId);
+
     return n;
   }
 

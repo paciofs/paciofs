@@ -194,6 +194,29 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
   }
 
   @Override
+  public CompletionStage<WriteResponse> write(WriteRequest in, Metadata metadata) {
+    // TODO do not trace the entire input
+    PacioFsGrpcUtil.traceMessages(LOG, "write({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final WriteResponse.Builder builder = WriteResponse.newBuilder();
+    try {
+      final int n = this.multiChainFileSystem.write(
+          in.getPath(), in.getBuf().asReadOnlyByteBuffer(), in.getOffset(), in.getFh());
+      builder.setN(n);
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not write file {}", in.getPath(), e);
+      error = Errno.ERRNO_EIO;
+    }
+
+    final WriteResponse out = builder.setError(error).build();
+
+    // TODO do not trace the entire input/output
+    PacioFsGrpcUtil.traceMessages(LOG, "write({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
   public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
 

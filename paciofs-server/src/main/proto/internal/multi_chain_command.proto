@@ -19,4 +19,6 @@ enum MultiChainCommand {
   MCC_IO_MKDIR = 5;
 
   MCC_IO_MKNOD = 6;
+
+  MCC_IO_WRITE = 7;
 }

@@ -76,8 +76,8 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final MkDirResponse.Builder builder = MkDirResponse.newBuilder();
-    if (!this.multiChainFileSystem.mkDir(in.getPath())) {
-      LOG.warn(Markers.EXCEPTION, "Could not create directory {}", in.getPath());
+    if (!this.multiChainFileSystem.mkDir(in.getPath(), in.getMode())) {
+      LOG.warn("Could not create directory {}", in.getPath());
       // TODO this is not accurate, find out proper reason
       error = Errno.ERRNO_EIO;
     }

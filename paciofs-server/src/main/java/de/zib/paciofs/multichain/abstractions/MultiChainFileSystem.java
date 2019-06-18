@@ -157,9 +157,10 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   /**
    * Create a directory.
    * @param path path to the directory, volume:/path/to/dir
+   * @param mode directory creation mode
    * @return true if the directory was created, false otherwise
    */
-  public boolean mkDir(String path) {
+  public boolean mkDir(String path, int mode) {
     final Volume volume = this.getVolumeFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
 
@@ -167,10 +168,17 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     final File volumeRoot = this.volumeRoots.get(volume);
     final File directory = new File(volumeRoot, cleanedPath);
 
+    if (directory.exists()) {
+      return false;
+    }
+
     final boolean success = directory.mkdir();
     if (success) {
-      final String txId = this.clientUtil.sendRawTransaction(
-          MultiChainCommand.MCC_IO_MKDIR, MultiChainUtil.encodeString(path));
+      final MultiChainData data = new MultiChainData();
+      data.writeString(path);
+      data.writeInt(mode);
+
+      final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKDIR, data);
       LOG.info("Directory {} was created in volume {} (transaction id: {})", cleanedPath,
           volume.getName(), txId);
     } else {
@@ -235,8 +243,9 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
             break;
           }
           case MCC_IO_MKDIR: {
-            final String path = MultiChainUtil.decodeString(data);
-            this.mkDir(path);
+            final String path = data.readString();
+            final int mode = data.readInt();
+            this.mkDir(path, mode);
             break;
           }
           default:

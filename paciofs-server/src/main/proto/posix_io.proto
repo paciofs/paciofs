@@ -66,6 +66,16 @@ message ChOwnResponse {
   messages.Errno error = 1;
 }
 
+message OpenRequest {
+  string path = 1;
+  sint32 flags = 2;
+}
+
+message OpenResponse {
+  messages.Errno error = 1;
+  uint64 fh = 2;
+}
+
 message ReadDirRequest {
   string path = 1;
 }
@@ -82,5 +92,6 @@ service PosixIoService {
   rpc MkDir(MkDirRequest) returns (MkDirResponse);
   rpc ChMod(ChModRequest) returns (ChModResponse);
   rpc ChOwn(ChOwnRequest) returns (ChOwnResponse);
+  rpc Open(OpenRequest) returns (OpenResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
 }

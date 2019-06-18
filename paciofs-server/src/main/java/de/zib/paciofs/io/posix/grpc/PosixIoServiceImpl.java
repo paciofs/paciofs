@@ -148,6 +148,26 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
   }
 
   @Override
+  public CompletionStage<OpenResponse> open(OpenRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "open({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final OpenResponse.Builder builder = OpenResponse.newBuilder();
+    try {
+      final long fh = this.multiChainFileSystem.open(in.getPath(), in.getFlags());
+      builder.setFh(fh);
+    } catch (FileNotFoundException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not open file {}", in.getPath(), e);
+      error = Errno.ERRNO_EIO;
+    }
+
+    final OpenResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "open({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
   public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
 

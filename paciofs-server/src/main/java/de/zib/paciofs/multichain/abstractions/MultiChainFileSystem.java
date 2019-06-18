@@ -252,6 +252,29 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   /**
+   * Open a file.
+   * @param path path to the file: volume:/path/to/file
+   * @param flags open flags
+   * @return a file handle
+   * @throws FileNotFoundException if the path does not exist
+   */
+  public long open(String path, int flags) throws FileNotFoundException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final File file = new File(volumeRoot, cleanedPath);
+
+    if (!file.exists()) {
+      throw new FileNotFoundException("Path " + path + " does not exist or is not a directory");
+    }
+
+    // TODO use a more meaningful file handle
+    return path.hashCode();
+  }
+
+  /**
    * List the contents of a directory.
    * @param path path to the directory: volume:/path/to/dir
    * @return list of entries in that directory, can be zero-length

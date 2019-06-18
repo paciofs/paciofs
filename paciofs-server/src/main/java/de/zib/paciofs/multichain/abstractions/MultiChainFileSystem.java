@@ -13,6 +13,8 @@ import de.zib.paciofs.grpc.messages.Volume;
 import de.zib.paciofs.io.posix.grpc.messages.Dir;
 import de.zib.paciofs.io.posix.grpc.messages.Mode;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
+import de.zib.paciofs.logging.Markers;
+import de.zib.paciofs.multichain.MultiChainData;
 import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
@@ -89,8 +91,11 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
       if ("".equals(volume.getCreationTxId())) {
         // send the volume to the chain as we have not seen it before
-        final String txId = this.clientUtil.sendRawTransaction(
-            MultiChainCommand.MCC_VOLUME_CREATE, volume.toByteArray());
+        final MultiChainData data = new MultiChainData();
+        data.writeByteArray(volume.toByteArray());
+
+        final String txId =
+            this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_VOLUME_CREATE, data);
         created = Volume.newBuilder(volume).setCreationTxId(txId).build();
       }
     } else {
@@ -217,7 +222,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
       try {
         switch (command) {
           case MCC_VOLUME_CREATE: {
-            final Volume volume = Volume.newBuilder(Volume.parseFrom(data))
+            final Volume volume = Volume.newBuilder(Volume.parseFrom(data.readByteArray()))
                                       .setCreationTxId(rawTransaction.txId())
                                       .build();
             this.createVolume(volume);
@@ -225,7 +230,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
             break;
           }
           case MCC_VOLUME_DELETE: {
-            final Volume volume = Volume.parseFrom(data);
+            final Volume volume = Volume.parseFrom(data.readByteArray());
             this.deleteVolume(volume);
             break;
           }
@@ -240,7 +245,10 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
         }
       } catch (InvalidProtocolBufferException e) {
         // should not happen because at this point we know what data to expect
-        MultiChainFileSystem.LOG.error("Error parsing data", e);
+        MultiChainFileSystem.LOG.error(Markers.EXCEPTION, "Error parsing data", e);
+      } catch (IOException e) {
+        MultiChainFileSystem.LOG.error(
+            Markers.EXCEPTION, "Could not process command {}", command, e);
       }
     });
   }

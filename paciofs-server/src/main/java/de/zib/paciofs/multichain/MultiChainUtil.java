@@ -15,7 +15,6 @@ import de.zib.paciofs.multichain.internal.MultiChainRawTransactionDataHeader;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -25,8 +24,6 @@ import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 import wf.bitcoin.krotjson.HexCoder;
 
 public class MultiChainUtil {
-  private static final Charset UTF8 = Charset.forName("UTF-8");
-
   // magic number in every raw transaction's data header
   // 'P' << 24 | 'A' << 16 | 'C' << 8 | 'I';
   private static final int HEADER_MAGIC = 1346454345;
@@ -54,14 +51,6 @@ public class MultiChainUtil {
     this.log = log;
   }
 
-  public static byte[] encodeString(String string) {
-    return string.getBytes(UTF8);
-  }
-
-  public static String decodeString(byte[] bytes) {
-    return new String(bytes, UTF8);
-  }
-
   /**
    * Takes a raw transaction and iterates over all outputs. If an output is found that contains
    * encoded data, extracts the corresponding command and passes it to the consumer, along with the
@@ -70,7 +59,7 @@ public class MultiChainUtil {
    * @param consumer callback taking a command along with data
    */
   public void processRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction,
-      BiConsumer<MultiChainCommand, byte[]> consumer) {
+      BiConsumer<MultiChainCommand, MultiChainData> consumer) {
     // TODO build fixed-size FIFO cache of raw transactions
     for (BitcoindRpcClient.RawTransaction.Out out : rawTransaction.vOut()) {
       if (out.scriptPubKey() != null && "nulldata".equals(out.scriptPubKey().type())) {
@@ -78,14 +67,16 @@ public class MultiChainUtil {
             HexCoder.decode(out.scriptPubKey().asm().substring("OP_RETURN ".length())));
         try {
           // limit to header size to avoid reading past the end
-          final int limit = stream.pushLimit(stream.readUInt32());
+          final int headerLength = stream.readUInt32();
+          final int limit = stream.pushLimit(headerLength);
           final MultiChainRawTransactionDataHeader header =
               MultiChainRawTransactionDataHeader.parseFrom(stream);
           stream.popLimit(limit);
 
           if (header.getMagic() == HEADER_MAGIC) {
-            // read array with appropriate length
-            consumer.accept(header.getCommand(), stream.readRawBytes(stream.readUInt32()));
+            final int dataLength = stream.readUInt32();
+            final MultiChainData data = new MultiChainData(stream.readRawBytes(dataLength));
+            consumer.accept(header.getCommand(), data);
           }
         } catch (InvalidProtocolBufferException e) {
           // invalid header, no raw transaction we can process
@@ -102,7 +93,7 @@ public class MultiChainUtil {
    * @param data the actual data to add to OP_RETURN
    * @return the transaction id
    */
-  public String sendRawTransaction(MultiChainCommand command, byte[] data) {
+  public String sendRawTransaction(MultiChainCommand command, MultiChainData data) {
     // get this wallet's UTXOs with a certain number of confirmations
     final List<BitcoindRpcClient.Unspent> utxos = this.client.listUnspent(UTXO_MIN_CONFIRMATIONS);
 
@@ -123,14 +114,15 @@ public class MultiChainUtil {
                 .build();
 
         // build the data array
+        final byte[] dataArray = data.toByteArray();
         final byte[] out = new byte[CodedOutputStream.computeMessageSizeNoTag(header)
-            + CodedOutputStream.computeByteArraySizeNoTag(data)];
+            + CodedOutputStream.computeByteArraySizeNoTag(dataArray)];
         try {
           final CodedOutputStream stream = CodedOutputStream.newInstance(out);
 
           // both methods prepend lengths as uint32 fields
           stream.writeMessageNoTag(header);
-          stream.writeByteArrayNoTag(data);
+          stream.writeByteArrayNoTag(dataArray);
 
           stream.flush();
         } catch (IOException e) {

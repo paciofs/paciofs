@@ -48,6 +48,7 @@ void InitializeFuseOperations(
   operations.mkdir = PfsMkDir;
   operations.chmod = PfsChMod;
   operations.chown = PfsChOwn;
+  operations.open = PfsOpen;
   operations.readdir = PfsReadDir;
 }
 
@@ -132,6 +133,18 @@ int PfsChOwn(const char *path, uid_t uid, gid_t gid) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   messages::Errno error = g_context.rpc_client->ChOwn(path, uid, gid);
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_ERRNO(error);
+  }
+
+  return 0;
+}
+
+int PfsOpen(const char *path, struct fuse_file_info *fi) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error = g_context.rpc_client->Open(path, fi->flags, fi->fh);
 
   if (error != messages::ERRNO_ESUCCESS) {
     return -TO_ERRNO(error);

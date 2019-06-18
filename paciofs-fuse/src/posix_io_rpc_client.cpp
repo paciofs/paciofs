@@ -233,6 +233,46 @@ messages::Errno PosixIoRpcClient::ChOwn(std::string const &path,
   }
 }
 
+messages::Errno PosixIoRpcClient::Open(std::string const &path,
+                                       google::protobuf::int32 flags,
+                                       google::protobuf::uint64 &fh) {
+  OpenRequest request;
+  request.set_path(PreparePath(path));
+  request.set_flags(flags);
+  logger_.Trace([request](auto &out) {
+    out << "Open(" << request.ShortDebugString() << ")";
+  });
+
+  OpenResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->Open(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "Open(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    messages::Errno error = response.error();
+    if (error != messages::ERRNO_ESUCCESS) {
+      return error;
+    }
+
+    fh = response.fh();
+
+    return messages::ERRNO_ESUCCESS;
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "Open(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
 messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
                                           std::vector<messages::Dir> &dirs) {
   ReadDirRequest request;

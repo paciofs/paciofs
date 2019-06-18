@@ -44,6 +44,7 @@ void InitializeFuseOperations(
   g_context.rpc_client = rpc_client;
 
   operations.getattr = PfsGetAttr;
+  operations.mknod = PfsMkNod;
   operations.mkdir = PfsMkDir;
   operations.readdir = PfsReadDir;
 }
@@ -88,9 +89,12 @@ int PfsGetAttr(const char *path, struct stat *buf) {
   return 0;
 }
 
+int PfsMkNod(const char *path, mode_t mode, dev_t dev) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   messages::Errno error =
+      g_context.rpc_client->MkNod(path, FromMode(mode), dev);
+
   if (error != messages::ERRNO_ESUCCESS) {
     return -TO_ERRNO(error);
   }

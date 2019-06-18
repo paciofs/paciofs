@@ -101,20 +101,32 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
   }
 }
 
+messages::Errno PosixIoRpcClient::MkNod(std::string const &path,
+                                        google::protobuf::uint32 mode,
+                                        google::protobuf::int32 dev) {
+  MkNodRequest request;
   request.set_path(PreparePath(path));
+  request.set_mode(mode);
+  request.set_dev(dev);
   logger_.Trace([request](auto &out) {
+    out << "MkNod(" << request.ShortDebugString() << ")";
   });
 
+  MkNodResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
+  ::grpc::Status status = stub_->MkNod(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
+      out << "MkNod(" << request.ShortDebugString()
           << "): " << response.ShortDebugString();
     });
 
+    return response.error();
   } else {
     logger_.Warning([request, status](auto &out) {
+      out << "MkNod(" << request.ShortDebugString()
           << "): " << status.error_message() << " (" << status.error_code()
           << ")";
     });

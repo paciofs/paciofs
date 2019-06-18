@@ -23,6 +23,7 @@ void InitializeFuseOperations(
 
 int PfsGetAttr(const char *path, struct stat *buf);
 
+int PfsMkNod(const char *path, mode_t mode, dev_t dev);
 
 int PfsMkDir(const char *path, mode_t mode);
 

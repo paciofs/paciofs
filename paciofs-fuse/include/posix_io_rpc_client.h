@@ -37,6 +37,9 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
 
   messages::Errno Stat(std::string const& path, messages::Stat& stat);
 
+  messages::Errno MkNod(std::string const& path, google::protobuf::uint32 mode,
+                        google::protobuf::int32 dev);
+
   messages::Errno MkDir(std::string const& path, google::protobuf::uint32 mode);
 
   messages::Errno ReadDir(std::string const& path,

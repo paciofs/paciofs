@@ -44,14 +44,51 @@ void InitializeFuseOperations(
   g_context.rpc_client = rpc_client;
 
   operations.getattr = PfsGetAttr;
+  operations.readlink = nullptr;
   operations.mknod = PfsMkNod;
   operations.mkdir = PfsMkDir;
+  operations.unlink = nullptr;
+  operations.rmdir = nullptr;
+  operations.symlink = nullptr;
+  operations.rename = nullptr;
+  operations.link = nullptr;
   operations.chmod = PfsChMod;
   operations.chown = PfsChOwn;
+  operations.truncate = nullptr;
   operations.open = PfsOpen;
   operations.read = PfsRead;
   operations.write = PfsWrite;
+  operations.statfs = nullptr;
+  operations.flush = nullptr;
+  operations.release = nullptr;
+  operations.fsync = nullptr;
+  operations.setxattr = nullptr;
+  operations.getxattr = nullptr;
+  operations.listxattr = nullptr;
+  operations.removexattr = nullptr;
+  operations.opendir = nullptr;
   operations.readdir = PfsReadDir;
+  operations.releasedir = nullptr;
+  operations.fsyncdir = nullptr;
+  operations.init = nullptr;
+  operations.destroy = nullptr;
+  operations.access = nullptr;
+  operations.create = nullptr;
+  operations.ftruncate = nullptr;
+  operations.fgetattr = nullptr;
+  operations.lock = nullptr;
+  operations.utimens = nullptr;
+  operations.bmap = nullptr;
+  operations.ioctl = nullptr;
+  operations.poll = nullptr;
+  operations.write_buf = nullptr;
+  operations.read_buf = nullptr;
+  operations.flock = nullptr;
+  operations.fallocate = nullptr;
+
+  operations.flag_nullpath_ok = false;
+  operations.flag_nopath = false;
+  operations.flag_utime_omit_ok = false;
 }
 
 int PfsGetAttr(const char *path, struct stat *buf) {

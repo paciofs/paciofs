@@ -229,6 +229,29 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   /**
+   * Change a file's mode.
+   * @param path path to the file, volume:/path/to/file
+   * @param mode the new mode
+   * @return true on success, false otherwise
+   */
+  public boolean chMod(String path, int mode) {
+    // TODO implement
+    return true;
+  }
+
+  /**
+   * Change a file's owner.
+   * @param path path to the file, volume:/path/to/file
+   * @param uid the new owner
+   * @param gid the new group
+   * @return true on success, false otherwise
+   */
+  public boolean chOwn(String path, int uid, int gid) {
+    // TODO implement
+    return true;
+  }
+
+  /**
    * List the contents of a directory.
    * @param path path to the directory: volume:/path/to/dir
    * @return list of entries in that directory, can be zero-length

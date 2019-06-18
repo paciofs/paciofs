@@ -114,6 +114,40 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
   }
 
   @Override
+  public CompletionStage<ChModResponse> chMod(ChModRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "chMod({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final ChModResponse.Builder builder = ChModResponse.newBuilder();
+    if (!this.multiChainFileSystem.chMod(in.getPath(), in.getMode())) {
+      LOG.warn("Could not change file mode for {}", in.getPath());
+      error = Errno.ERRNO_EIO;
+    }
+
+    final ChModResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "chMod({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
+  public CompletionStage<ChOwnResponse> chOwn(ChOwnRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "chOwn({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final ChOwnResponse.Builder builder = ChOwnResponse.newBuilder();
+    if (!this.multiChainFileSystem.chOwn(in.getPath(), in.getUid(), in.getGid())) {
+      LOG.warn("Could not change file owner for {}", in.getPath());
+      error = Errno.ERRNO_EIO;
+    }
+
+    final ChOwnResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "chOwn({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
   public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
 

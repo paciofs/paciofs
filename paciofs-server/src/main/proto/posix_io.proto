@@ -47,6 +47,25 @@ message MkDirResponse {
   messages.Errno error = 1;
 }
 
+message ChModRequest {
+  string path = 1;
+  uint32 mode = 2;
+}
+
+message ChModResponse {
+  messages.Errno error = 1;
+}
+
+message ChOwnRequest {
+  string path = 1;
+  uint32 uid = 2;
+  uint32 gid = 3;
+}
+
+message ChOwnResponse {
+  messages.Errno error = 1;
+}
+
 message ReadDirRequest {
   string path = 1;
 }
@@ -61,5 +80,7 @@ service PosixIoService {
   rpc Stat(StatRequest) returns (StatResponse);
   rpc MkNod(MkNodRequest) returns (MkNodResponse);
   rpc MkDir(MkDirRequest) returns (MkDirResponse);
+  rpc ChMod(ChModRequest) returns (ChModResponse);
+  rpc ChOwn(ChOwnRequest) returns (ChOwnResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
 }

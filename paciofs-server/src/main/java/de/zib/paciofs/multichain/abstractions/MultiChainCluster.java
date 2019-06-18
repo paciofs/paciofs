@@ -10,6 +10,7 @@ package de.zib.paciofs.multichain.abstractions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import de.zib.paciofs.grpc.messages.Node;
+import de.zib.paciofs.multichain.MultiChainData;
 import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
@@ -32,7 +33,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
 
   private final Map<String, Node> nodes;
 
-  private Node self;
+  private volatile Node self;
 
   /**
    * Create a cluster abstraction for this MultiChain.
@@ -64,8 +65,11 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
 
       // send the node to the chain as we have not seen it before
       if ("".equals(node.getCreationTxId())) {
+        final MultiChainData data = new MultiChainData();
+        data.writeByteArray(node.toByteArray());
+
         final String txId =
-            this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_NODE_ADD, node.toByteArray());
+            this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_NODE_ADD, data);
         added = Node.newBuilder(added).setCreationTxId(txId).build();
       }
     } else {
@@ -118,7 +122,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
       try {
         switch (command) {
           case MCC_NODE_ADD: {
-            final Node node = Node.newBuilder(Node.parseFrom(data))
+            final Node node = Node.newBuilder(Node.parseFrom(data.readByteArray()))
                                   .setCreationTxId(rawTransaction.txId())
                                   .build();
             this.addNode(node);
@@ -132,7 +136,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
             break;
           }
           case MCC_NODE_REMOVE: {
-            final Node node = Node.parseFrom(data);
+            final Node node = Node.parseFrom(data.readByteArray());
             this.removeNode(node);
             break;
           }

@@ -16,6 +16,7 @@ import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -39,26 +40,6 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     final PingResponse out = PingResponse.newBuilder().setPing(ping).build();
 
     PacioFsGrpcUtil.traceMessages(LOG, "ping({}): {}", in, out);
-    return CompletableFuture.completedFuture(out);
-  }
-
-  @Override
-  public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in, Metadata metadata) {
-    PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
-
-    Errno error = Errno.ERRNO_ESUCCESS;
-    final ReadDirResponse.Builder builder = ReadDirResponse.newBuilder();
-    try {
-      final List<Dir> entries = this.multiChainFileSystem.readDir(in.getPath());
-      builder.addAllDirs(entries);
-    } catch (FileNotFoundException e) {
-      LOG.warn(Markers.EXCEPTION, "Could not read directory {}", in.getPath(), e);
-      error = Errno.ERRNO_ENOENT;
-    }
-
-    final ReadDirResponse out = builder.setError(error).build();
-
-    PacioFsGrpcUtil.traceMessages(LOG, "readDir({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 
@@ -101,6 +82,29 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     final MkDirResponse out = builder.setError(error).build();
 
     PacioFsGrpcUtil.traceMessages(LOG, "mkDir({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
+
+  @Override
+  public CompletionStage<ReadDirResponse> readDir(ReadDirRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "readDir({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final ReadDirResponse.Builder builder = ReadDirResponse.newBuilder();
+    try {
+      final List<Dir> entries = this.multiChainFileSystem.readDir(in.getPath());
+      builder.addAllDirs(entries);
+    } catch (FileNotFoundException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not read directory {}", in.getPath(), e);
+      error = Errno.ERRNO_ENOENT;
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not read directory {}", in.getPath(), e);
+      error = Errno.ERRNO_EIO;
+    }
+
+    final ReadDirResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "readDir({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
 }

@@ -19,6 +19,7 @@ import de.zib.paciofs.multichain.internal.MultiChainCommand;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,34 +106,6 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   /**
-   * List the contents of a directory.
-   * @param path path to the directory: volume:/path/to/dir
-   * @return list of entries in that directory, can be zero-length
-   * @throws FileNotFoundException if path does not exist or is not a directory
-   */
-  public List<Dir> readDir(String path) throws FileNotFoundException {
-    final Volume volume = this.getVolumeFromPath(path);
-    final String cleanedPath = removeVolumeFromPath(path);
-
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
-    final File directory = new File(volumeRoot, cleanedPath);
-    if (!directory.exists() || !directory.isDirectory()) {
-      throw new FileNotFoundException("Path " + cleanedPath + " on volume " + volume.getName()
-          + " does not exist or is not a directory");
-    }
-
-    final List<Dir> dirEntries = new ArrayList<>();
-    dirEntries.add(Dir.newBuilder().setName(".").build());
-    dirEntries.add(Dir.newBuilder().setName("..").build());
-    for (File entry : directory.listFiles()) {
-      dirEntries.add(Dir.newBuilder().setName(entry.getName()).build());
-    }
-
-    return dirEntries;
-  }
-
-  /**
    * Get information for a file.
    * @param path path to the file, volume:/path/to/file
    * @param user user ID to use in the returned stat
@@ -196,6 +169,40 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     }
 
     return success;
+  }
+
+  /**
+   * List the contents of a directory.
+   * @param path path to the directory: volume:/path/to/dir
+   * @return list of entries in that directory, can be zero-length
+   * @throws FileNotFoundException if path does not exist or is not a directory or there is an error
+   *     during listing
+   */
+  public List<Dir> readDir(String path) throws IOException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+
+    // TODO null check, otherwise we get access to /
+    final File volumeRoot = this.volumeRoots.get(volume);
+    final File directory = new File(volumeRoot, cleanedPath);
+    if (!directory.exists() || !directory.isDirectory()) {
+      throw new FileNotFoundException("Path " + path + " does not exist or is not a directory");
+    }
+
+    final List<Dir> dirEntries = new ArrayList<>();
+    dirEntries.add(Dir.newBuilder().setName(".").build());
+    dirEntries.add(Dir.newBuilder().setName("..").build());
+
+    final File[] entries = directory.listFiles();
+    if (entries == null) {
+      throw new IOException("Error listing " + path);
+    }
+
+    for (File entry : entries) {
+      dirEntries.add(Dir.newBuilder().setName(entry.getName()).build());
+    }
+
+    return dirEntries;
   }
 
   @Override

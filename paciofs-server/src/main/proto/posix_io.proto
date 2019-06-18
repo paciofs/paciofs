@@ -28,13 +28,9 @@ message StatResponse {
   messages.Errno error = 2;
 }
 
-message ReadDirRequest {
   string path = 1;
 }
 
-message ReadDirResponse {
-  repeated messages.Dir dirs = 1;
-  messages.Errno error = 2;
 }
 
 message MkDirRequest {
@@ -46,9 +42,18 @@ message MkDirResponse {
   messages.Errno error = 1;
 }
 
+message ReadDirRequest {
+  string path = 1;
+}
+
+message ReadDirResponse {
+  repeated messages.Dir dirs = 1;
+  messages.Errno error = 2;
+}
+
 service PosixIoService {
   rpc Ping(PingRequest) returns (PingResponse);
-  rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
   rpc Stat(StatRequest) returns (StatResponse);
   rpc MkDir(MkDirRequest) returns (MkDirResponse);
+  rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
 }

@@ -10,7 +10,6 @@ import "messages/errno.proto";
 import "messages/ping.proto";
 import "messages/dir.proto";
 import "messages/stat.proto";
-import "messages/mode.proto";
 
 message PingRequest {
   paciofs.grpc.messages.Ping ping = 1;

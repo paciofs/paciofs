@@ -41,7 +41,8 @@ message Stat {
   // For symbolic links, the length in bytes of the pathname contained in the
   // symbolic link. For a shared memory object, the length in bytes. For a typed
   // memory object, the length in bytes. For other file types, the use of this
-  // field is unspecified. macOS: long long, Ubuntu: long int
+  // field is unspecified.
+  // macOS: long long, Ubuntu: long int
   sint64 size = 8;
 
   // Last data access timestamp.

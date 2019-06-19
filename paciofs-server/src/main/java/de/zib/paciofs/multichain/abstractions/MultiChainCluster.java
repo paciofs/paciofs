@@ -27,7 +27,8 @@ import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainCluster.class);
 
-  private static final BigDecimal CLUSTER_OP_RETURN_FEE = new BigDecimal(1);
+  // the equivalent of one satoshi
+  private static final BigDecimal CLUSTER_OP_RETURN_FEE = new BigDecimal(1.0 / 100_000_000.0);
 
   private final MultiChainUtil clientUtil;
 

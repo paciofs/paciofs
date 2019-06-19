@@ -32,6 +32,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -249,6 +250,24 @@ public class PacioFsGrpcUtil {
         messageStrings[i] = TextFormat.shortDebugString(messages[i]);
       }
       log.trace(formatString, (Object[]) messageStrings);
+    }
+  }
+
+  /**
+   * Build a string representation of messages, and logs them at trace level if enabled.
+   * @param log logger to use
+   * @param formatString format string with placeholders to use
+   * @param messageSuppliers lit of suppliers to be invoked and their results then passed to {@link
+   *     #traceMessages(Logger, String, AbstractMessage...)}
+   */
+  public static void traceMessages(
+      Logger log, String formatString, Supplier<AbstractMessage>... messageSuppliers) {
+    if (log.isTraceEnabled()) {
+      final AbstractMessage[] messages = new AbstractMessage[messageSuppliers.length];
+      for (int i = 0; i < messageSuppliers.length; ++i) {
+        messages[i] = messageSuppliers[i].get();
+      }
+      traceMessages(log, formatString, messages);
     }
   }
 

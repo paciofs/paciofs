@@ -192,8 +192,8 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     data.writeInt(dev);
 
     final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKNOD, data);
-    LOG.info("Node {} was created in volume {} (transaction id: {})", cleanedPath, volume.getName(),
-        txId);
+    LOG.debug("Node {} was created in volume {} (transaction id: {})", cleanedPath,
+        volume.getName(), txId);
 
     return true;
   }
@@ -223,7 +223,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
       data.writeInt(mode);
 
       final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKDIR, data);
-      LOG.info("Directory {} was created in volume {} (transaction id: {})", cleanedPath,
+      LOG.debug("Directory {} was created in volume {} (transaction id: {})", cleanedPath,
           volume.getName(), txId);
     } else {
       LOG.warn("Directory {} could not be created in volume {}", cleanedPath, volume.getName());
@@ -332,7 +332,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     data.writeByteArray(sha256);
 
     final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_WRITE, data);
-    LOG.info("Wrote {} bytes (sha256: {}) to file {} on volume {} (transaction id: {})", n,
+    LOG.debug("Wrote {} bytes (sha256: {}) to file {} on volume {} (transaction id: {})", n,
         Hex.encodeHexString(sha256, true), cleanedPath, volume.getName(), txId);
 
     return n;

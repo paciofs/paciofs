@@ -188,15 +188,17 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
 
     final ReadResponse out = builder.setError(error).build();
 
-    // TODO do not trace the entire output
-    PacioFsGrpcUtil.traceMessages(LOG, "read({}): {}", in, out);
+    // do not trace file content
+    PacioFsGrpcUtil.traceMessages(
+        LOG, "read({}): {}", () -> in, () -> ReadResponse.newBuilder(out).clearBuf().build());
     return CompletableFuture.completedFuture(out);
   }
 
   @Override
   public CompletionStage<WriteResponse> write(WriteRequest in, Metadata metadata) {
-    // TODO do not trace the entire input
-    PacioFsGrpcUtil.traceMessages(LOG, "write({})", in);
+    // do not trace file content
+    PacioFsGrpcUtil.traceMessages(
+        LOG, "write({})", () -> WriteRequest.newBuilder(in).clearBuf().build());
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final WriteResponse.Builder builder = WriteResponse.newBuilder();
@@ -211,8 +213,9 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
 
     final WriteResponse out = builder.setError(error).build();
 
-    // TODO do not trace the entire input/output
-    PacioFsGrpcUtil.traceMessages(LOG, "write({}): {}", in, out);
+    // do not trace file content
+    PacioFsGrpcUtil.traceMessages(
+        LOG, "write({}): {}", () -> WriteRequest.newBuilder(in).clearBuf().build(), () -> out);
     return CompletableFuture.completedFuture(out);
   }
 

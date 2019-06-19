@@ -19,21 +19,21 @@
 // use error values directly without converting to (possibly) platform-specific
 // codes
 #ifdef VERBATIM_ERRNO
-#define TO_ERRNO(error) (error)
+#define TO_NATIVE_ERRNO(error) (error)
 #else
-#define TO_ERRNO(error) ToErrno(error)
-static int ToErrno(paciofs::io::posix::grpc::messages::Errno error);
+#define TO_NATIVE_ERRNO(error) ToNativeErrno(error)
+static int ToNativeErrno(paciofs::io::posix::grpc::messages::Errno error);
 #endif  // VERBATIM_ERRNO
 
 // same for mode
 #ifdef VERBATIM_MODE
-#define FROM_MODE(mode) (mode)
-#define TO_MODE(mode) (mode)
+#define FROM_NATIVE_MODE(mode) (mode)
+#define TO_NATIVE_MODE(mode) (mode)
 #else
-#define FROM_MODE(mode) FromMode(mode)
-#define TO_MODE(mode) ToMode(mode)
-static google::protobuf::uint32 FromMode(mode_t mode);
-static mode_t ToMode(google::protobuf::uint32 mode);
+#define FROM_NATIVE_MODE(mode) FromNativeMode(mode)
+#define TO_NATIVE_MODE(mode) ToNativeMode(mode)
+static google::protobuf::uint32 FromNativeMode(mode_t mode);
+static mode_t ToNativeMode(google::protobuf::uint32 mode);
 #endif  // VERBATIM_MODE
 
 static struct fuse_operations_context g_context = {nullptr};
@@ -97,12 +97,12 @@ int PfsGetAttr(const char *path, struct stat *buf) {
   messages::Stat s;
   messages::Errno error = g_context.rpc_client->Stat(std::string(path), s);
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   buf->st_dev = s.dev();
   buf->st_ino = s.ino();
-  buf->st_mode = TO_MODE(s.mode());
+  buf->st_mode = TO_NATIVE_MODE(s.mode());
   buf->st_nlink = s.nlink();
   buf->st_uid = s.uid();
   buf->st_gid = s.gid();
@@ -135,10 +135,10 @@ int PfsMkNod(const char *path, mode_t mode, dev_t dev) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   messages::Errno error =
-      g_context.rpc_client->MkNod(path, FromMode(mode), dev);
+      g_context.rpc_client->MkNod(path, FROM_NATIVE_MODE(mode), dev);
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return 0;
@@ -147,10 +147,11 @@ int PfsMkNod(const char *path, mode_t mode, dev_t dev) {
 int PfsMkDir(const char *path, mode_t mode) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
-  messages::Errno error = g_context.rpc_client->MkDir(path, FromMode(mode));
+  messages::Errno error =
+      g_context.rpc_client->MkDir(path, FROM_NATIVE_MODE(mode));
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return 0;
@@ -162,7 +163,7 @@ int PfsChMod(const char *path, mode_t mode) {
   messages::Errno error = g_context.rpc_client->ChMod(path, mode);
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return 0;
@@ -174,7 +175,7 @@ int PfsChOwn(const char *path, uid_t uid, gid_t gid) {
   messages::Errno error = g_context.rpc_client->ChOwn(path, uid, gid);
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return 0;
@@ -186,7 +187,7 @@ int PfsOpen(const char *path, struct fuse_file_info *fi) {
   messages::Errno error = g_context.rpc_client->Open(path, fi->flags, fi->fh);
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return 0;
@@ -201,7 +202,7 @@ int PfsRead(const char *path, char *buf, size_t size, off_t offset,
       g_context.rpc_client->Read(path, buf, size, offset, fi->fh, n);
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return n;
@@ -216,7 +217,7 @@ int PfsWrite(const char *path, const char *buf, size_t size, off_t offset,
       g_context.rpc_client->Write(path, buf, size, offset, fi->fh, n);
 
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return n;
@@ -230,7 +231,7 @@ int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
   messages::Errno error =
       g_context.rpc_client->ReadDir(std::string(path), dirs);
   if (error != messages::ERRNO_ESUCCESS) {
-    return -TO_ERRNO(error);
+    return -TO_NATIVE_ERRNO(error);
   }
 
   for (messages::Dir const &dir : dirs) {
@@ -241,7 +242,7 @@ int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 #ifndef VERBATIM_ERRNO
-static int ToErrno(paciofs::io::posix::grpc::messages::Errno error) {
+static int ToNativeErrno(paciofs::io::posix::grpc::messages::Errno error) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   switch (error) {
@@ -412,7 +413,7 @@ static int ToErrno(paciofs::io::posix::grpc::messages::Errno error) {
 #endif  // VERBATIM_ERRNO
 
 #ifndef VERBATIM_MODE
-static google::protobuf::uint32 FromMode(mode_t mode) {
+static google::protobuf::uint32 FromNativeMode(mode_t mode) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   google::protobuf::uint32 m = 0;
@@ -474,7 +475,7 @@ static google::protobuf::uint32 FromMode(mode_t mode) {
   return m;
 }
 
-static mode_t ToMode(google::protobuf::uint32 mode) {
+static mode_t ToNativeMode(google::protobuf::uint32 mode) {
   namespace messages = paciofs::io::posix::grpc::messages;
 
   unsigned int m = 0;

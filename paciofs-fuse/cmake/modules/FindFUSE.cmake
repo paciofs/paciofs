@@ -5,14 +5,14 @@ if (APPLE)
 
   find_path (
     FUSE_INCLUDE_DIRS fuse.h
-    /usr/local/include/osxfuse
+    HINTS /usr/local/include/osxfuse
   )
 
   set (fuse_name osxfuse)
 else ()
   find_path (
     FUSE_INCLUDE_DIRS fuse.h
-    /usr/local/include
+    HINTS /usr/local/include
   )
 
   set (fuse_name fuse)

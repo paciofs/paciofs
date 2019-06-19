@@ -20,7 +20,6 @@ import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.math.BigDecimal;
@@ -118,17 +117,16 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param user user ID to use in the returned stat
    * @param group group ID to use in the returned stat
    * @return the file information
-   * @throws IOException if the file does not exist or the file type is not supported
+   * @throws NoSuchFileException if the path does not exist
+   * @throws IOException if the file type is not supported
    */
   public Stat stat(String path, int user, int group) throws IOException {
-    final Volume volume = this.getVolumeFromPath(path);
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
 
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final File file = new File(volumeRoot, cleanedPath);
     if (!file.exists()) {
-      throw new FileNotFoundException("Path " + path + " does not exist");
+      throw new NoSuchFileException(path);
     }
 
     // TODO fill all stat fields
@@ -160,23 +158,22 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param path path to the file to create, volume:/path/to/file
    * @param mode file creation mode
    * @param dev major and minor version for device special files
-   * @return true if the file was created, false otherwise
-   * @throws IOException if any error occurs when writing the file
+   * @throws IllegalArgumentException if the file type is not supported
+   * @throws NoSuchFileException if the volume does not exist
+   * @throws FileAlreadyExistsException if the file exists already
+   * @throws IOException if there is an error during creation
    */
-  public boolean mkNod(String path, int mode, int dev) throws IOException {
+  public void mkNod(String path, int mode, int dev) throws IOException {
     if ((mode & Mode.MODE_S_IFREG_VALUE) != Mode.MODE_S_IFREG_VALUE) {
       throw new IllegalArgumentException("Cannot create special file " + path);
     }
 
-    final Volume volume = this.getVolumeFromPath(path);
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final File file = new File(volumeRoot, cleanedPath);
 
     if (file.exists()) {
-      return false;
+      throw new FileAlreadyExistsException(path);
     }
 
     // touch the file
@@ -188,44 +185,36 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     data.writeInt(dev);
 
     final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKNOD, data);
-    LOG.debug("Node {} was created in volume {} (transaction id: {})", cleanedPath,
-        volume.getName(), txId);
-
-    return true;
+    LOG.debug("Node {} was created (transaction id: {})", path, txId);
   }
 
   /**
    * Create a directory.
    * @param path path to the directory, volume:/path/to/dir
    * @param mode directory creation mode
-   * @return true if the directory was created, false otherwise
+   * @throws NoSuchFileException if the volume does not exist
+   * @throws FileAlreadyExistsException if the directory exists already
+   * @throws IOException if there is an error during creation
    */
-  public boolean mkDir(String path, int mode) {
-    final Volume volume = this.getVolumeFromPath(path);
+  public void mkDir(String path, int mode) throws IOException {
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final File directory = new File(volumeRoot, cleanedPath);
 
     if (directory.exists()) {
-      return false;
+      throw new FileAlreadyExistsException(path);
     }
 
-    final boolean success = directory.mkdir();
-    if (success) {
+    if (directory.mkdir()) {
       final MultiChainData data = new MultiChainData();
       data.writeString(path);
       data.writeInt(mode);
 
       final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKDIR, data);
-      LOG.debug("Directory {} was created in volume {} (transaction id: {})", cleanedPath,
-          volume.getName(), txId);
+      LOG.debug("Directory {} was created (transaction id: {})", path, txId);
     } else {
-      LOG.warn("Directory {} could not be created in volume {}", cleanedPath, volume.getName());
+      throw new IOException("Could not create directory " + path);
     }
-
-    return success;
   }
 
   /**
@@ -256,18 +245,15 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param path path to the file: volume:/path/to/file
    * @param flags open flags
    * @return a file handle
-   * @throws FileNotFoundException if the path does not exist
+   * @throws NoSuchFileException if the path does not exist
    */
-  public long open(String path, int flags) throws FileNotFoundException {
-    final Volume volume = this.getVolumeFromPath(path);
+  public long open(String path, int flags) throws NoSuchFileException {
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final File file = new File(volumeRoot, cleanedPath);
 
     if (!file.exists()) {
-      throw new FileNotFoundException("Path " + path + " does not exist or is not a directory");
+      throw new NoSuchFileException(path);
     }
 
     // TODO use a more meaningful file handle
@@ -281,14 +267,12 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param offset position in the file
    * @param fh file handle as returned by {@link #open(String, int)}
    * @return the number of bytes read, -1 on EOF
-   * @throws IOException if the path does not exist or on IO errors
+   * @throws NoSuchFileException if the path does not exist
+   * @throws IOException if there is an error during reading
    */
   public int read(String path, ByteBuffer destination, long offset, long fh) throws IOException {
-    final Volume volume = this.getVolumeFromPath(path);
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final RandomAccessFile file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "r");
 
     final FileChannel channel = file.getChannel();
@@ -304,14 +288,12 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param offset position in the file
    * @param fh file handle as returned by {@link #open(String, int)}
    * @return the number of bytes written
-   * @throws IOException if the path does not exist or on IO errors
+   * @throws NoSuchFileException if the path does not exist
+   * @throws IOException if there is an error during writing
    */
   public int write(String path, ByteBuffer source, long offset, long fh) throws IOException {
-    final Volume volume = this.getVolumeFromPath(path);
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final RandomAccessFile file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "rw");
 
     final FileChannel channel = file.getChannel();
@@ -328,8 +310,8 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     data.writeByteArray(sha256);
 
     final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_WRITE, data);
-    LOG.debug("Wrote {} bytes (sha256: {}) to file {} on volume {} (transaction id: {})", n,
-        Hex.encodeHexString(sha256, true), cleanedPath, volume.getName(), txId);
+    LOG.debug("Wrote {} bytes from {} to {} (sha256: {}) to file {} (transaction id: {})", n,
+        offset, offset + n, Hex.encodeHexString(sha256, true), path, txId);
 
     return n;
   }
@@ -338,18 +320,20 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * List the contents of a directory.
    * @param path path to the directory: volume:/path/to/dir
    * @return list of entries in that directory, can be zero-length
-   * @throws FileNotFoundException if path does not exist or is not a directory or there is an error
-   *     during listing
+   * @throws NoSuchFileException if path does not exist
+   * @throws NotDirectoryException if the path is not a directory
+   * @throws IOException if there is an error during listing
    */
   public List<Dir> readDir(String path) throws IOException {
-    final Volume volume = this.getVolumeFromPath(path);
+    final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
 
-    // TODO null check, otherwise we get access to /
-    final File volumeRoot = this.volumeRoots.get(volume);
     final File directory = new File(volumeRoot, cleanedPath);
-    if (!directory.exists() || !directory.isDirectory()) {
-      throw new FileNotFoundException("Path " + path + " does not exist or is not a directory");
+    if (!directory.exists()) {
+      throw new NoSuchFileException(path);
+    }
+    if (!directory.isDirectory()) {
+      throw new NotDirectoryException(path);
     }
 
     final List<Dir> dirEntries = new ArrayList<>();
@@ -369,18 +353,12 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   /**
-   * Shortcut for {@link #mkNod(String, int, int)} and {@link #open(String, int)}.
-   * @param path path to the file to create: volume:/path/to/file
-   * @param mode file creation mode
-   * @param flags open flags
-   * @return a file handle
-   * @throws IOException if the file could not be created
+   * Shortcut for mkNod and open.
+   * @see #mkNod(String, int, int)
+   * @see #open(String, int)
    */
   public long create(String path, int mode, int flags) throws IOException {
-    if (!this.mkNod(path, mode, 0)) {
-      throw new IOException("Could not create file " + path);
-    }
-
+    this.mkNod(path, mode, 0);
     return this.open(path, flags);
   }
 
@@ -415,6 +393,10 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
             final String path = data.readString();
             final int mode = data.readInt();
             this.mkDir(path, mode);
+            break;
+          }
+          case MCC_IO_WRITE: {
+            // TODO obtain the relevant data from other nodes in the cluster
             break;
           }
           default:
@@ -454,13 +436,13 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
   private Volume getVolumeFromPath(String path) throws NoSuchFileException {
     if (!path.contains(":")) {
-      throw new IllegalArgumentException("No volume specified in path: " + path);
+      throw new InvalidPathException(path, "No volume specified in path");
     }
 
     final String volumeName = path.split(":")[0];
     final Volume volume = this.volumes.get(volumeName);
     if (volume == null) {
-      throw new IllegalArgumentException("Volume does not exist: " + volumeName);
+      throw new NoSuchFileException(volumeName);
     }
 
     return volume;
@@ -468,7 +450,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
   private static String removeVolumeFromPath(String path) {
     if (!path.contains(":")) {
-      throw new IllegalArgumentException("No volume specified in path: " + path);
+      throw new InvalidPathException(path, "No volume specified in path");
     }
 
     return path.split(":")[1];

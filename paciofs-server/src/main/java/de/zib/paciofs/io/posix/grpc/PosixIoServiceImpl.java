@@ -16,9 +16,11 @@ import de.zib.paciofs.io.posix.grpc.messages.Errno;
 import de.zib.paciofs.io.posix.grpc.messages.Stat;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -58,8 +60,7 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
 
       final Stat stat = this.multiChainFileSystem.stat(in.getPath(), user, group);
       builder.setStat(stat);
-    } catch (FileNotFoundException e) {
-      LOG.warn(Markers.EXCEPTION, "Could not stat file {}", in.getPath(), e);
+    } catch (NoSuchFileException e) {
       error = Errno.ERRNO_ENOENT;
     } catch (IOException e) {
       LOG.warn(Markers.EXCEPTION, "Could not stat file {}", in.getPath(), e);
@@ -80,14 +81,15 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     final MkNodResponse.Builder builder = MkNodResponse.newBuilder();
 
     try {
-      if (!this.multiChainFileSystem.mkNod(in.getPath(), in.getMode(), in.getDev())) {
-        LOG.warn("Could not create node {}", in.getPath());
-        // TODO this is not accurate, find out proper reason
-        error = Errno.ERRNO_EIO;
-      }
+      this.multiChainFileSystem.mkNod(in.getPath(), in.getMode(), in.getDev());
+    } catch (NoSuchFileException e) {
+      error = Errno.ERRNO_ENOENT;
+    } catch (FileAlreadyExistsException e) {
+      error = Errno.ERRNO_EEXIST;
+    } catch (IllegalArgumentException e) {
+      error = Errno.ERRNO_EINVAL;
     } catch (IOException e) {
       LOG.warn(Markers.EXCEPTION, "Could not create node {}", in.getPath(), e);
-      // TODO this is not accurate, find out proper reason
       error = Errno.ERRNO_EIO;
     }
 
@@ -103,9 +105,14 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
 
     Errno error = Errno.ERRNO_ESUCCESS;
     final MkDirResponse.Builder builder = MkDirResponse.newBuilder();
-    if (!this.multiChainFileSystem.mkDir(in.getPath(), in.getMode())) {
+    try {
+      this.multiChainFileSystem.mkDir(in.getPath(), in.getMode());
+    } catch (NoSuchFileException e) {
+      error = Errno.ERRNO_ENOENT;
+    } catch (FileAlreadyExistsException e) {
+      error = Errno.ERRNO_EEXIST;
+    } catch (IOException e) {
       LOG.warn("Could not create directory {}", in.getPath());
-      // TODO this is not accurate, find out proper reason
       error = Errno.ERRNO_EIO;
     }
 
@@ -158,9 +165,8 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     try {
       final long fh = this.multiChainFileSystem.open(in.getPath(), in.getFlags());
       builder.setFh(fh);
-    } catch (FileNotFoundException e) {
-      LOG.warn(Markers.EXCEPTION, "Could not open file {}", in.getPath(), e);
-      error = Errno.ERRNO_EIO;
+    } catch (NoSuchFileException e) {
+      error = Errno.ERRNO_ENOENT;
     }
 
     final OpenResponse out = builder.setError(error).build();
@@ -181,6 +187,8 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
           this.multiChainFileSystem.read(in.getPath(), destination, in.getOffset(), in.getFh());
       builder.setBuf(ByteString.copyFrom(destination));
       builder.setN(n);
+    } catch (NoSuchFileException e) {
+      error = Errno.ERRNO_ENOENT;
     } catch (IOException e) {
       LOG.warn(Markers.EXCEPTION, "Could not read file {}", in.getPath(), e);
       error = Errno.ERRNO_EIO;
@@ -206,6 +214,8 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
       final int n = this.multiChainFileSystem.write(
           in.getPath(), in.getBuf().asReadOnlyByteBuffer(), in.getOffset(), in.getFh());
       builder.setN(n);
+    } catch (NoSuchFileException e) {
+      error = Errno.ERRNO_ENOENT;
     } catch (IOException e) {
       LOG.warn(Markers.EXCEPTION, "Could not write file {}", in.getPath(), e);
       error = Errno.ERRNO_EIO;
@@ -228,9 +238,10 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     try {
       final List<Dir> entries = this.multiChainFileSystem.readDir(in.getPath());
       builder.addAllDirs(entries);
-    } catch (FileNotFoundException e) {
-      LOG.warn(Markers.EXCEPTION, "Could not read directory {}", in.getPath(), e);
+    } catch (NoSuchFileException e) {
       error = Errno.ERRNO_ENOENT;
+    } catch (NotDirectoryException e) {
+      error = Errno.ERRNO_ENOTDIR;
     } catch (IOException e) {
       LOG.warn(Markers.EXCEPTION, "Could not read directory {}", in.getPath(), e);
       error = Errno.ERRNO_EIO;
@@ -251,6 +262,12 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     try {
       final long fh = this.multiChainFileSystem.create(in.getPath(), in.getMode(), in.getFlags());
       builder.setFh(fh);
+    } catch (NoSuchFileException e) {
+      error = Errno.ERRNO_ENOENT;
+    } catch (FileAlreadyExistsException e) {
+      error = Errno.ERRNO_EEXIST;
+    } catch (IllegalArgumentException e) {
+      error = Errno.ERRNO_EINVAL;
     } catch (IOException e) {
       LOG.warn(Markers.EXCEPTION, "Could not create file {}", in.getPath(), e);
       error = Errno.ERRNO_EIO;

@@ -53,7 +53,7 @@ matrix:
 
 before_install:
   # install CMake, stripping the first N path elements
-  - export CMAKE_VERSION="3.13.4"
+  - export CMAKE_VERSION="3.14.5"
   - wget --output-document cmake.tar.gz --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_DIST}-x86_64.tar.gz
   - sudo tar --directory /usr/local --extract --file cmake.tar.gz --strip-components ${CMAKE_STRIP_COMPONENTS}
   - rm cmake.tar.gz

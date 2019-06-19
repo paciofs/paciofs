@@ -29,13 +29,13 @@ RUN apt-get --quiet update \
 WORKDIR /tmp
 
 # install cmake
-ENV CMAKE_VERSION="3.13.4"
+ENV CMAKE_VERSION="3.14.5"
 RUN wget --output-document cmake.tar.gz --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz \
   && tar --directory /usr/local --extract --file cmake.tar.gz --strip-components 1 \
   && rm cmake.tar.gz
 
 # install go
-ENV GO_VERSION="1.11.5"
+ENV GO_VERSION="1.12.6"
 RUN wget --output-document go.tar.gz --quiet https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz \
   && tar --directory /usr/local --extract --file go.tar.gz \
   && rm go.tar.gz

@@ -68,7 +68,7 @@ before_install:
 
   # install dep
   - mkdir -p ${GOBIN}
-  - export DEP_RELEASE_TAG="v0.5.4"
+  - export DEP_RELEASE_TAG="v0.5.0"
   - curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
   # install gRPC, protoc headers and libraries

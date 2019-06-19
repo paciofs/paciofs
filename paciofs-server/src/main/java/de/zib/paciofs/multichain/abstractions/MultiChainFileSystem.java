@@ -322,7 +322,8 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     final int n = channel.write(source.slice(), offset);
     channel.close();
 
-    final byte[] sha256 = DigestUtils.digest(DigestUtils.getSha256Digest(), source.slice());
+    final ByteBuffer sourceWritten = source.slice().limit(n);
+    final byte[] sha256 = DigestUtils.digest(DigestUtils.getSha256Digest(), sourceWritten);
 
     final MultiChainData data = new MultiChainData();
     data.writeString(path);

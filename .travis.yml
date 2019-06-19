@@ -31,7 +31,6 @@ matrix:
             - boost
             - clang-format
             - cppcheck
-          update: true
       env:
         - CMAKE_DIST=Darwin
         # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/

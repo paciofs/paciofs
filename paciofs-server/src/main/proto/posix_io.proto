@@ -111,6 +111,17 @@ message ReadDirResponse {
   messages.Errno error = 2;
 }
 
+message CreateRequest {
+  string path = 1;
+  uint32 mode = 2;
+  sint32 flags = 3;
+}
+
+message CreateResponse {
+  messages.Errno error = 1;
+  uint64 fh = 2;
+}
+
 service PosixIoService {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc Stat(StatRequest) returns (StatResponse);
@@ -122,4 +133,5 @@ service PosixIoService {
   rpc Read(ReadRequest) returns (ReadResponse);
   rpc Write(WriteRequest) returns (WriteResponse);
   rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
+  rpc Create(CreateRequest) returns (CreateResponse);
 }

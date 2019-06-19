@@ -42,4 +42,6 @@ int PfsWrite(const char *path, const char *buf, size_t size, off_t offset,
 int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
                off_t offset, struct fuse_file_info *fi);
 
+int PfsCreate(const char *path, mode_t mode, struct fuse_file_info *fi);
+
 #endif  // FUSE_OPERATIONS_H

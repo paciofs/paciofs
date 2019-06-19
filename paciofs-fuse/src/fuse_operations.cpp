@@ -73,7 +73,7 @@ void InitializeFuseOperations(
   operations.init = nullptr;
   operations.destroy = nullptr;
   operations.access = nullptr;
-  operations.create = nullptr;
+  operations.create = PfsCreate;
   operations.ftruncate = nullptr;
   operations.fgetattr = nullptr;
   operations.lock = nullptr;
@@ -236,6 +236,19 @@ int PfsReadDir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   for (messages::Dir const &dir : dirs) {
     filler(buf, dir.name().c_str(), nullptr, 0);
+  }
+
+  return 0;
+}
+
+int PfsCreate(const char *path, mode_t mode, struct fuse_file_info *fi) {
+  namespace messages = paciofs::io::posix::grpc::messages;
+
+  messages::Errno error = g_context.rpc_client->Create(
+      std::string(path), FROM_NATIVE_MODE(mode), fi->flags, fi->fh);
+
+  if (error != messages::ERRNO_ESUCCESS) {
+    return -TO_NATIVE_ERRNO(error);
   }
 
   return 0;

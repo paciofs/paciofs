@@ -399,6 +399,48 @@ messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
   }
 }
 
+messages::Errno PosixIoRpcClient::Create(std::string const &path,
+                                         google::protobuf::uint32 mode,
+                                         google::protobuf::int32 flags,
+                                         google::protobuf::uint64 &fh) {
+  CreateRequest request;
+  request.set_path(PreparePath(path));
+  request.set_mode(mode);
+  request.set_flags(flags);
+  logger_.Trace([request](auto &out) {
+    out << "Create(" << request.ShortDebugString() << ")";
+  });
+
+  CreateResponse response;
+  ::grpc::ClientContext context;
+  SetMetadata(context);
+  ::grpc::Status status = stub_->Create(&context, request, &response);
+
+  if (status.ok()) {
+    logger_.Trace([request, response](auto &out) {
+      out << "Create(" << request.ShortDebugString()
+          << "): " << response.ShortDebugString();
+    });
+
+    messages::Errno error = response.error();
+    if (error != messages::ERRNO_ESUCCESS) {
+      return error;
+    }
+
+    fh = response.fh();
+
+    return messages::ERRNO_ESUCCESS;
+  } else {
+    logger_.Warning([request, status](auto &out) {
+      out << "Create(" << request.ShortDebugString()
+          << "): " << status.error_message() << " (" << status.error_code()
+          << ")";
+    });
+
+    return messages::ERRNO_EIO;
+  }
+}
+
 std::string const PosixIoRpcClient::PreparePath(std::string const &path) const {
   std::string prepared_path = path;
   prepared_path = MakeAbsolute(prepared_path);

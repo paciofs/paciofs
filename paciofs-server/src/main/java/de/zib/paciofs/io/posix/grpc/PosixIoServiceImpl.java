@@ -238,4 +238,24 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
     PacioFsGrpcUtil.traceMessages(LOG, "readDir({}): {}", in, out);
     return CompletableFuture.completedFuture(out);
   }
+
+  @Override
+  public CompletionStage<CreateResponse> create(CreateRequest in, Metadata metadata) {
+    PacioFsGrpcUtil.traceMessages(LOG, "create({})", in);
+
+    Errno error = Errno.ERRNO_ESUCCESS;
+    final CreateResponse.Builder builder = CreateResponse.newBuilder();
+    try {
+      final long fh = this.multiChainFileSystem.create(in.getPath(), in.getMode(), in.getFlags());
+      builder.setFh(fh);
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not create file {}", in.getPath(), e);
+      error = Errno.ERRNO_EIO;
+    }
+
+    final CreateResponse out = builder.setError(error).build();
+
+    PacioFsGrpcUtil.traceMessages(LOG, "create({}): {}", in, out);
+    return CompletableFuture.completedFuture(out);
+  }
 }

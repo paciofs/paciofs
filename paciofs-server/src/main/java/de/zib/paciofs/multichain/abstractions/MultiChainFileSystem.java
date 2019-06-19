@@ -371,6 +371,22 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     return dirEntries;
   }
 
+  /**
+   * Shortcut for {@link #mkNod(String, int, int)} and {@link #open(String, int)}.
+   * @param path path to the file to create: volume:/path/to/file
+   * @param mode file creation mode
+   * @param flags open flags
+   * @return a file handle
+   * @throws IOException if the file could not be created
+   */
+  public long create(String path, int mode, int flags) throws IOException {
+    if (!this.mkNod(path, mode, 0)) {
+      throw new IOException("Could not create file " + path);
+    }
+
+    return this.open(path, flags);
+  }
+
   @Override
   public void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
     LOG.trace("Received raw tx: {}", rawTransaction.txId());

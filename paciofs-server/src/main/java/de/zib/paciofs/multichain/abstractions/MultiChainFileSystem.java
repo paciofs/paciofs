@@ -26,6 +26,10 @@ import java.io.RandomAccessFile;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -70,43 +74,35 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * Create a volume, sending it to MultiChain.
    * @param volume the volume to create
    * @return the created volume, along with its MultiChain transaction id
+   * @throws FileAlreadyExistsException if the volume exists already
+   * @throws IOException if an I/O error occurs
    */
-  public Volume createVolume(Volume volume) {
-    // TODO check cluster for readiness
-    // TODO check for same name of volume
-    Volume created = this.volumes.merge(volume.getName(), volume, (old, toAdd) -> {
-      if ("".equals(old.getCreationTxId()) && !"".equals(toAdd.getCreationTxId())) {
-        // if the new volume has a creation transaction ID and the old one does not, then update
-        return toAdd;
-      }
+  public Volume createVolume(Volume volume) throws IOException {
+    this.checkClusterReadiness();
 
-      // volumes are either the same, or the new one does not have a creation transaction ID
-      return old;
-    });
-
-    if (created == volume) {
-      LOG.info("Volume {} was added to cluster", TextFormat.shortDebugString(volume));
-
-      // TODO replace with mkDir and set permissions of / in the volume to the creating user
-      // optimistically create the directory and add an entry in the map
-      final File volumeRoot = new File(this.baseDir, volume.getName());
-      if (!volumeRoot.mkdirs()) {
-        LOG.warn("Could not create directory {} for volume {}", volumeRoot, volume.getName());
-      }
-      this.volumeRoots.put(volume, volumeRoot);
-
-      if ("".equals(volume.getCreationTxId())) {
-        // send the volume to the chain as we have not seen it before
-        final MultiChainData data = new MultiChainData();
-        data.writeByteArray(volume.toByteArray());
-
-        final String txId =
-            this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_VOLUME_CREATE, data);
-        created = Volume.newBuilder(volume).setCreationTxId(txId).build();
-      }
-    } else {
-      LOG.warn("Volume {} is already present in cluster", TextFormat.shortDebugString(volume));
+    // TODO synchronize the relevant parts here
+    if (this.volumes.containsKey(volume.getName())) {
+      throw new FileAlreadyExistsException(volume.getName());
     }
+
+    // optimistically create the directory and add an entry in the map
+    final File volumeRoot = new File(this.baseDir, volume.getName());
+    if (!volumeRoot.mkdirs()) {
+      throw new IOException(
+          "Could not create directory " + volumeRoot + " for volume " + volume.getName());
+    }
+
+    final MultiChainData data = new MultiChainData();
+    data.writeByteArray(volume.toByteArray());
+
+    final String txId =
+        this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_VOLUME_CREATE, data);
+    final Volume created = Volume.newBuilder(volume).setCreationTxId(txId).build();
+
+    this.volumeRoots.put(created, volumeRoot);
+    this.volumes.put(volume.getName(), created);
+
+    LOG.debug("Volume {} was created", TextFormat.shortDebugString(created));
 
     return created;
   }
@@ -440,7 +436,23 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     LOG.trace("Received raw tx for removal: {}", rawTransaction.txId());
   }
 
-  private Volume getVolumeFromPath(String path) {
+  private void checkClusterReadiness() {
+    if (!this.cluster.ready()) {
+      throw new IllegalStateException("Cluster is not ready");
+    }
+  }
+
+  private File getVolumeRootFromPath(String path) throws NoSuchFileException {
+    final Volume volume = this.getVolumeFromPath(path);
+    final File volumeRoot = this.volumeRoots.get(volume);
+    if (volumeRoot == null) {
+      throw new NoSuchFileException(volume.getName());
+    }
+
+    return volumeRoot;
+  }
+
+  private Volume getVolumeFromPath(String path) throws NoSuchFileException {
     if (!path.contains(":")) {
       throw new IllegalArgumentException("No volume specified in path: " + path);
     }

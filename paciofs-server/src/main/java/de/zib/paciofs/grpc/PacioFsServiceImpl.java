@@ -7,10 +7,14 @@
 
 package de.zib.paciofs.grpc;
 
+import akka.grpc.GrpcServiceException;
 import akka.grpc.javadsl.Metadata;
 import de.zib.paciofs.grpc.messages.Ping;
-import de.zib.paciofs.grpc.messages.Volume;
+import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
+import io.grpc.Status;
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
@@ -30,8 +34,18 @@ public class PacioFsServiceImpl implements PacioFsServicePowerApi {
       CreateVolumeRequest in, Metadata metadata) {
     PacioFsGrpcUtil.traceMessages(LOG, "createVolume({})", in);
 
-    final Volume volume = this.multiChainFileSystem.createVolume(in.getVolume());
-    final CreateVolumeResponse out = CreateVolumeResponse.newBuilder().setVolume(volume).build();
+    final CreateVolumeResponse.Builder builder = CreateVolumeResponse.newBuilder();
+    try {
+      builder.setVolume(this.multiChainFileSystem.createVolume(in.getVolume()));
+    } catch (FileAlreadyExistsException e) {
+      throw new GrpcServiceException(Status.ALREADY_EXISTS);
+    } catch (IOException e) {
+      LOG.warn(Markers.EXCEPTION, "Could not create volume {}", in.getVolume().getName(), e);
+      throw new GrpcServiceException(
+          Status.UNKNOWN.withCause(e).augmentDescription(e.getMessage()));
+    }
+
+    final CreateVolumeResponse out = builder.build();
 
     PacioFsGrpcUtil.traceMessages(LOG, "createVolume({}): {}", in, out);
     return CompletableFuture.completedFuture(out);

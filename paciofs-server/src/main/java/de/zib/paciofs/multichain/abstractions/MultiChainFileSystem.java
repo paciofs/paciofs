@@ -131,8 +131,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     final File volumeRoot = this.volumeRoots.get(volume);
     final File file = new File(volumeRoot, cleanedPath);
     if (!file.exists()) {
-      throw new FileNotFoundException(
-          "File " + cleanedPath + " on volume " + volume.getName() + " does not exist");
+      throw new FileNotFoundException("Path " + path + " does not exist");
     }
 
     // TODO fill all stat fields
@@ -153,7 +152,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
 
       builder.setSize(file.length());
     } else {
-      throw new IOException("Illegal file type for " + cleanedPath);
+      throw new IOException("Illegal file type for " + path);
     }
 
     return builder.build();
@@ -169,7 +168,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    */
   public boolean mkNod(String path, int mode, int dev) throws IOException {
     if ((mode & Mode.MODE_S_IFREG_VALUE) != Mode.MODE_S_IFREG_VALUE) {
-      throw new IllegalArgumentException("Can only create regular files");
+      throw new IllegalArgumentException("Cannot create special file " + path);
     }
 
     final Volume volume = this.getVolumeFromPath(path);

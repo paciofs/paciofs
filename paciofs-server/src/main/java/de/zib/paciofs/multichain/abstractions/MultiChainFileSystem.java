@@ -282,7 +282,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param path path to the file: volume:/path/to/file
    * @param destination buffer to read contents into
    * @param offset position in the file
-   * @param fh file handle as returned by {{@link #open(String, int)}}
+   * @param fh file handle as returned by {@link #open(String, int)}
    * @return the number of bytes read, -1 on EOF
    * @throws IOException if the path does not exist or on IO errors
    */
@@ -305,7 +305,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param path path to the file: volume:/path/to/file
    * @param source buffer to write contents from
    * @param offset position in the file
-   * @param fh file handle as returned by {{@link #open(String, int)}}
+   * @param fh file handle as returned by {@link #open(String, int)}
    * @return the number of bytes written
    * @throws IOException if the path does not exist or on IO errors
    */

@@ -20,6 +20,7 @@ import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.math.BigDecimal;
@@ -273,7 +274,12 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   public int read(String path, ByteBuffer destination, long offset, long fh) throws IOException {
     final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-    final RandomAccessFile file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "r");
+    final RandomAccessFile file;
+    try {
+      file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "r");
+    } catch (FileNotFoundException e) {
+      throw new NoSuchFileException(path, null, e.getMessage());
+    }
 
     final FileChannel channel = file.getChannel();
     final int n = channel.read(destination, offset);
@@ -294,7 +300,12 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   public int write(String path, ByteBuffer source, long offset, long fh) throws IOException {
     final File volumeRoot = this.getVolumeRootFromPath(path);
     final String cleanedPath = removeVolumeFromPath(path);
-    final RandomAccessFile file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "rw");
+    final RandomAccessFile file;
+    try {
+      file = new RandomAccessFile(new File(volumeRoot, cleanedPath), "rw");
+    } catch (FileNotFoundException e) {
+      throw new NoSuchFileException(path, null, e.getMessage());
+    }
 
     final FileChannel channel = file.getChannel();
     final int n = channel.write(source.slice(), offset);

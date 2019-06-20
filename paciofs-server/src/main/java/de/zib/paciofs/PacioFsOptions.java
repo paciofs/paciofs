@@ -8,7 +8,7 @@
 package de.zib.paciofs;
 
 public class PacioFsOptions {
-  public static final String BASEDIR = "paciofs.base-dir";
+  public static final String BASE_DIR_KEY = "paciofs.base-dir";
 
   public static final String HTTP_BIND_HOSTNAME_KEY = "paciofs.http.bind-hostname";
   public static final String HTTP_BIND_PORT_KEY = "paciofs.http.bind-port";

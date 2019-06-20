@@ -29,8 +29,11 @@ MountOptions::MountOptions()
 
   // default fuse options
   fuse_options_.push_back("allow_other");
+  fuse_options_.push_back("big_writes");
   fuse_options_.push_back("default_permissions");
   fuse_options_.push_back("fsname=paciofs");
+  fuse_options_.push_back("max_readahead=1048576");
+  fuse_options_.push_back("max_write=131072");
   fuse_options_.push_back("noatime");
 
   // build a textual representation to display the fuse options

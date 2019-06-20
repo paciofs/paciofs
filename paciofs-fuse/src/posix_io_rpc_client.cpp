@@ -298,8 +298,7 @@ messages::Errno PosixIoRpcClient::Read(std::string const &path, char *buf,
           << "): " << response.ShortDebugString();
     });
 
-    if (response.n() == -1) {
-      // end of file
+    if (response.eof()) {
       n = 0;
     } else {
       n = response.n();

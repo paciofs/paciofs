@@ -185,8 +185,16 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
       final ByteBuffer destination = ByteBuffer.allocateDirect(in.getSize());
       final int n =
           this.multiChainFileSystem.read(in.getPath(), destination, in.getOffset(), in.getFh());
-      builder.setBuf(ByteString.copyFrom(destination));
-      builder.setN(n);
+      if (n >= 0) {
+        // a read return value of 0 is fine
+        builder.setEof(false);
+        builder.setBuf(ByteString.copyFrom(destination, n));
+        builder.setN(n);
+      } else if (n == -1) {
+        builder.setEof(true);
+      } else {
+        throw new IOException("Unexpected read return value: " + n);
+      }
     } catch (NoSuchFileException e) {
       error = Errno.ERRNO_ENOENT;
     } catch (IOException e) {

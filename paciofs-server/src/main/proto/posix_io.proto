@@ -87,6 +87,7 @@ message ReadResponse {
   messages.Errno error = 1;
   bytes buf = 2;
   uint32 n = 3;
+  bool eof = 4;
 }
 
 message WriteRequest {

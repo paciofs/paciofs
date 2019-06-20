@@ -35,7 +35,7 @@ metadata:
     app: pacio
     component: paciofs
 spec:
-  replicas: 3
+  replicas: 1
   strategy: {}
   selector:
     matchLabels:

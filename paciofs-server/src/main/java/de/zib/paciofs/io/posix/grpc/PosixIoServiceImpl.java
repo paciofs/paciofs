@@ -188,8 +188,11 @@ public class PosixIoServiceImpl implements PosixIoServicePowerApi {
       if (n >= 0) {
         // a read return value of 0 is fine
         builder.setEof(false);
-        builder.setBuf(ByteString.copyFrom(destination, n));
         builder.setN(n);
+
+        // flip buffer for reading from it
+        destination.flip();
+        builder.setBuf(ByteString.copyFrom(destination, n));
       } else if (n == -1) {
         builder.setEof(true);
       } else {

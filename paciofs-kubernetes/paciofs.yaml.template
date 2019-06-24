@@ -65,6 +65,8 @@ spec:
         - name: multichain
           containerPort: 30771
         resources: {}
+        securityContext:
+          privileged: false
         # probes provided by Akka management
         readinessProbe:
           httpGet:

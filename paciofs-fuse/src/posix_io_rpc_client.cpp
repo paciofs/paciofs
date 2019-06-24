@@ -302,7 +302,7 @@ messages::Errno PosixIoRpcClient::Read(std::string const &path, char *buf,
       n = 0;
     } else {
       n = response.n();
-      strncpy(buf, response.buf().c_str(), n);
+      memcpy(buf, response.buf().c_str(), n);
     }
 
     return messages::ERRNO_ESUCCESS;

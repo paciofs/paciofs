@@ -294,8 +294,10 @@ messages::Errno PosixIoRpcClient::Read(std::string const &path, char *buf,
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
+      ReadResponse printResponse(response);
+      printResponse.clear_buf();
       out << "Read(" << request.ShortDebugString()
-          << "): " << response.ShortDebugString();
+          << "): " << printResponse.ShortDebugString();
     });
 
     if (response.eof()) {
@@ -330,7 +332,9 @@ messages::Errno PosixIoRpcClient::Write(std::string const &path,
   request.set_offset(offset);
   request.set_fh(fh);
   logger_.Trace([request](auto &out) {
-    out << "Write(" << request.ShortDebugString() << ")";
+    WriteRequest printRequest(request);
+    printRequest.clear_buf();
+    out << "Write(" << printRequest.ShortDebugString() << ")";
   });
 
   WriteResponse response;
@@ -340,7 +344,9 @@ messages::Errno PosixIoRpcClient::Write(std::string const &path,
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
-      out << "Write(" << request.ShortDebugString()
+      WriteRequest printRequest(request);
+      printRequest.clear_buf();
+      out << "Write(" << printRequest.ShortDebugString()
           << "): " << response.ShortDebugString();
     });
 
@@ -349,7 +355,9 @@ messages::Errno PosixIoRpcClient::Write(std::string const &path,
     return messages::ERRNO_ESUCCESS;
   } else {
     logger_.Warning([request, status](auto &out) {
-      out << "Write(" << request.ShortDebugString()
+      WriteRequest printRequest(request);
+      printRequest.clear_buf();
+      out << "Write(" << printRequest.ShortDebugString()
           << "): " << status.error_message() << " (" << status.error_code()
           << ")";
     });

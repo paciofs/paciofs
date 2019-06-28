@@ -80,7 +80,7 @@ before_install:
   - make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins
   - sudo make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs
   # need to install protoc and include files as well
-  - cd ./third_party/protobuf && sudo make install cd ../../../
+  - cd ./third_party/protobuf && sudo make install && cd ../../../
   - rm -rf ./grpc
 
   # install MultiChain

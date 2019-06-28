@@ -55,7 +55,7 @@ ENV HAS_SYSTEM_PROTOBUF=false
 RUN git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git \
   && cd ./grpc && git submodule update --init \
   && cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} \
-  && cd ../../ && make -j2 && make install \
+  && cd ../../ && make -j2 static plugins && make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs \
   && cd ./third_party/protobuf && make install \
   && cd ../../../ && rm -rf ./grpc
 

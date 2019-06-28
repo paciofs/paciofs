@@ -51,12 +51,13 @@ RUN curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh
 # install gRPC, protoc headers and libraries
 ENV GRPC_VERSION="1.18.0"
 ENV PROTOBUF_VERSION="3.6.1"
-ENV HAS_SYSTEM_PROTOBUF=false
 RUN git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git \
   && cd ./grpc && git submodule update --init \
-  && cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} \
-  && cd ../../ && make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins && make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs \
-  && cd ../ && rm -rf ./grpc
+  && cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} ../../ \
+  && make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins \
+  && make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs \
+  && cd ./third_party/protobuf && make install cd ../../../ \
+  && rm -rf ./grpc
 
 # install MultiChain
 ENV MULTICHAIN_VERSION="2.0.2"

@@ -21,6 +21,7 @@ RUN apt-get --quiet update \
   libtool \
   maven \
   openjdk-11-jdk \
+  openssl \
   pkg-config \
   \
   # cleanup

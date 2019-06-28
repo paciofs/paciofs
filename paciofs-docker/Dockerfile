@@ -17,9 +17,7 @@ RUN apt-get --quiet update \
   build-essential \
   git \
   libboost-all-dev \
-  libc-ares2 \
   libfuse-dev \
-  libssl-dev \
   libtool \
   maven \
   openjdk-11-jdk \
@@ -57,9 +55,8 @@ ENV HAS_SYSTEM_PROTOBUF=false
 RUN git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git \
   && cd ./grpc && git submodule update --init \
   && cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} \
-  && cd ../../ && make -j2 static plugins && make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs \
-  && cd ./third_party/protobuf && make install \
-  && cd ../../../ && rm -rf ./grpc
+  && cd ../../ && make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins && make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs \
+  && cd ../ && rm -rf ./grpc
 
 # install MultiChain
 ENV MULTICHAIN_VERSION="2.0.2"

@@ -16,14 +16,15 @@ find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
 
 find_package (FUSE REQUIRED)
 
-# required by statically linked gRPC, so explicitly list here
-find_library (c_ares_LIBRARY NAMES cares libcares.so.2)
-find_package (OpenSSL REQUIRED)
-find_package (ZLIB REQUIRED)
-
+# static gRPC and Protobuf libraries
 find_library (gRPC_C_LIBRARY grpc "${GRPC_LIBRARY_DIRS}")
 find_library (gRPC_CXX_LIBRARY grpc++ "${GRPC_LIBRARY_DIRS}")
 find_library (Protobuf_LIBRARIES protobuf "${PROTOBUF_LIBRARY_DIRS}")
+
+# needed by gRPC
+find_library (CRYPTO_LIBRARY crypto)
+find_library (SSL_LIBRARY ssl)
+find_library (Z_LIBRARY z)
 
 set (GENERATED_GRPC_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/grpc")
 set (GENERATED_PROTOBUF_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/protobuf")
@@ -85,10 +86,9 @@ target_link_libraries (
   Boost::log
   Boost::log_setup
   Boost::program_options
-  "${c_ares_LIBRARY}"
-  OpenSSL::Crypto
-  OpenSSL::SSL
-  ZLIB::ZLIB
+  "${CRYPTO_LIBRARY}"
+  "${SSL_LIBRARY}"
+  "${Z_LIBRARY}"
 )
 
 add_executable (
@@ -142,8 +142,7 @@ target_link_libraries (
   Boost::log
   Boost::log_setup
   Boost::program_options
-  "${c_ares_LIBRARY}"
-  OpenSSL::Crypto
-  OpenSSL::SSL
-  ZLIB::ZLIB
+  "${CRYPTO_LIBRARY}"
+  "${SSL_LIBRARY}"
+  "${Z_LIBRARY}"
 )

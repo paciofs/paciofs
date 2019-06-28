@@ -11,9 +11,7 @@ matrix:
             - clang-format
             - cppcheck
             - libboost-all-dev
-            - libc-ares2
             - libfuse-dev
-            - libssl-dev
       env:
         - CMAKE_DIST=Linux
         # cmake-<VERSION>-Linux-x86_64/
@@ -31,10 +29,8 @@ matrix:
             - osxfuse
           packages:
             - boost
-            - cares
             - clang-format
             - cppcheck
-            - openssl
       env:
         - CMAKE_DIST=Darwin
         # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/
@@ -82,14 +78,10 @@ before_install:
   - cd ${GRPC_HOME}
   - git submodule update --init
   - cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} && cd ../../
-  # builds static protobuf no matter what
-  - export HAS_SYSTEM_PROTOBUF=false
-  # do not build/install shared gRPC libraries
-  - make -j2 static plugins
+  # build static gRPC with embeddec c-ares and protobuf, use system ssl and z
+  - make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins
   - sudo make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs
-  - cd ./third_party/protobuf
-  - sudo make install
-  - cd ../../../
+  - cd ../
   - rm -rf ./grpc
 
   # install MultiChain

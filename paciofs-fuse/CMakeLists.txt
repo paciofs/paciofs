@@ -16,7 +16,13 @@ find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
 
 find_package (FUSE REQUIRED)
 
-find_library (gRPC_LIBRARIES grpc++ "${GRPC_LIBRARY_DIRS}")
+# required by statically linked gRPC, so explicitly list here
+find_library (c_ares_LIBRARY NAMES cares libcares.so.2)
+find_package (OpenSSL REQUIRED)
+find_package (ZLIB REQUIRED)
+
+find_library (gRPC_C_LIBRARY grpc "${GRPC_LIBRARY_DIRS}")
+find_library (gRPC_CXX_LIBRARY grpc++ "${GRPC_LIBRARY_DIRS}")
 find_library (Protobuf_LIBRARIES protobuf "${PROTOBUF_LIBRARY_DIRS}")
 
 set (GENERATED_GRPC_DIR "${PROJECT_SOURCE_DIR}/target/generated-sources/grpc")
@@ -73,11 +79,16 @@ target_include_directories (
 
 target_link_libraries (
   mkfs.paciofs
-  "${gRPC_LIBRARIES}"
+  "${gRPC_CXX_LIBRARY}"
+  "${gRPC_C_LIBRARY}"
   "${Protobuf_LIBRARIES}"
   Boost::log
   Boost::log_setup
   Boost::program_options
+  "${c_ares_LIBRARY}"
+  OpenSSL::Crypto
+  OpenSSL::SSL
+  ZLIB::ZLIB
 )
 
 add_executable (
@@ -124,10 +135,15 @@ target_include_directories (
 target_link_libraries (
   mount.paciofs
   "${FUSE_LIBRARIES}"
-  "${gRPC_LIBRARIES}"
+  "${gRPC_CXX_LIBRARY}"
+  "${gRPC_C_LIBRARY}"
   "${Protobuf_LIBRARIES}"
   Boost::filesystem
   Boost::log
   Boost::log_setup
   Boost::program_options
+  "${c_ares_LIBRARY}"
+  OpenSSL::Crypto
+  OpenSSL::SSL
+  ZLIB::ZLIB
 )

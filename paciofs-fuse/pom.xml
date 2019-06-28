@@ -16,7 +16,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <boost.version>1.57.0</boost.version>
+        <boost.version>1.55.0</boost.version>
         <build-type>Release</build-type>
         <!-- as per fuse.h -->
         <fuse.version>26</fuse.version>

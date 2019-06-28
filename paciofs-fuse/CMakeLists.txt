@@ -146,3 +146,37 @@ target_link_libraries (
   "${SSL_LIBRARY}"
   "${Z_LIBRARY}"
 )
+
+install (
+  TARGETS mkfs.paciofs mount.paciofs
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+
+if (APPLE)
+else ()
+  set (CPACK_GENERATOR "DEB" "RPM")
+
+  # general package information
+  set (CPACK_PACKAGE_CONTACT "Zuse Institute Berlin")
+  set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Distributed, fault-tolerant and tamper-proof file system")
+  set (CPACK_PACKAGE_VENDOR "Zuse Institute Berlin")
+
+  # DEB-specific
+  set (CPACK_DEBIAN_PACKAGE_ARCH "amd64")
+  set (CPACK_DEBIAN_PACKAGE_DEPENDS "\
+    fuse (>= 2.9.3), \
+    libboost-filesystem1.55.0 | libboost-filesystem1.58.0 | libboost-filesystem1.62.0 | libboost-filesystem1.65.1 | libboost-filesystem1.67.0, \
+    libboost-log1.55.0 | libboost-log1.58.0 | libboost-log1.62.0 | libboost-log1.65.1 | libboost-log1.67.0, \
+    libboost-program-options1.55.0 | libboost-program-options1.58.0 | libboost-program-options1.62.0 | libboost-program-options1.65.1 | libboost-program-options1.67.0, \
+    openssl (>= 1.0.1) \
+  ")
+
+  # RPM-specific
+  set (CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
+  set (CPACK_RPM_PACKAGE_REQUIRES "\
+    fuse >= 2.9.3, \
+    openssl >= 1.0.1 \
+  ")
+
+endif()
+include (CPack)

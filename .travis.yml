@@ -54,8 +54,10 @@ before_install:
   # install CMake, stripping the first N path elements
   - export CMAKE_VERSION="3.14.5"
   - wget --output-document cmake.tar.gz --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_DIST}-x86_64.tar.gz
-  - sudo tar --directory /usr/local --extract --file cmake.tar.gz --strip-components ${CMAKE_STRIP_COMPONENTS}
+  - sudo mkdir /usr/local/cmake-${CMAKE_VERSION}
+  - sudo tar --directory /usr/local/cmake-${CMAKE_VERSION} --extract --file cmake.tar.gz --strip-components ${CMAKE_STRIP_COMPONENTS}
   - rm cmake.tar.gz
+  - export PATH="/usr/local/cmake-${CMAKE_VERSION}/bin:${PATH}"
 
   # install go
   - wget --output-document go.tar.gz --quiet https://dl.google.com/go/go1.12.6.${GO_DIST}-amd64.tar.gz

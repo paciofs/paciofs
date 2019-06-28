@@ -11,7 +11,9 @@ matrix:
             - clang-format
             - cppcheck
             - libboost-all-dev
+            - libc-ares2
             - libfuse-dev
+            - libssl-dev
       env:
         - CMAKE_DIST=Linux
         # cmake-<VERSION>-Linux-x86_64/
@@ -29,8 +31,10 @@ matrix:
             - osxfuse
           packages:
             - boost
+            - cares
             - clang-format
             - cppcheck
+            - openssl
       env:
         - CMAKE_DIST=Darwin
         # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/

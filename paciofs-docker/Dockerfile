@@ -17,7 +17,9 @@ RUN apt-get --quiet update \
   build-essential \
   git \
   libboost-all-dev \
+  libc-ares2 \
   libfuse-dev \
+  libssl-dev \
   libtool \
   maven \
   openjdk-11-jdk \

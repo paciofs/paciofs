@@ -7,6 +7,7 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
+set (Boost_USE_STATIC_LIBS "ON")
 find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
   filesystem
   log
@@ -58,7 +59,6 @@ add_executable (
 
 target_compile_definitions (mkfs.paciofs PRIVATE PACIOFS_VERSION="${PROJECT_VERSION}")
 
-target_compile_definitions (mkfs.paciofs PRIVATE BOOST_ALL_DYN_LINK)
 target_compile_options (mkfs.paciofs PRIVATE -Wall)
 
 target_include_directories (
@@ -111,7 +111,6 @@ target_compile_definitions (mount.paciofs PRIVATE PACIOFS_VERSION="${PROJECT_VER
 # target_compile_definitions (mount.paciofs PRIVATE VERBATIM_MODE)
 
 target_compile_definitions (mount.paciofs PRIVATE FUSE_USE_VERSION=${FUSE_VERSION})
-target_compile_definitions (mount.paciofs PRIVATE BOOST_ALL_DYN_LINK)
 target_compile_options (mount.paciofs PRIVATE -Wall)
 
 target_include_directories (
@@ -165,17 +164,14 @@ else ()
   set (CPACK_DEBIAN_PACKAGE_ARCH "amd64")
   set (CPACK_DEBIAN_PACKAGE_DEPENDS "\
     fuse (>= 2.9.3), \
-    libboost-filesystem1.55.0 | libboost-filesystem1.58.0 | libboost-filesystem1.62.0 | libboost-filesystem1.65.1 | libboost-filesystem1.67.0, \
-    libboost-log1.55.0 | libboost-log1.58.0 | libboost-log1.62.0 | libboost-log1.65.1 | libboost-log1.67.0, \
-    libboost-program-options1.55.0 | libboost-program-options1.58.0 | libboost-program-options1.62.0 | libboost-program-options1.65.1 | libboost-program-options1.67.0, \
-    openssl (>= 1.0.1) \
+    libssl1.1 \
   ")
 
   # RPM-specific
   set (CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
   set (CPACK_RPM_PACKAGE_REQUIRES "\
     fuse >= 2.9.3, \
-    openssl >= 1.0.1 \
+    libopenssl1_1 \
   ")
 
 endif()

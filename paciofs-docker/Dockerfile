@@ -19,6 +19,12 @@ RUN apt-get --quiet update \
   libboost-filesystem-dev \
   libboost-log-dev \
   libboost-program-options-dev \
+  libboost-system-dev \
+  libboost-date-time-dev \
+  libboost-thread-dev \
+  libboost-regex-dev \
+  libboost-chrono-dev \
+  libboost-atomic-dev \
   libfuse-dev \
   libssl-dev \
   libtool \

@@ -7,12 +7,20 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
+# we only need filesystem, log, program_options
+# the others are dependencies of these three
 set (Boost_USE_STATIC_LIBS "ON")
 find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
   filesystem
   log
-  log_setup
   program_options
+  system
+  date_time
+  log_setup
+  thread
+  regex
+  chrono
+  atomic
 )
 
 find_package (FUSE REQUIRED)
@@ -84,8 +92,14 @@ target_link_libraries (
   "${gRPC_C_LIBRARY}"
   "${Protobuf_LIBRARIES}"
   Boost::log
-  Boost::log_setup
   Boost::program_options
+  Boost::system
+  Boost::date_time
+  Boost::log_setup
+  Boost::thread
+  Boost::regex
+  Boost::chrono
+  Boost::atomic
   "${CRYPTO_LIBRARY}"
   "${SSL_LIBRARY}"
   "${Z_LIBRARY}"
@@ -139,8 +153,14 @@ target_link_libraries (
   "${Protobuf_LIBRARIES}"
   Boost::filesystem
   Boost::log
-  Boost::log_setup
   Boost::program_options
+  Boost::system
+  Boost::date_time
+  Boost::log_setup
+  Boost::thread
+  Boost::regex
+  Boost::chrono
+  Boost::atomic
   "${CRYPTO_LIBRARY}"
   "${SSL_LIBRARY}"
   "${Z_LIBRARY}"

@@ -27,9 +27,9 @@ find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
 find_package (FUSE REQUIRED)
 
 # static gRPC and Protobuf libraries
-find_library (gRPC_C_LIBRARY grpc "${GRPC_LIBRARY_DIRS}")
-find_library (gRPC_CXX_LIBRARY grpc++ "${GRPC_LIBRARY_DIRS}")
-find_library (Protobuf_LIBRARIES protobuf "${PROTOBUF_LIBRARY_DIRS}")
+find_library (gRPC_C_LIBRARY libgrpc.a HINTS "${GRPC_LIBRARY_DIRS}")
+find_library (gRPC_CXX_LIBRARY libgrpc++.a HINTS "${GRPC_LIBRARY_DIRS}")
+find_library (Protobuf_LIBRARIES libprotobuf.a HINTS "${PROTOBUF_LIBRARY_DIRS}")
 
 # needed by gRPC
 find_library (CRYPTO_LIBRARY crypto)

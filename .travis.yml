@@ -110,17 +110,32 @@ script:
   - MVN_PID=$!
   - sleep 15s
 
-  # simple query with default parameters
-  - ${MULTICHAIN_HOME}/multichain-cli paciofs -datadir=/tmp/multichain-data-dir -rpconnect=localhost -rpcport=8332 getblockchaininfo; CLI_EXIT=$?
+  # create and mount file system
+  - ./paciofs-fuse/target/Release/mkfs.paciofs localhost:8080 volume1
+  - mkdir /tmp/mnt-volume1
+  - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 &
+  - MNT_PID=$!
+
+  # write file
+  - cp ./pom.xml /tmp/mnt-volume1
+
+  # remount
+  - kill ${MNT_PID}; wait ${MNT_PID}
+  - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 &
+  - MNT_PID=$!
+
+  # files should not differ
+  - diff ./pom.xml /tmp/mnt-volume1/pom.xml; DIFF_EXIT=$?
+  - test "0" -eq "${DIFF_EXIT}"
+
+  # unmount
+  - kill ${MNT_PID}; wait ${MNT_PID}
 
   # wait for everyting to shut down
   - kill ${MVN_PID}; wait ${MVN_PID}; MVN_EXIT=$?
 
   # JVM return code when sent SIGTERM
   - test "143" -eq "${MVN_EXIT}"
-
-  # exit with the multichain-cli exit code
-  - exit ${CLI_EXIT}
 
 deploy:
   provider: releases

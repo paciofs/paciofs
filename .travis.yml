@@ -12,6 +12,7 @@ matrix:
             - cppcheck
             - libboost-all-dev
             - libfuse-dev
+            - rpm
       env:
         - CMAKE_DIST=Linux
         # cmake-<VERSION>-Linux-x86_64/

@@ -121,3 +121,14 @@ script:
 
   # exit with the multichain-cli exit code
   - exit ${CLI_EXIT}
+
+deploy:
+  provider: releases
+  api_key:
+    secure: YB55j3A4CCCjRN4gc8b1lo9eFNcvnwJN3SgQduZgF3Lr3no4gompkYO97RBltl7IQZtN6bBcKN/kkxaCHkAwFD0CFF4rOW3TXZMlX6kBrtdPhbvHKICH5w+ccmI6qfE3A3XcmZBiWoru4JZgJVhgGPwb+1Zapb2nWAy/BlIxNtZDbCLcdzlFDKMd9d7VfnoJjHroogjSGZK+Rs9OmruMcl0txPksm4bKtu2X8opu8+iBb3ybDbRsMKh6cYVlXw9Micu8GBoAOCxNkrPFeL2LEawdS27/M0UDDSs6ytTCrLq/ox0fnVDocJqMImxikCHbT7KKmmdTCcO8UavjRH1plpBxrFgRhd3mhigazcF441QspSIB60tO9yZRTaRs1qVKfRKqHcRwqJ24IS7n6DehTFMGBZjj/DWcMpbIQ3L9D0Gr84J9RbEmcfKpjgga8WRwW9HKJ500vfCdxUOfXzheOE1168jdxgB1tfNEIyggbVvskze0iXWg4HEf6FWB9qD+TnRZm8jDOgDHjMkO/gPTN8Rd+4ROfOHsl06mzbZnNhPfhs2xkcW7+DW2B24E+gFDshKoOQ0woSkgihCDjnBNXB2mCNURNbx+e4NGubzlUofUKFFcozds1bIy4DHCOxetAJXljXEaB1oNhkfpDKRlC0CdtDMjt2hR2tOzc9Bt35A=
+  file: ./paciofs-fuse/target/Release/paciofs_fuse-*
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
+  on:
+    repo: paciofs/paciofs

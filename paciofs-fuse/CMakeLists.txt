@@ -5,10 +5,11 @@ set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
+# contains our own module to find fuse
 list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 # we only need filesystem, log, program_options
-# the others are dependencies of these three
+# the others are static dependencies of these three
 set (Boost_USE_STATIC_LIBS "ON")
 find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
   filesystem
@@ -44,14 +45,14 @@ file (GLOB_RECURSE GRPC_SOURCES CONFIGURE_DEPENDS "${GENERATED_GRPC_DIR}/*.cc")
 file (GLOB_RECURSE PROTOBUF_SOURCES CONFIGURE_DEPENDS "${GENERATED_PROTOBUF_DIR}/*.cc")
 
 # object library for gRPC
-add_library (protobuf_obj OBJECT ${PROTOBUF_SOURCES})
-target_include_directories (protobuf_obj PRIVATE ${GENERATED_PROTOBUF_DIR})
-target_include_directories (protobuf_obj BEFORE PRIVATE ${GRPC_INCLUDE_DIRS})
-
-# object library for protobuf
 add_library (grpc_obj OBJECT ${GRPC_SOURCES})
 target_include_directories (grpc_obj PRIVATE ${GENERATED_GRPC_DIR} ${GENERATED_PROTOBUF_DIR})
 target_include_directories (grpc_obj BEFORE PRIVATE ${GRPC_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
+
+# object library for Protobuf
+add_library (protobuf_obj OBJECT ${PROTOBUF_SOURCES})
+target_include_directories (protobuf_obj PRIVATE ${GENERATED_PROTOBUF_DIR})
+target_include_directories (protobuf_obj BEFORE PRIVATE ${PROTOBUF_INCLUDE_DIRS})
 
 add_executable (
   mkfs.paciofs

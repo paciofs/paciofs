@@ -46,8 +46,8 @@ matrix:
         - MULTICHAIN_TAG=20190521T124426
         - MULTICHAIN_HASH=2bff381
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-${MULTICHAIN_HASH}-osx.tar.gz
-        - UMOUNT_CMD="umount"
-        - UMOUNT_OPTIONS=""
+        - UMOUNT_CMD="diskutil"
+        - UMOUNT_OPTIONS="unmount"
 
     - os: linux
       dist: xenial

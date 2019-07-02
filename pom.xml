@@ -42,6 +42,7 @@
         <checkstyle.skip>false</checkstyle.skip>
         <cppcheck.skip>false</cppcheck.skip>
         <format-sources.skip>false</format-sources.skip>
+        <package-fuse.skip>false</package-fuse.skip>
         <spotbugs.skip>false</spotbugs.skip>
 
         <!-- protoc and gRPC properties here because server and client should use the same -->
@@ -79,6 +80,7 @@
                 <checkstyle.skip>true</checkstyle.skip>
                 <cppcheck.skip>true</cppcheck.skip>
                 <format-sources.skip>true</format-sources.skip>
+                <package-fuse.skip>true</package-fuse.skip>
                 <spotbugs.skip>true</spotbugs.skip>
             </properties>
         </profile>

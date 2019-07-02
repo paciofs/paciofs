@@ -172,6 +172,7 @@ install (
 )
 
 if (APPLE)
+  set (CPACK_GENERATOR "productbuild")
 else ()
   set (CPACK_GENERATOR "DEB" "RPM")
 

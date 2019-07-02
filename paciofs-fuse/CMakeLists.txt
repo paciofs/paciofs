@@ -182,14 +182,12 @@ else ()
   set (CPACK_PACKAGE_VENDOR "Zuse Institute Berlin")
 
   # DEB-specific
-  set (CPACK_DEBIAN_PACKAGE_ARCH "amd64")
   set (CPACK_DEBIAN_PACKAGE_DEPENDS "\
     fuse (>= 2.9.3), \
     libssl1.1 \
   ")
 
   # RPM-specific
-  set (CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
   set (CPACK_RPM_PACKAGE_REQUIRES "\
     fuse >= 2.9.3, \
     libopenssl1_1 \

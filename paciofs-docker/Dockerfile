@@ -16,13 +16,16 @@ RUN apt-get --quiet update \
   automake \
   build-essential \
   git \
-  libboost-all-dev \
+  libboost-filesystem-dev \
+  libboost-log-dev \
+  libboost-program-options-dev \
   libfuse-dev \
+  libssl-dev \
   libtool \
   maven \
   openjdk-11-jdk \
-  openssl \
   pkg-config \
+  zlib1g-dev \
   \
   # cleanup
   && rm -rf /var/lib/apt/lists/*

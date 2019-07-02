@@ -122,6 +122,7 @@ script:
   - ./paciofs-fuse/target/Release/mkfs.paciofs localhost:8080 volume1 -d TRACE
   - mkdir /tmp/mnt-volume1
   - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -d TRACE &
+  - sleep 5s
 
   # write file
   - cp ./pom.xml /tmp/mnt-volume1
@@ -129,6 +130,7 @@ script:
   # remount
   - ${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
   - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -d TRACE &
+  - sleep 5s
 
   # files should not differ
   - diff ./pom.xml /tmp/mnt-volume1/pom.xml; DIFF_EXIT=$?

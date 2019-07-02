@@ -112,7 +112,7 @@ script:
   # start and stop PacioFS
   - mvn --projects paciofs-server exec:java@run-server &
   - MVN_PID=$!
-  - sleep 15s
+  - sleep 60s
 
   # create and mount file system
   - ./paciofs-fuse/target/Release/mkfs.paciofs localhost:8080 volume1

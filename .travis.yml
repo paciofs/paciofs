@@ -124,9 +124,9 @@ script:
   - sleep 60s
 
   # create and mount file system
-  - ./paciofs-fuse/target/Release/mkfs.paciofs localhost:8080 volume1 -d TRACE
+  - ./paciofs-client/target/Release/mkfs.paciofs localhost:8080 volume1 -d TRACE
   - mkdir /tmp/mnt-volume1
-  - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
+  - ./paciofs-client/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
   - sleep 5s
 
   # write file
@@ -135,7 +135,7 @@ script:
 
   # remount to clear caches
   - ${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
-  - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
+  - ./paciofs-client/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
   - sleep 5s
 
   # files should not differ

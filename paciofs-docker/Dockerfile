@@ -80,14 +80,14 @@ ENV MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 WORKDIR /paciofs
 COPY ./pom.xml ./pom.xml
 COPY ./paciofs-csi/pom.xml ./paciofs-csi/pom.xml
-COPY ./paciofs-fuse/pom.xml ./paciofs-fuse/pom.xml
+COPY ./paciofs-client/pom.xml ./paciofs-client/pom.xml
 COPY ./paciofs-kubernetes/pom.xml ./paciofs-kubernetes/pom.xml
 COPY ./paciofs-server/pom.xml ./paciofs-server/pom.xml
 RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --define silent=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION}
 
 # build PacioFS
 COPY ./paciofs-csi ./paciofs-csi/
-COPY ./paciofs-fuse ./paciofs-fuse/
+COPY ./paciofs-client ./paciofs-client/
 COPY ./paciofs-kubernetes ./paciofs-kubernetes/
 COPY ./paciofs-server ./paciofs-server/
 RUN mvn --activate-profiles docker --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} clean install

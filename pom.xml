@@ -27,7 +27,7 @@
 
     <modules>
         <module>paciofs-server</module>
-        <module>paciofs-fuse</module>
+        <module>paciofs-client</module>
         <module>paciofs-csi</module>
         <module>paciofs-kubernetes</module>
     </modules>

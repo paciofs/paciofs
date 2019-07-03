@@ -14,7 +14,7 @@ $ kubectl apply -f ./paciofs-kubernetes/paciofs-minikube.yaml
 $ kubectl port-forward --namespace=pacio service/paciofs 8080:8080
 ```
 ```bash
-$ ./paciofs-fuse/target/Release/mkfs.paciofs localhost:8080 volume1
+$ ./paciofs-client/target/Release/mkfs.paciofs localhost:8080 volume1
 $ mkdir /tmp/volume1
-$ ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/volume1 volume1 -d TRACE
+$ ./paciofs-client/target/Release/mount.paciofs localhost:8080 /tmp/volume1 volume1 -d TRACE
 ```

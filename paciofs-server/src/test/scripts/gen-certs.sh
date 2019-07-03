@@ -61,6 +61,6 @@ cp servercert.p12.pass ../resources/certs/
 cp cacert.p12 ../resources/certs/
 cp cacert.p12.pass ../resources/certs/
 
-cp ./paciofsCA/cacert.pem ../../../../paciofs-fuse/test/certs/
-cp clientcert.pem ../../../../paciofs-fuse/test/certs/
-cp clientkey.pem ../../../../paciofs-fuse/test/certs/
+cp ./paciofsCA/cacert.pem ../../../../paciofs-client/test/certs/
+cp clientcert.pem ../../../../paciofs-client/test/certs/
+cp clientkey.pem ../../../../paciofs-client/test/certs/

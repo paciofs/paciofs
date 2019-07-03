@@ -9,9 +9,9 @@
         <relativePath>..</relativePath>
     </parent>
 
-    <artifactId>paciofs-fuse</artifactId>
+    <artifactId>paciofs-client</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>paciofs-fuse</name>
+    <name>paciofs-client</name>
 
     <packaging>pom</packaging>
 

@@ -22,26 +22,30 @@ matrix:
         # cmake-<VERSION>-Linux-x86_64/
         - CMAKE_STRIP_COMPONENTS=1
         - GO_DIST=linux
+        - LOAD_FUSE_CMD="true"
         - MULTICHAIN_VERSION=2.0.2
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
         - UMOUNT_CMD="fusermount"
         - UMOUNT_OPTIONS="-u"
 
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode9.2
       addons:
         homebrew:
           casks:
+            - oracle-jdk
             - osxfuse
           packages:
             - boost
             - clang-format
             - cppcheck
+          update: true
       env:
         - CMAKE_DIST=Darwin
         # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/
         - CMAKE_STRIP_COMPONENTS=3
         - GO_DIST=darwin
+        - LOAD_FUSE_CMD="/Library/Filesystems/osxfuse.fs/Contents/Resources/load_osxfuse"
         - MULTICHAIN_VERSION=2.0-release
         - MULTICHAIN_TAG=20190521T124426
         - MULTICHAIN_HASH=2bff381
@@ -59,6 +63,9 @@ matrix:
         - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:
+  # load kernel extension on macOS, do nothing otherwise
+  - sudo ${LOAD_FUSE_CMD}
+
   # install CMake, stripping the first N path elements
   - export CMAKE_VERSION="3.14.5"
   - wget --output-document cmake.tar.gz --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_DIST}-x86_64.tar.gz

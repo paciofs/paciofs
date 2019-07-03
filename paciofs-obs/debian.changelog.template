@@ -1,0 +1,5 @@
+paciofs (${PACIOFS_VERSION}) stable; urgency=low
+
+  * PacioFS ${PACIOFS_VERSION}
+
+ -- PacioFS Project <paciofs-dev@googlegroups.com>  ${PACIOFS_RELEASE_DATE}

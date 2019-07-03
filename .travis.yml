@@ -132,8 +132,9 @@ script:
 
   # write file
   - cp ./pom.xml /tmp/mnt-volume1
+  - sync
 
-  # remount
+  # remount to clear caches
   - ${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
   - ./paciofs-fuse/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
   - sleep 5s

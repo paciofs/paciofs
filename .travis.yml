@@ -16,7 +16,6 @@ matrix:
             - cppcheck
             - libboost-all-dev
             - libfuse-dev
-            - rpm
       env:
         - CMAKE_DIST=Linux
         # cmake-<VERSION>-Linux-x86_64/
@@ -151,22 +150,3 @@ script:
 
   # JVM return code when sent SIGTERM
   - test "143" -eq "${MVN_EXIT}"
-
-after_success:
-  # set the tag to enable deployment
-  - export TRAVIS_TAG=${TRAVIS_BRANCH}-build
-
-deploy:
-  name: "Build of PacioFS ${TRAVIS_BRANCH}"
-  body: "Build of https://github.com/paciofs/paciofs/tree/${TRAVIS_COMMIT}"
-  provider: releases
-  api_key:
-    secure: YB55j3A4CCCjRN4gc8b1lo9eFNcvnwJN3SgQduZgF3Lr3no4gompkYO97RBltl7IQZtN6bBcKN/kkxaCHkAwFD0CFF4rOW3TXZMlX6kBrtdPhbvHKICH5w+ccmI6qfE3A3XcmZBiWoru4JZgJVhgGPwb+1Zapb2nWAy/BlIxNtZDbCLcdzlFDKMd9d7VfnoJjHroogjSGZK+Rs9OmruMcl0txPksm4bKtu2X8opu8+iBb3ybDbRsMKh6cYVlXw9Micu8GBoAOCxNkrPFeL2LEawdS27/M0UDDSs6ytTCrLq/ox0fnVDocJqMImxikCHbT7KKmmdTCcO8UavjRH1plpBxrFgRhd3mhigazcF441QspSIB60tO9yZRTaRs1qVKfRKqHcRwqJ24IS7n6DehTFMGBZjj/DWcMpbIQ3L9D0Gr84J9RbEmcfKpjgga8WRwW9HKJ500vfCdxUOfXzheOE1168jdxgB1tfNEIyggbVvskze0iXWg4HEf6FWB9qD+TnRZm8jDOgDHjMkO/gPTN8Rd+4ROfOHsl06mzbZnNhPfhs2xkcW7+DW2B24E+gFDshKoOQ0woSkgihCDjnBNXB2mCNURNbx+e4NGubzlUofUKFFcozds1bIy4DHCOxetAJXljXEaB1oNhkfpDKRlC0CdtDMjt2hR2tOzc9Bt35A=
-  # upload generated packages (.deb, .rpm, .pkg)
-  file_glob: true
-  file: paciofs-fuse/target/Release/paciofs_fuse-*
-  skip_cleanup: true
-  overwrite: true
-  on:
-    repo: ${TRAVIS_REPO_SLUG}
-    tags: true

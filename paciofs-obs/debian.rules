@@ -20,7 +20,7 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-	mvn --projects paciofs-fuse compile
+	mvn --projects paciofs-client compile
 	# --- end custom part for compiling
 
 	touch build-stamp
@@ -31,7 +31,7 @@ clean:
 	rm -f build-stamp
 
 	# Add here commands to clean up after the build process.
-	mvn --projects paciofs-fuse clean || true
+	mvn --projects paciofs-client clean || true
 	# --- end custom part for cleaning up
 
 	dh_clean
@@ -44,7 +44,7 @@ install: build
 
 	# Add here commands to install the package
 	# The DESTDIR Has To Be Exactly  /usr/src/packages/BUILD/debian/<nameOfPackage>
-	mvn --projects paciofs-fuse install
+	mvn --projects paciofs-client install
 	# --- end custom part for installing
 
 # Build architecture-independent files here.

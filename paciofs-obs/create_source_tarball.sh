@@ -8,4 +8,4 @@ fi
 
 cd ..
 mvn clean
-tar czf ./paciofs-obs/paciofs_${paciofs_version}.orig.tar.gz ./pom.xml ./paciofs-fuse
+tar czf ./paciofs-obs/paciofs_${paciofs_version}.orig.tar.gz ./pom.xml ./paciofs-client

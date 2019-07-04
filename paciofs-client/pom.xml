@@ -20,6 +20,8 @@
         <build-type>Release</build-type>
         <!-- as per fuse.h -->
         <fuse.version>26</fuse.version>
+        <grpc.protobuf-cpp-plugin>${project.parent.basedir}/paciofs-client/third_party/bin/grpc_cpp_plugin</grpc.protobuf-cpp-plugin>
+        <protobuf.protoc>${project.parent.basedir}/paciofs-client/third_party/bin/protoc</protobuf.protoc>
     </properties>
 
     <build>
@@ -143,11 +145,11 @@
                             <arguments>
                                 <argument>-DBOOST_MIN_VERSION=${boost.version}</argument>
                                 <argument>-DFUSE_VERSION=${fuse.version}</argument>
-                                <argument>-DGRPC_INCLUDE_DIRS=${grpc.dirs.include}</argument>
-                                <argument>-DPROTOBUF_INCLUDE_DIRS=${protobuf.dirs.include}</argument>
-                                <argument>-DGRPC_LIBRARY_DIRS=${grpc.dirs.library}</argument>
-                                <argument>-DPROTOBUF_LIBRARY_DIRS=${protobuf.dirs.library}</argument>
+                                <argument>-DGRPC_VERSION=${grpc.version}</argument>
+                                <argument>-DGRPC_CORE_VERSION=${grpc.core.version}</argument>
+                                <argument>-DPROTOBUF_VERSION=${protobuf.version}</argument>
                                 <argument>-DCMAKE_BUILD_TYPE=${build-type}</argument>
+                                <argument>-DCMAKE_PREFIX_PATH=${project.basedir}/third_party/lib/pkgconfig</argument>
                                 <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>

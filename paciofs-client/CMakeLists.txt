@@ -26,10 +26,11 @@ find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
 
 find_package (FUSE REQUIRED)
 
-# static gRPC and Protobuf libraries
-find_library (gRPC_C_LIBRARY libgrpc.a HINTS "${GRPC_LIBRARY_DIRS}")
-find_library (gRPC_CXX_LIBRARY libgrpc++.a HINTS "${GRPC_LIBRARY_DIRS}")
-find_library (Protobuf_LIBRARIES libprotobuf.a HINTS "${PROTOBUF_LIBRARY_DIRS}")
+# pkg-config helps us find our libraries in ./third_party
+find_package (PkgConfig REQUIRED)
+pkg_search_module (Protobuf REQUIRED protobuf=${PROTOBUF_VERSION})
+pkg_search_module (gRPC_C REQUIRED grpc=${GRPC_CORE_VERSION})
+pkg_search_module (gRPC_CXX REQUIRED grpc++=${GRPC_VERSION})
 
 # needed by gRPC
 find_library (CRYPTO_LIBRARY crypto)
@@ -47,12 +48,12 @@ file (GLOB_RECURSE PROTOBUF_SOURCES CONFIGURE_DEPENDS "${GENERATED_PROTOBUF_DIR}
 # object library for gRPC
 add_library (grpc_obj OBJECT ${GRPC_SOURCES})
 target_include_directories (grpc_obj PRIVATE ${GENERATED_GRPC_DIR} ${GENERATED_PROTOBUF_DIR})
-target_include_directories (grpc_obj BEFORE PRIVATE ${GRPC_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
+target_include_directories (grpc_obj BEFORE PRIVATE ${gRPC_INCLUDE_DIRS} ${Protobuf_INCLUDE_DIRS})
 
 # object library for Protobuf
 add_library (protobuf_obj OBJECT ${PROTOBUF_SOURCES})
 target_include_directories (protobuf_obj PRIVATE ${GENERATED_PROTOBUF_DIR})
-target_include_directories (protobuf_obj BEFORE PRIVATE ${PROTOBUF_INCLUDE_DIRS})
+target_include_directories (protobuf_obj BEFORE PRIVATE ${Protobuf_INCLUDE_DIRS})
 
 add_executable (
   mkfs.paciofs
@@ -83,15 +84,15 @@ target_include_directories (
 target_include_directories (
   mkfs.paciofs
   BEFORE PRIVATE
-  "${GRPC_INCLUDE_DIRS}"
-  "${PROTOBUF_INCLUDE_DIRS}"
+  "${gRPC_INCLUDE_DIRS}"
+  "${Protobuf_INCLUDE_DIRS}"
 )
 
 target_link_libraries (
   mkfs.paciofs
-  "${gRPC_CXX_LIBRARY}"
-  "${gRPC_C_LIBRARY}"
-  "${Protobuf_LIBRARIES}"
+  "${gRPC_CXX_LINK_LIBRARIES}"
+  "${gRPC_C_LINK_LIBRARIES}"
+  "${Protobuf_LINK_LIBRARIES}"
   Boost::log
   Boost::program_options
   Boost::system
@@ -142,16 +143,16 @@ target_include_directories (
   mount.paciofs
   BEFORE PRIVATE
   "${FUSE_INCLUDE_DIRS}"
-  "${GRPC_INCLUDE_DIRS}"
-  "${PROTOBUF_INCLUDE_DIRS}"
+  "${gRPC_INCLUDE_DIRS}"
+  "${Protobuf_INCLUDE_DIRS}"
 )
 
 target_link_libraries (
   mount.paciofs
   "${FUSE_LIBRARIES}"
-  "${gRPC_CXX_LIBRARY}"
-  "${gRPC_C_LIBRARY}"
-  "${Protobuf_LIBRARIES}"
+  "${gRPC_CXX_LINK_LIBRARIES}"
+  "${gRPC_C_LINK_LIBRARIES}"
+  "${Protobuf_LINK_LIBRARIES}"
   Boost::filesystem
   Boost::log
   Boost::program_options

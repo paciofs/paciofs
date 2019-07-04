@@ -47,13 +47,8 @@
 
         <!-- protoc and gRPC properties here because server and client should use the same -->
         <grpc.version>1.18.0</grpc.version>
-        <grpc.protobuf-cpp-plugin>/usr/local/bin/grpc_cpp_plugin</grpc.protobuf-cpp-plugin>
-        <grpc.dirs.include>/usr/local/include</grpc.dirs.include>
-        <grpc.dirs.library>/usr/local/lib</grpc.dirs.library>
+        <grpc.core.version>7.0.0</grpc.core.version>
         <protobuf.version>3.6.1</protobuf.version>
-        <protobuf.protoc>/usr/local/bin/protoc</protobuf.protoc>
-        <protobuf.dirs.include>/usr/local/include</protobuf.dirs.include>
-        <protobuf.dirs.library>/usr/local/lib</protobuf.dirs.library>
 
         <!-- Plugin configurations -->
         <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>

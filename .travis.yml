@@ -87,19 +87,6 @@ before_install:
   - export DEP_RELEASE_TAG="v0.5.0"
   - curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-  # install gRPC, protoc headers and libraries
-  - export GRPC_VERSION="1.18.0"
-  - export PROTOBUF_VERSION="3.6.1"
-  - git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git
-  - cd ./grpc && git submodule update --init
-  - cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} && cd ../../
-  # build static gRPC with embeddec c-ares and protobuf, use system ssl and z
-  - make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins
-  - sudo make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs
-  # need to install protoc and include files as well
-  - cd ./third_party/protobuf && sudo make install && cd ../../../
-  - rm -rf ./grpc
-
   # install MultiChain
   - wget --output-document multichain.tar.gz --quiet ${MULTICHAIN_URL}
   - sudo tar --directory /usr/local --extract --file multichain.tar.gz
@@ -110,14 +97,15 @@ before_install:
   - pip install --user pygments
 
 install:
-  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
+  - mvn --file ./paciofs-client/third_party/pom.xml install
+  - mvn install --define skipTests=true --define maven.javadoc.skip=true --batch-mode --show-version
 
 script:
   # generate TLS certificates
   - cd ./paciofs-server/src/test/scripts && ./gen-certs.sh && cd ../../../../
 
   # run tests
-  - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
+  - mvn test --batch-mode
 
   # start and stop PacioFS
   - mvn --projects paciofs-server exec:java@run-server &

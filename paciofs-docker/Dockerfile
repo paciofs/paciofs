@@ -79,6 +79,7 @@ COPY ./paciofs-csi ./paciofs-csi/
 COPY ./paciofs-client ./paciofs-client/
 COPY ./paciofs-kubernetes ./paciofs-kubernetes/
 COPY ./paciofs-server ./paciofs-server/
+RUN mvn --non-recursive install
 RUN mvn --file ./paciofs-client/third_party/pom.xml install
 RUN mvn --activate-profiles docker clean install
 

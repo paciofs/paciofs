@@ -58,17 +58,6 @@ RUN mkdir -p "${GOBIN}"
 ENV DEP_RELEASE_TAG="v0.5.0"
 RUN curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-# install gRPC, protoc headers and libraries
-ENV GRPC_VERSION="1.18.0"
-ENV PROTOBUF_VERSION="3.6.1"
-RUN git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git \
-  && cd ./grpc && git submodule update --init \
-  && cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} && cd ../../ \
-  && make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins \
-  && make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs \
-  && cd ./third_party/protobuf && make install && cd ../../../ \
-  && rm -rf ./grpc
-
 # install MultiChain
 ENV MULTICHAIN_VERSION="2.0.2"
 RUN wget --output-document multichain.tar.gz --quiet https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz \
@@ -83,14 +72,15 @@ COPY ./paciofs-csi/pom.xml ./paciofs-csi/pom.xml
 COPY ./paciofs-client/pom.xml ./paciofs-client/pom.xml
 COPY ./paciofs-kubernetes/pom.xml ./paciofs-kubernetes/pom.xml
 COPY ./paciofs-server/pom.xml ./paciofs-server/pom.xml
-RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --define silent=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION}
+RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --define silent=true
 
 # build PacioFS
 COPY ./paciofs-csi ./paciofs-csi/
 COPY ./paciofs-client ./paciofs-client/
 COPY ./paciofs-kubernetes ./paciofs-kubernetes/
 COPY ./paciofs-server ./paciofs-server/
-RUN mvn --activate-profiles docker --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} clean install
+RUN mvn --file ./paciofs-client/third_party/pom.xml install
+RUN mvn --activate-profiles docker clean install
 
 # run PacioFS
 ENTRYPOINT [ "java", "-jar", "/paciofs/paciofs-server/target/paciofs-server-1.0.0-SNAPSHOT-allinone.jar" ]

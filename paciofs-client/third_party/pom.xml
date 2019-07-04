@@ -1,0 +1,106 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.zib.paciofs</groupId>
+        <artifactId>paciofs-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>..../</relativePath>
+    </parent>
+
+    <artifactId>paciofs-client-third-party</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>paciofs-client-third-party</name>
+
+    <packaging>pom</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>initialize-third-party</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>
+                                ${project.basedir}
+                            </workingDirectory>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>build_third_party.sh</argument>
+                                <argument>${grpc.version}</argument>
+                                <argument>${protobuf.version}</argument>
+                                <argument>initialize</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>compile-third-party</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>
+                                ${project.basedir}
+                            </workingDirectory>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>build_third_party.sh</argument>
+                                <argument>${grpc.version}</argument>
+                                <argument>${protobuf.version}</argument>
+                                <argument>compile</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>install-third-party</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>
+                                ${project.basedir}
+                            </workingDirectory>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>build_third_party.sh</argument>
+                                <argument>${grpc.version}</argument>
+                                <argument>${protobuf.version}</argument>
+                                <argument>install</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}</directory>
+                            <includes>
+                                <include>bin/</include>
+                                <include>grpc/</include>
+                                <include>include/</include>
+                                <include>lib/</include>
+                                <include>share/</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

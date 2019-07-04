@@ -24,8 +24,6 @@ matrix:
         - LOAD_FUSE_CMD="true"
         - MULTICHAIN_VERSION=2.0.2
         - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
-        - UMOUNT_CMD="fusermount"
-        - UMOUNT_OPTIONS="-u"
 
     - os: osx
       osx_image: xcode9.2
@@ -49,8 +47,6 @@ matrix:
         - MULTICHAIN_TAG=20190521T124426
         - MULTICHAIN_HASH=2bff381
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-${MULTICHAIN_HASH}-osx.tar.gz
-        - UMOUNT_CMD="diskutil"
-        - UMOUNT_OPTIONS="unmount"
 
     - os: linux
       dist: xenial
@@ -86,19 +82,6 @@ before_install:
   - export DEP_RELEASE_TAG="v0.5.0"
   - curl --silent https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-  # install gRPC, protoc headers and libraries
-  - export GRPC_VERSION="1.18.0"
-  - export PROTOBUF_VERSION="3.6.1"
-  - git clone --branch v$GRPC_VERSION https://github.com/grpc/grpc.git
-  - cd ./grpc && git submodule update --init
-  - cd ./third_party/protobuf && git checkout tags/v${PROTOBUF_VERSION} && cd ../../
-  # build static gRPC with embeddec c-ares and protobuf, use system ssl and z
-  - make HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false -j2 static plugins
-  - sudo make install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs
-  # need to install protoc and include files as well
-  - cd ./third_party/protobuf && sudo make install && cd ../../../
-  - rm -rf ./grpc
-
   # install MultiChain
   - wget --output-document multichain.tar.gz --quiet ${MULTICHAIN_URL}
   - sudo tar --directory /usr/local --extract --file multichain.tar.gz
@@ -109,44 +92,7 @@ before_install:
   - pip install --user pygments
 
 install:
-  - mvn install --define skipTests=true --define maven.javadoc.skip=true --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode --show-version
+  - mvn --file ./paciofs-client/third_party/pom.xml install
+  - mvn install --define skipTests=true --define maven.javadoc.skip=true --batch-mode --show-version
 
-script:
-  # generate TLS certificates
-  - cd ./paciofs-server/src/test/scripts && ./gen-certs.sh && cd ../../../../
-
-  # run tests
-  - mvn test --define protobuf.version=${PROTOBUF_VERSION} --define grpc.version=${GRPC_VERSION} --batch-mode
-
-  # start and stop PacioFS
-  - mvn --projects paciofs-server exec:java@run-server &
-  - MVN_PID=$!
-  - sleep 60s
-
-  # create and mount file system
-  - ./paciofs-client/target/Release/mkfs.paciofs localhost:8080 volume1 -d TRACE
-  - mkdir /tmp/mnt-volume1
-  - ./paciofs-client/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
-  - sleep 5s
-
-  # write file
-  - cp ./pom.xml /tmp/mnt-volume1
-  - sync
-
-  # remount to clear caches
-  - ${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
-  - ./paciofs-client/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
-  - sleep 5s
-
-  # files should not differ
-  - diff ./pom.xml /tmp/mnt-volume1/pom.xml; DIFF_EXIT=$?
-  - test "0" -eq "${DIFF_EXIT}"
-
-  # unmount
-  - ${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
-
-  # wait for everyting to shut down
-  - kill ${MVN_PID}; wait ${MVN_PID}; MVN_EXIT=$?
-
-  # JVM return code when sent SIGTERM
-  - test "143" -eq "${MVN_EXIT}"
+script: ./travis/test.sh

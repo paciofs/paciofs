@@ -99,7 +99,7 @@ install:
   - mvn --file ./paciofs-client/third_party/pom.xml install
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --batch-mode --show-version
 
-script: ./travis/test.sh
+script: ./.travis/test.sh
 
 after_success:
   # set the tag to enable deployment

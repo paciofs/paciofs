@@ -6,6 +6,12 @@ if [[ -z "${paciofs_version}" ]]; then
   exit 1
 fi
 
+paciofs_release=$2
+if [[ -z "${paciofs_release}" ]]; then
+  echo "No release given, aborting"
+  exit 1
+fi
+
 os=$(uname)
 if [[ "${os}" == "Linux" ]]; then
   readlink_cmd=readlink
@@ -15,7 +21,7 @@ fi
 current_dir=$(dirname $(${readlink_cmd} -f $0))
 
 # the directory we will put the necessary files in to build on OBS
-dist_dir=${current_dir}/dist
+dist_dir=${current_dir}/paciofs-${paciofs_version}
 rm -rf ${dist_dir}
 echo "Building distribution in ${dist_dir}"
 
@@ -41,7 +47,7 @@ for git_file in ${git_files}; do
 done
 
 # package the whole thing
-dist_archive=${current_dir}/paciofs_${paciofs_version}.orig.tar.gz
+dist_archive=${current_dir}/paciofs_${paciofs_version}-${paciofs_release}.orig.tar.gz
 
 # change to parent directory of dist_dir so we can have relative paths inside the archive
 tar czf ${dist_archive} -C $(dirname ${dist_dir}) $(basename ${dist_dir})

@@ -2,8 +2,14 @@
 
 paciofs_version=$1
 if [[ -z "${paciofs_version}" ]]; then
-	echo "No version given, aborting"
-	exit 1
+  echo "No version given, aborting"
+  exit 1
+fi
+
+paciofs_release=$2
+if [[ -z "${paciofs_release}" ]]; then
+  echo "No release given, aborting"
+  exit 1
 fi
 
 os=$(uname)
@@ -16,16 +22,18 @@ current_dir=$(dirname $(${readlink_cmd} -f $0))
 
 cp ${current_dir}/paciofs.dsc ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 cp ${current_dir}/debian.changelog ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/debian.compat ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 cp ${current_dir}/debian.control ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 cp ${current_dir}/debian.rules ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
-cp ${current_dir}/paciofs_${paciofs_version}.orig.tar.gz ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/paciofs_${paciofs_version}-${paciofs_release}.orig.tar.gz ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 
 cd ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 osc add ./paciofs.dsc
 osc add ./debian.changelog
+osc add ./debian.compat
 osc add ./debian.control
 osc add ./debian.rules
-osc add ./paciofs_${paciofs_version}.orig.tar.gz
+osc add ./paciofs_${paciofs_version}-${paciofs_release}.orig.tar.gz
 
-osc commit -m "PacioFS ${paciofs_version}" \
-  ./paciofs.dsc ./debian.changelog ./debian.control ./debian.rules ./paciofs_${paciofs_version}.orig.tar.gz
+osc commit -m "PacioFS ${paciofs_version}-${paciofs_release}" \
+  ./paciofs.dsc ./debian.changelog ./debian.compat ./debian.control ./debian.rules ./paciofs_${paciofs_version}-${paciofs_release}.orig.tar.gz

@@ -149,7 +149,7 @@
                                 <argument>-DPROTOBUF_VERSION=${protobuf.version}</argument>
                                 <argument>-DCMAKE_BUILD_TYPE=${build-type}</argument>
                                 <argument>-DCMAKE_MODULE_PATH=${project.basedir}/cmake/modules</argument>
-                                <argument>-DCMAKE_PREFIX_PATH=${project.basedir}/third_party/lib/pkgconfig</argument>
+                                <argument>-DCMAKE_PREFIX_PATH=${project.basedir}/third_party</argument>
                                 <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>

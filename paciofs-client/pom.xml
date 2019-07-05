@@ -16,6 +16,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <cmake>cmake</cmake>
         <boost.version>1.55.0</boost.version>
         <build-type>Release</build-type>
         <!-- as per fuse.h -->
@@ -140,7 +141,7 @@
                         </goals>
                         <configuration>
                             <workingDirectory>${project.build.directory}/${build-type}</workingDirectory>
-                            <executable>cmake</executable>
+                            <executable>${cmake}</executable>
                             <arguments>
                                 <argument>-DBOOST_MIN_VERSION=${boost.version}</argument>
                                 <argument>-DFUSE_VERSION=${fuse.version}</argument>

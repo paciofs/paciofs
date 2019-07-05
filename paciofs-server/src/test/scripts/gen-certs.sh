@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! -e "$(pwd)/gen-certs.sh" ]; then
+if [[ ! -e "$(pwd)/gen-certs.sh" ]]; then
   echo "Must be run from this directory"
   exit 1
 fi

@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # figure out current directory
-OS=$(uname)
-if [[ "$OS" == "Linux" ]]; then
-  READLINK=readlink
-elif [[ "$OS" == "Darwin" ]]; then
-  READLINK=greadlink
+os=$(uname)
+if [[ "${os}" == "Linux" ]]; then
+  readlink_cmd=readlink
+elif [[ "${os}" == "Darwin" ]]; then
+  readlink_cmd=greadlink
 fi
-DIR=$(dirname $(READLINK -f $0))
+current_dir=$(dirname $(READLINK -f $0))
 
 docker-compose \
-  --file "${DIR}/docker-compose.yaml" \
+  --file "${current_dir}/docker-compose.yaml" \
   push paciofs

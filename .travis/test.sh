@@ -1,12 +1,12 @@
 #!/bin/bash
 
-OS=$(uname)
-if [[ "$OS" == "Linux" ]]; then
-  UMOUNT_CMD=fusermount
-  UMOUNT_OPTIONS=-u
-elif [[ "$OS" == "Darwin" ]]; then
-  UMOUNT_CMD=diskutil
-  UMOUNT_OPTIONS=unmount
+os=$(uname)
+if [[ "${os}" == "Linux" ]]; then
+  umount_cmd=fusermount
+  umount_options=-u
+elif [[ "${os}" == "Darwin" ]]; then
+  umount_cmd=diskutil
+  umount_options=unmount
 fi
 
 # generate TLS certificates
@@ -17,7 +17,7 @@ mvn test --batch-mode
 
 # start and stop PacioFS
 mvn --projects paciofs-server exec:java@run-server &
-MVN_PID=$!
+mvn_pid=$!
 sleep 60s
 
 # create and mount file system
@@ -31,19 +31,19 @@ cp ./pom.xml /tmp/mnt-volume1
 sync
 
 # remount to clear caches
-${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
+${umount_cmd} ${umount_options} /tmp/mnt-volume1
 ./paciofs-client/target/Release/mount.paciofs localhost:8080 /tmp/mnt-volume1 volume1 -o default_permissions -o fsname=paciofs -o noatime -d TRACE &
 sleep 5s
 
 # files should not differ
-diff ./pom.xml /tmp/mnt-volume1/pom.xml; DIFF_EXIT=$?
-test "0" -eq "${DIFF_EXIT}"
+diff ./pom.xml /tmp/mnt-volume1/pom.xml; diff_exit=$?
+test "0" -eq "${diff_exit}"
 
 # unmount
-${UMOUNT_CMD} ${UMOUNT_OPTIONS} /tmp/mnt-volume1
+${umount_cmd} ${umount_options} /tmp/mnt-volume1
 
 # wait for everyting to shut down
-kill ${MVN_PID}; wait ${MVN_PID}; MVN_EXIT=$?
+kill ${mvn_pid}; wait ${mvn_pid}; mvn_exit=$?
 
 # JVM return code when sent SIGTERM
-test "143" -eq "${MVN_EXIT}"
+test "143" -eq "${mvn_exit}"

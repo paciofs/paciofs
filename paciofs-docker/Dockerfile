@@ -77,6 +77,7 @@ RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --defi
 # install parent pom only first
 RUN mvn --non-recursive install
 
+# compile third party libraries, relying on the installed parent pom
 COPY ./dist/paciofs-client/third_party ./paciofs-client/third_party/
 RUN mvn --file ./paciofs-client/third_party/pom.xml install
 

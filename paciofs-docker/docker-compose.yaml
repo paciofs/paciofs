@@ -2,10 +2,8 @@ version: "3"
 services:
   paciofs:
     build:
-      # allows us to copy our sibling directories
-      context: ..
-      # relative to context
-      dockerfile: paciofs-docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     image: paciofs/paciofs:latest
     ports:
       # http

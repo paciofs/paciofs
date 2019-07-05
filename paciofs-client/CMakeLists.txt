@@ -5,9 +5,6 @@ set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
-# contains our own module to find fuse
-list (APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
-
 # we only need filesystem, log, program_options
 # the others are static dependencies of these three
 set (Boost_USE_STATIC_LIBS "ON")

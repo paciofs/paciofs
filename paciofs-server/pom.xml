@@ -392,9 +392,8 @@
                         </goals>
                         <configuration>
                             <workingDirectory>${project.basedir}</workingDirectory>
-                            <executable>${project.basedir}/src/main/scripts/protoc.sh</executable>
+                            <executable>${project.basedir}/../paciofs-client/third_party/bin/protoc.sh</executable>
                             <arguments>
-                                <argument>${protobuf.protoc}</argument>
                                 <argument>${project.basedir}/src/main/proto</argument>
                                 <argument>--proto_path=${project.basedir}/src/main/proto</argument>
                                 <argument>--spotbugsexcl_out=${project.build.directory}</argument>
@@ -412,9 +411,8 @@
                         </goals>
                         <configuration>
                             <workingDirectory>${project.basedir}</workingDirectory>
-                            <executable>${project.basedir}/src/main/scripts/protoc.sh</executable>
+                            <executable>${project.basedir}/../paciofs-client/third_party/bin/protoc.sh</executable>
                             <arguments>
-                                <argument>${protobuf.protoc}</argument>
                                 <argument>${project.basedir}/src/main/proto</argument>
                                 <argument>--proto_path=${project.basedir}/src/main/proto</argument>
                                 <argument>--java_out=${project.build.directory}/generated-sources/akka-grpc-java</argument>

@@ -67,21 +67,25 @@ ENV MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
 # install PacioFS dependencies
 WORKDIR /paciofs
-COPY ./pom.xml ./pom.xml
-COPY ./paciofs-csi/pom.xml ./paciofs-csi/pom.xml
-COPY ./paciofs-client/pom.xml ./paciofs-client/pom.xml
-COPY ./paciofs-kubernetes/pom.xml ./paciofs-kubernetes/pom.xml
-COPY ./paciofs-server/pom.xml ./paciofs-server/pom.xml
+COPY ./dist/pom.xml ./pom.xml
+COPY ./dist/paciofs-csi/pom.xml ./paciofs-csi/pom.xml
+COPY ./dist/paciofs-client/pom.xml ./paciofs-client/pom.xml
+COPY ./dist/paciofs-kubernetes/pom.xml ./paciofs-kubernetes/pom.xml
+COPY ./dist/paciofs-server/pom.xml ./paciofs-server/pom.xml
 RUN mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline --define silent=true
 
-# build PacioFS
-COPY ./paciofs-csi ./paciofs-csi/
-COPY ./paciofs-client ./paciofs-client/
-COPY ./paciofs-kubernetes ./paciofs-kubernetes/
-COPY ./paciofs-server ./paciofs-server/
+# install parent pom only first
 RUN mvn --non-recursive install
+
+COPY ./dist/paciofs-client/third_party ./paciofs-client/third_party/
 RUN mvn --file ./paciofs-client/third_party/pom.xml install
-RUN mvn --activate-profiles docker clean install
+
+# build PacioFS
+COPY ./dist/paciofs-csi ./paciofs-csi/
+COPY ./dist/paciofs-client ./paciofs-client/
+COPY ./dist/paciofs-kubernetes ./paciofs-kubernetes/
+COPY ./dist/paciofs-server ./paciofs-server/
+RUN mvn --activate-profiles docker install
 
 # run PacioFS
 ENTRYPOINT [ "java", "-jar", "/paciofs/paciofs-server/target/paciofs-server-1.0.0-SNAPSHOT-allinone.jar" ]

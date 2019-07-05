@@ -92,6 +92,7 @@ before_install:
   - pip install --user pygments
 
 install:
+  # install parent pom only first
   - mvn --non-recursive install
   - mvn --file ./paciofs-client/third_party/pom.xml install
   - mvn install --define skipTests=true --define maven.javadoc.skip=true --batch-mode --show-version

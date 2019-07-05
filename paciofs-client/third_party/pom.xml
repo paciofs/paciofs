@@ -34,9 +34,9 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>build_third_party.sh</argument>
+                                <argument>initialize</argument>
                                 <argument>${grpc.version}</argument>
                                 <argument>${protobuf.version}</argument>
-                                <argument>initialize</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -54,9 +54,8 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>build_third_party.sh</argument>
-                                <argument>${grpc.version}</argument>
-                                <argument>${protobuf.version}</argument>
                                 <argument>compile</argument>
+                                <argument>${build.parallelism}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -74,8 +73,6 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>build_third_party.sh</argument>
-                                <argument>${grpc.version}</argument>
-                                <argument>${protobuf.version}</argument>
                                 <argument>install</argument>
                             </arguments>
                         </configuration>
@@ -91,7 +88,8 @@
                         <fileset>
                             <directory>${project.basedir}</directory>
                             <includes>
-                                <include>bin/</include>
+                                <include>bin/grpc_*_plugin</include>
+                                <include>bin/protoc</include>
                                 <include>grpc/</include>
                                 <include>include/</include>
                                 <include>lib/</include>

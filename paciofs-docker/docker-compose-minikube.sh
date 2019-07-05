@@ -7,17 +7,17 @@ usage() {
   echo "  --no-clean (default: not specified)"
 }
 
-COMPOSE_OPTIONS=""
-BUILD_OPTIONS=""
+compose_options=""
+build_options=""
 while [[ $# -gt 0 ]]; do
   key="$1"
-  case $key in
+  case ${key} in
     --log-level)
-      COMPOSE_OPTIONS="${COMPOSE_OPTIONS} --log-level $2"
+      compose_options="${compose_options} --log-level $2"
       shift
       ;;
     --no-cache)
-      BUILD_OPTIONS="${BUILD_OPTIONS} --no-cache"
+      build_options="${build_options} --no-cache"
       ;;
     *)
       echo "Invalid argument detected."
@@ -28,15 +28,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 # figure out current directory
-OS=$(uname)
-if [[ "$OS" == "Linux" ]]; then
-  READLINK=readlink
-elif [[ "$OS" == "Darwin" ]]; then
-  READLINK=greadlink
+os=$(uname)
+if [[ "${os}" == "Linux" ]]; then
+  readlink_cmd=readlink
+elif [[ "${os}" == "Darwin" ]]; then
+  readlink_cmd=greadlink
 fi
-DIR=$(dirname $(READLINK -f $0))
+current_dir=$(dirname $(${readlink_cmd} -f $0))
 
-if [ -z "${DOCKER_HOST}" ]; then
+if [[ -z "${DOCKER_HOST}" ]]; then
   echo "This does not look like a minikube environment, did you run 'eval \$(minikube docker-env)'?"
 fi
 
@@ -44,9 +44,14 @@ fi
 echo "Setting minikube environment"
 eval $(minikube docker-env)
 
+# build lean distribution
+echo "Building distribution"
+rm -rf ${current_dir}/dist
+${current_dir}/make_dist.sh "${current_dir}/dist"
+
 # redirect to minikube Docker daemon
 docker-compose --host "${DOCKER_HOST}" \
   --tls --tlscacert "${DOCKER_CERT_PATH}/ca.pem" --tlscert "${DOCKER_CERT_PATH}/cert.pem" --tlskey "${DOCKER_CERT_PATH}/key.pem" --tlsverify \
-  --file "${DIR}/docker-compose.yaml" \
-  ${COMPOSE_OPTIONS} \
-  build ${BUILD_OPTIONS}
+  --file "${current_dir}/docker-compose.yaml" \
+  ${compose_options} \
+  build ${build_options}

@@ -34,7 +34,7 @@ mvn --file ${dist_dir}/paciofs-client/third_party/pom.xml initialize
 # the OBS build VMs are offline, so copy necessary dependencies to distribution
 mkdir ${dist_dir}/maven-repository
 mvn --file ${dist_dir}/pom.xml \
-  --projects paciofs-client,paciofs-server \
+  --projects paciofs-client \
   --activate-profiles docker \
   org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline \
   --define maven.repo.local=${dist_dir}/maven-repository \

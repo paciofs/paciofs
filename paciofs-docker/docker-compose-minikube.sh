@@ -44,6 +44,11 @@ fi
 echo "Setting minikube environment"
 eval $(minikube docker-env)
 
+# build lean distribution
+echo "Building distribution"
+rm -rf ${current_dir}/dist
+${current_dir}/make_dist.sh "${current_dir}/dist"
+
 # redirect to minikube Docker daemon
 docker-compose --host "${DOCKER_HOST}" \
   --tls --tlscacert "${DOCKER_CERT_PATH}/ca.pem" --tlscert "${DOCKER_CERT_PATH}/cert.pem" --tlskey "${DOCKER_CERT_PATH}/key.pem" --tlsverify \

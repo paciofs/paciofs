@@ -10,15 +10,28 @@ cd ..
 
 # the directory we will put the necessary files in to build on OBS
 DIST_DIR=$(mktemp -d -t paciofs.XXXXXX)
+echo "Building distribution in ${DIST_DIR}"
 
 # the OBS build VMs are offline, so copy necessary dependencies to distribution
+mkdir ${DIST_DIR}/maven-repository
 mvn --file ./paciofs-client/pom.xml \
+  --activate-profiles docker \
   package org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline \
-  --define maven.repo.local=./paciofs-obs/repository \
+  --define maven.repo.local=${DIST_DIR}/maven-repository \
   --define skipTests=true
 
-# clean source tree
-mvn --projects paciofs-client clean
-mvn --file ./paciofs-client/third_party/pom.xml clean initialize
+# create lean distribution
+./paciofs-docker/make_dist.sh ${DIST_DIR}
 
-tar czf ./paciofs-obs/paciofs_${paciofs_version}.orig.tar.gz --exclude '.git' ./pom.xml ./paciofs-client ./paciofs-obs/repository
+# clone third parties into the distribution
+mvn --file ${DIST_DIR}/paciofs-client/third_party/pom.xml initialize
+
+DIST_ARCHIVE=$(pwd)/paciofs-obs/paciofs_${paciofs_version}.orig.tar.gz
+
+cd ${DIST_DIR}
+tar czf ${DIST_ARCHIVE} \
+  pom.xml \
+  paciofs-client \
+  maven-repository
+
+rm -rf ${DIST_DIR}

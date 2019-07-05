@@ -1,4 +1,5 @@
-bin/
+bin/grpc_*_plugin
+bin/protoc
 grpc/
 include/
 lib/

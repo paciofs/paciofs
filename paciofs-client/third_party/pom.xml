@@ -91,7 +91,8 @@
                         <fileset>
                             <directory>${project.basedir}</directory>
                             <includes>
-                                <include>bin/</include>
+                                <include>bin/grpc_*_plugin</include>
+                                <include>bin/protoc</include>
                                 <include>grpc/</include>
                                 <include>include/</include>
                                 <include>lib/</include>

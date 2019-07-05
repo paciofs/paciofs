@@ -17,9 +17,9 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-	mvn --offline --define maven.repo.local=./maven-repository --non-recursive install
-	mvn --offline --define maven.repo.local=./maven-repository --file ./paciofs-client/third_party/pom.xml install
-	mvn --define maven.repo.local=./maven-repository --projects paciofs-client install
+	mvn --offline --activate-profiles docker --define maven.repo.local=./maven-repository --non-recursive install
+	mvn --offline --activate-profiles docker --define maven.repo.local=./maven-repository --file ./paciofs-client/third_party/pom.xml install
+	mvn --offline --activate-profiles docker --define maven.repo.local=./maven-repository --projects paciofs-client install
 	# --- end custom part for compiling
 
 	touch build-stamp

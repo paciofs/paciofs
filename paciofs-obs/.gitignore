@@ -1,4 +1,5 @@
 debian.changelog
+dist/
 home:robert-schmidtke:paciofs/
 paciofs.dsc
 paciofs*.orig.tar.gz

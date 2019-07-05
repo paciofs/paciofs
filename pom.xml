@@ -38,7 +38,7 @@
         <java.target.version>1.8</java.target.version>
         <scala.version>2.12</scala.version>
 
-        <build.parallelism>4</build.parallelism>
+        <build.parallelism>8</build.parallelism>
         <checkstyle.skip>false</checkstyle.skip>
         <cppcheck.skip>false</cppcheck.skip>
         <format-sources.skip>false</format-sources.skip>

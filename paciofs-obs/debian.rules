@@ -12,14 +12,17 @@ else
 CFLAGS += -O2
 endif
 
+CMAKE:=./cmake-3.14.5-Linux-x86_64/bin/cmake
+MVN:=./apache-maven-3.6.1/bin/mvn
+
 build: build-stamp
 build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-	mvn --offline --activate-profiles docker --define maven.repo.local=./maven-repository --non-recursive install
-	mvn --offline --activate-profiles docker --define maven.repo.local=./maven-repository --file ./paciofs-client/third_party/pom.xml install
-	mvn --offline --activate-profiles docker --define maven.repo.local=./maven-repository --projects paciofs-client install
+	$(MVN) --offline --activate-profiles docker --define maven.repo.local=./maven-repository --non-recursive install
+	$(MVN) --offline --activate-profiles docker --define maven.repo.local=./maven-repository --file ./paciofs-client/third_party/pom.xml install
+	$(MVN) --offline --activate-profiles docker --define maven.repo.local=./maven-repository --define cmake=$(CMAKE) --projects paciofs-client install
 	# --- end custom part for compiling
 
 	touch build-stamp

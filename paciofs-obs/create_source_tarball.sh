@@ -46,10 +46,21 @@ for git_file in ${git_files}; do
   rm -rf ${git_file}
 done
 
+# ship maven
+wget http://mirror.23media.de/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.zip
+unzip apache-maven-3.6.1-bin.zip -d ${dist_dir}
+rm apache-maven-3.6.1-bin.zip
+
+# ship cmake
+wget https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz
+tar xf cmake-3.14.5-Linux-x86_64.tar.gz -C ${dist_dir}
+rm cmake-3.14.5-Linux-x86_64.tar.gz
+
 # package the whole thing
 dist_archive=${current_dir}/paciofs_${paciofs_version}-${paciofs_release}.orig.tar.gz
 
 # change to parent directory of dist_dir so we can have relative paths inside the archive
+echo "Creating ${dist_archive} ..."
 tar czf ${dist_archive} -C $(dirname ${dist_dir}) $(basename ${dist_dir})
 
 rm -rf ${dist_dir}

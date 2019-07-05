@@ -7,7 +7,7 @@ if [[ "${os}" == "Linux" ]]; then
 elif [[ "${os}" == "Darwin" ]]; then
   readlink_cmd=greadlink
 fi
-current_dir=$(dirname $(READLINK -f $0))
+current_dir=$(dirname $(${readlink_cmd} -f $0))
 
 if [[ -z "${DOCKER_HOST}" ]]; then
   echo "This does not look like a minikube environment, did you run 'eval \$(minikube docker-env)'?"

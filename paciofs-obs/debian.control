@@ -2,7 +2,7 @@ Source: paciofs
 Section: utils
 Priority: optional
 Maintainer: PacioFS Project <paciofs-dev@googlegroups.com>
-Build-Depends: debhelper (>= 4.1.16), autoconf, automake, build-essential, git, libboost-filesystem-dev (>= 1.55.0), libboost-log-dev (>= 1.55.0), libboost-program-options-dev (>= 1.55.0), libboost-system-dev (>= 1.55.0), libboost-date-time-dev (>= 1.55.0), libboost-thread-dev (>= 1.55.0), libboost-regex-dev (>= 1.55.0), libboost-chrono-dev (>= 1.55.0), libboost-atomic-dev (>= 1.55.0), libfuse-dev (>= 2.9.3), libssl-dev (>= 1.0.1), libtool, maven (>= 3.0.5), pkg-config, zlib1g-dev
+Build-Depends: debhelper (>= 4.1.16), autoconf, automake, build-essential, git, libboost-filesystem-dev (>= 1.55.0), libboost-log-dev (>= 1.55.0), libboost-program-options-dev (>= 1.55.0), libboost-system-dev (>= 1.55.0), libboost-date-time-dev (>= 1.55.0), libboost-thread-dev (>= 1.55.0), libboost-regex-dev (>= 1.55.0), libboost-chrono-dev (>= 1.55.0), libboost-atomic-dev (>= 1.55.0), libfuse-dev (>= 2.9.3), libssl-dev (>= 1.0.1), libtool, pkg-config, zlib1g-dev
 
 Package: paciofs-client
 Architecture: any

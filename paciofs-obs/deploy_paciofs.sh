@@ -1,18 +1,26 @@
 #!/bin/bash
 
 paciofs_version=$1
-if [ -z "$1" ]; then
+if [[ -z "${paciofs_version}" ]]; then
 	echo "No version given, aborting"
 	exit 1
 fi
 
-cp ./paciofs.dsc ./home\:robert-schmidtke\:paciofs/paciofs
-cp ./debian.changelog ./home\:robert-schmidtke\:paciofs/paciofs
-cp ./debian.control ./home\:robert-schmidtke\:paciofs/paciofs
-cp ./debian.rules ./home\:robert-schmidtke\:paciofs/paciofs
-cp ./paciofs_${paciofs_version}.orig.tar.gz ./home\:robert-schmidtke\:paciofs/paciofs
+os=$(uname)
+if [[ "${os}" == "Linux" ]]; then
+  readlink_cmd=readlink
+elif [[ "${os}" == "Darwin" ]]; then
+  readlink_cmd=greadlink
+fi
+current_dir=$(dirname $(${readlink_cmd} -f $0))
 
-cd ./home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/paciofs.dsc ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/debian.changelog ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/debian.control ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/debian.rules ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+cp ${current_dir}/paciofs_${paciofs_version}.orig.tar.gz ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
+
+cd ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 osc add ./paciofs.dsc
 osc add ./debian.changelog
 osc add ./debian.control

@@ -16,8 +16,10 @@
     <packaging>pom</packaging>
 
     <properties>
+        <cmake>cmake</cmake>
         <boost.version>1.55.0</boost.version>
         <build-type>Release</build-type>
+        <destdir></destdir>
         <!-- as per fuse.h -->
         <fuse.version>26</fuse.version>
         <grpc.protobuf-cpp-plugin>${project.parent.basedir}/paciofs-client/third_party/bin/grpc_cpp_plugin</grpc.protobuf-cpp-plugin>
@@ -140,7 +142,7 @@
                         </goals>
                         <configuration>
                             <workingDirectory>${project.build.directory}/${build-type}</workingDirectory>
-                            <executable>cmake</executable>
+                            <executable>${cmake}</executable>
                             <arguments>
                                 <argument>-DBOOST_MIN_VERSION=${boost.version}</argument>
                                 <argument>-DFUSE_VERSION=${fuse.version}</argument>
@@ -156,7 +158,7 @@
                     </execution>
 
                     <execution>
-                        <id>compile-fuse</id>
+                        <id>compile-client</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>exec</goal>
@@ -171,8 +173,8 @@
                     </execution>
 
                     <execution>
-                        <id>package-fuse</id>
-                        <phase>package</phase>
+                        <id>install-client</id>
+                        <phase>install</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -180,9 +182,9 @@
                             <workingDirectory>${project.build.directory}/${build-type}</workingDirectory>
                             <executable>make</executable>
                             <arguments>
-                                <argument>package</argument>
+                                <argument>DESTDIR=${destdir}</argument>
+                                <argument>install</argument>
                             </arguments>
-                            <skip>${package-fuse.skip}</skip>
                         </configuration>
                     </execution>
                 </executions>

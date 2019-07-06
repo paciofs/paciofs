@@ -169,28 +169,3 @@ install (
   TARGETS mkfs.paciofs mount.paciofs
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
-
-if (APPLE)
-  set (CPACK_GENERATOR "productbuild")
-else ()
-  set (CPACK_GENERATOR "DEB" "RPM")
-
-  # general package information
-  set (CPACK_PACKAGE_CONTACT "Zuse Institute Berlin")
-  set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Distributed, fault-tolerant and tamper-proof file system")
-  set (CPACK_PACKAGE_VENDOR "Zuse Institute Berlin")
-
-  # DEB-specific
-  set (CPACK_DEBIAN_PACKAGE_DEPENDS "\
-    fuse (>= 2.9.3), \
-    libssl1.1 \
-  ")
-
-  # RPM-specific
-  set (CPACK_RPM_PACKAGE_REQUIRES "\
-    fuse >= 2.9.3, \
-    libopenssl1_1 \
-  ")
-
-endif()
-include (CPack)

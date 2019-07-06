@@ -34,7 +34,10 @@ current_dir=$(dirname $(${readlink_cmd} -f $0))
 
 # the directory we will put the necessary files in to build on OBS
 dist_dir=${current_dir}/paciofs-${paciofs_version}
-rm -rf ${dist_dir}
+if [[ -e "${dist_dir}" ]]; then
+  echo "${dist_dir} exists"
+  exit 1
+fi
 echo "Building distribution in ${dist_dir}"
 
 # create lean distribution like in docker
@@ -74,5 +77,3 @@ dist_archive=${current_dir}/paciofs_${paciofs_version}-${paciofs_release}.orig.t
 # change to parent directory of dist_dir so we can have relative paths inside the archive
 echo "Creating ${dist_archive} ..."
 tar czf ${dist_archive} -C $(dirname ${dist_dir}) $(basename ${dist_dir})
-
-rm -rf ${dist_dir}

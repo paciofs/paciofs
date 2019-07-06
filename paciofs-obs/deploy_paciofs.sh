@@ -20,6 +20,11 @@ elif [[ "${os}" == "Darwin" ]]; then
 fi
 current_dir=$(dirname $(${readlink_cmd} -f $0))
 
+if [[ ! -e "${current_dir}/home:robert-schmidtke:paciofs" ]]; then
+  echo "Please run osc co home:robert-schmidtke:paciofs first"
+  exit 1
+fi
+
 cp ${current_dir}/paciofs.dsc ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 cp ${current_dir}/debian.changelog ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs
 cp ${current_dir}/debian.compat ${current_dir}/home\:robert-schmidtke\:paciofs/paciofs

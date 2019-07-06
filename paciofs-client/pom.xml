@@ -19,6 +19,7 @@
         <cmake>cmake</cmake>
         <boost.version>1.55.0</boost.version>
         <build-type>Release</build-type>
+        <destdir></destdir>
         <!-- as per fuse.h -->
         <fuse.version>26</fuse.version>
         <grpc.protobuf-cpp-plugin>${project.parent.basedir}/paciofs-client/third_party/bin/grpc_cpp_plugin</grpc.protobuf-cpp-plugin>
@@ -181,6 +182,7 @@
                             <workingDirectory>${project.build.directory}/${build-type}</workingDirectory>
                             <executable>make</executable>
                             <arguments>
+                                <argument>DESTDIR=${destdir}</argument>
                                 <argument>install</argument>
                             </arguments>
                         </configuration>

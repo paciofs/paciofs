@@ -12,18 +12,20 @@ else
 CFLAGS += -O2
 endif
 
-CMAKE:=./cmake-${CMAKE_VERSION}-Linux-x86_64/bin/cmake
-MVN:=./apache-maven-${MVN_VERSION}/bin/mvn
-JAVA_HOME:=/usr/lib/jvm/default-java
+CMAKE := ./cmake-${CMAKE_VERSION}-Linux-x86_64/bin/cmake
+MVN := ./apache-maven-${MVN_VERSION}/bin/mvn
+MVN_OPTS := --offline --activate-profiles docker --define maven.repo.local=./maven-repository
+JAVA_HOME := /usr/lib/jvm/default-java
+DESTDIR := /usr/src/packages/BUILD/debian/paciofs
 
 build: build-stamp
 build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-	$(MVN) --offline --activate-profiles docker --define maven.repo.local=./maven-repository --non-recursive install
-	$(MVN) --offline --activate-profiles docker --define maven.repo.local=./maven-repository --file ./paciofs-client/third_party/pom.xml install
-	$(MVN) --offline --activate-profiles docker --define maven.repo.local=./maven-repository --define cmake=$(CMAKE) --define skipTests=true --projects paciofs-client install
+	$(MVN) $(MVN_OPTS) --non-recursive install
+	$(MVN) $(MVN_OPTS) --file ./paciofs-client/third_party/pom.xml install
+	$(MVN) $(MVN_OPTS) --define cmake=$(CMAKE) --define skipTests=true --projects paciofs-client compile
 	# --- end custom part for compiling
 
 	touch build-stamp
@@ -46,6 +48,7 @@ install: build
 
 	# Add here commands to install the package
 	# The DESTDIR Has To Be Exactly  /usr/src/packages/BUILD/debian/<nameOfPackage>
+	$(MVN) $(MVN_OPTS) --define cmake=$(CMAKE) --define skipTests=true --projects paciofs-client install
 	# --- end custom part for installing
 
 # Build architecture-independent files here.

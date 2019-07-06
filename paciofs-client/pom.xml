@@ -157,7 +157,7 @@
                     </execution>
 
                     <execution>
-                        <id>compile-fuse</id>
+                        <id>compile-client</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>exec</goal>
@@ -167,6 +167,21 @@
                             <executable>make</executable>
                             <arguments>
                                 <argument>-j${build.parallelism}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>install-client</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.build.directory}/${build-type}</workingDirectory>
+                            <executable>make</executable>
+                            <arguments>
+                                <argument>install</argument>
                             </arguments>
                         </configuration>
                     </execution>

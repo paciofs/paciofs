@@ -31,3 +31,5 @@ paciofs_release_date=$(date -R)
 
 PACIOFS_VERSION=${paciofs_version}-${paciofs_release} PACIOFS_TARBALL_MD5SUM=${paciofs_tarball_md5sum} PACIOFS_TARBALL_SIZE=${paciofs_tarball_size} envsubst < ${current_dir}/paciofs.dsc.template > ${current_dir}/paciofs.dsc
 PACIOFS_VERSION=${paciofs_version}-${paciofs_release} PACIOFS_RELEASE_DATE=${paciofs_release_date} envsubst < ${current_dir}/debian.changelog.template > ${current_dir}/debian.changelog
+
+CMAKE_VERSION=${cmake_version} MVN_VERSION=${mvn_version} envsubst < ${current_dir}/debian.rules.template > ${current_dir}/debian.rules

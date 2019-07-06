@@ -1,4 +1,5 @@
 debian.changelog
+debian.rules
 paciofs-1.0.0/
 home:robert-schmidtke:paciofs/
 paciofs.dsc

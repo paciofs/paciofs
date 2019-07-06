@@ -101,7 +101,7 @@
                                 <include>debian.changelog</include>
                                 <include>debian.rules</include>
                                 <include>paciofs.dsc</include>
-                                <include>paciofs-${project.version}</include>
+                                <include>paciofs-${project.version}/</include>
                                 <include>paciofs_${project.version}-${release-number}.orig.tar.gz</include>
                             </includes>
                         </fileset>

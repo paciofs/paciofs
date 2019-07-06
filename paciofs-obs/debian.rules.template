@@ -47,7 +47,7 @@ install: build
 
 	# Add here commands to install the package
 	# The DESTDIR Has To Be Exactly  /usr/src/packages/BUILD/debian/<nameOfPackage>
-	$(MVN) $(MVN_OPTS) --define cmake=$(CMAKE) --define destdir=/usr/src/packages/BUILD/debian/paciofs --define skipTests=true --projects paciofs-client install
+	$(MVN) $(MVN_OPTS) --define cmake=$(CMAKE) --define destdir=/usr/src/packages/BUILD/debian/paciofs-client --define skipTests=true --projects paciofs-client install
 	# --- end custom part for installing
 
 # Build architecture-independent files here.

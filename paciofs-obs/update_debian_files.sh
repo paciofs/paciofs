@@ -12,6 +12,18 @@ if [[ -z "${paciofs_release}" ]]; then
   exit 1
 fi
 
+cmake_version=$3
+if [[ -z "${cmake_version}" ]]; then
+  echo "No cmake version given, aborting"
+  exit 1
+fi
+
+mvn_version=$4
+if [[ -z "${mvn_version}" ]]; then
+  echo "No mvn version given, aborting"
+  exit 1
+fi
+
 os=$(uname)
 if [[ "${os}" == "Linux" ]]; then
   stat_format=("--format" "%s")

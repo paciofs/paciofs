@@ -12,6 +12,18 @@ if [[ -z "${paciofs_release}" ]]; then
   exit 1
 fi
 
+cmake_version=$3
+if [[ -z "${cmake_version}" ]]; then
+  echo "No cmake version given, aborting"
+  exit 1
+fi
+
+mvn_version=$4
+if [[ -z "${mvn_version}" ]]; then
+  echo "No mvn version given, aborting"
+  exit 1
+fi
+
 os=$(uname)
 if [[ "${os}" == "Linux" ]]; then
   readlink_cmd=readlink
@@ -46,15 +58,15 @@ for git_file in ${git_files}; do
   rm -rf ${git_file}
 done
 
-# ship maven
-wget http://mirror.23media.de/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.zip
-unzip apache-maven-3.6.1-bin.zip -d ${dist_dir}
-rm apache-maven-3.6.1-bin.zip
-
 # ship cmake
-wget https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz
-tar xf cmake-3.14.5-Linux-x86_64.tar.gz -C ${dist_dir}
-rm cmake-3.14.5-Linux-x86_64.tar.gz
+wget https://github.com/Kitware/CMake/releases/download/v${cmake_version}/cmake-${cmake_version}-Linux-x86_64.tar.gz
+tar xf cmake-${cmake_version}-Linux-x86_64.tar.gz -C ${dist_dir}
+rm cmake-${cmake_version}-Linux-x86_64.tar.gz
+
+# ship maven
+wget https://www-eu.apache.org/dist/maven/maven-3/${mvn_version}/binaries/apache-maven-${mvn_version}-bin.zip
+unzip apache-maven-${mvn_version}-bin.zip -d ${dist_dir}
+rm apache-maven-${mvn_version}-bin.zip
 
 # package the whole thing
 dist_archive=${current_dir}/paciofs_${paciofs_version}-${paciofs_release}.orig.tar.gz

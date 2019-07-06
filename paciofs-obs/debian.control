@@ -6,6 +6,6 @@ Build-Depends: debhelper (>= 4.1.16), autoconf, automake, build-essential, defau
 
 Package: paciofs-client
 Architecture: any
-Depends: ${shlib:Depends}, fuse (>= 2.9.3)
+Depends: ${shlib:Depends}, fuse (>= 2.9.3), libssl1.0.0 (>= 1.0.1) | libssl1.0.2 | libssl1.1, zlib1g
 Description: PacioFS client utilities
  Utilities for creating and mounting PacioFS.

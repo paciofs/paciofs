@@ -33,8 +33,13 @@
                             </workingDirectory>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>config-kubernetes.sh</argument>
+                                <argument>${project.basedir}/envsubst.sh</argument>
+                                <argument>${project.basedir}/paciofs.yaml.template</argument>
+                                <argument>${project.basedir}/paciofs-kubernetes.yaml</argument>
                             </arguments>
+                            <environmentVariables>
+                                <IMAGE_PULL_POLICY>Always</IMAGE_PULL_POLICY>
+                            </environmentVariables>
                         </configuration>
                     </execution>
 
@@ -50,8 +55,13 @@
                             </workingDirectory>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>config-minikube.sh</argument>
+                                <argument>${project.basedir}/envsubst.sh</argument>
+                                <argument>${project.basedir}/paciofs.yaml.template</argument>
+                                <argument>${project.basedir}/paciofs-minikube.yaml</argument>
                             </arguments>
+                            <environmentVariables>
+                                <IMAGE_PULL_POLICY>Never</IMAGE_PULL_POLICY>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>

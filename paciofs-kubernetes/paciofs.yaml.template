@@ -50,7 +50,7 @@ spec:
       containers:
       - name: paciofs
         image: paciofs/paciofs
-        imagePullPolicy: $IMAGE_PULL_POLICY
+        imagePullPolicy: ${IMAGE_PULL_POLICY}
         ports:
         - name: http
           containerPort: 8080

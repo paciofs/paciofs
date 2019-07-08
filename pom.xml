@@ -30,6 +30,15 @@
         <module>paciofs-client</module>
         <module>paciofs-csi</module>
         <module>paciofs-kubernetes</module>
+        <!-- do not include the following modules in regular lifecycle -->
+
+        <!-- third_party is only built once and does not need to be cleaned/rebuilt -->
+        <!-- invoke with: mvn -f ./paciofs-client/third_party/pom.xml clean install -->
+        <!-- <module>paciofs-client/third_party</module> -->
+
+        <!-- paciofs-obs only needs to be run for deployment -->
+        <!-- invoke with: mvn -f ./paciofs-obs/pom.xml clean deploy -->
+        <!-- <module>paciofs-obs</module> -->
     </modules>
 
     <properties>

@@ -41,7 +41,7 @@ fi
 echo "Building distribution in ${dist_dir}"
 
 # create lean distribution like in docker
-${current_dir}/../paciofs-docker/make_dist.sh ${dist_dir}
+${current_dir}/../paciofs-docker/create_clean_source_distribution.sh ${dist_dir}
 
 # clone third parties into the distribution
 mvn --file ${dist_dir}/paciofs-client/third_party/pom.xml initialize

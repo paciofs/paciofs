@@ -55,7 +55,7 @@ matrix:
       before_install: true
       install: true
       script:
-        - ./paciofs-docker/make_dist.sh ./paciofs-docker/dist
+        - ./paciofs-docker/create_clean_source_distribution.sh ./paciofs-docker/dist
         - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:

@@ -47,7 +47,7 @@ eval $(minikube docker-env)
 # build lean distribution
 echo "Building distribution"
 rm -rf ${current_dir}/dist
-${current_dir}/make_dist.sh "${current_dir}/dist"
+${current_dir}/create_clean_source_distribution.sh "${current_dir}/dist"
 
 # redirect to minikube Docker daemon
 docker-compose --host "${DOCKER_HOST}" \

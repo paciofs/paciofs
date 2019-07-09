@@ -32,8 +32,8 @@
     <properties>
         <akka.grpc.version>0.6.2</akka.grpc.version>
         <akka.http.version>10.1.8</akka.http.version>
-        <akka.management.version>0.20.0</akka.management.version>
-        <akka.version>2.5.19</akka.version>
+        <akka.management.version>1.0.1</akka.management.version>
+        <akka.version>2.5.23</akka.version>
         <bitcoin-rpc-client.version>f0d23f862d</bitcoin-rpc-client.version>
         <commons-cli.version>1.4</commons-cli.version>
         <commons-codec.version>1.12</commons-codec.version>

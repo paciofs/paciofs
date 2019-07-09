@@ -87,10 +87,6 @@ spec:
           periodSeconds: 10
           failureThreshold: 6
         env:
-        - name: KUBERNETES_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         - name: KUBERNETES_REPLICAS
           value: "1"
 ---

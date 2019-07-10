@@ -14,6 +14,7 @@ matrix:
           packages:
             - clang-format
             - cppcheck
+            - gettext
             - libboost-all-dev
             - libfuse-dev
       env:
@@ -36,6 +37,7 @@ matrix:
             - boost
             - clang-format
             - cppcheck
+            - gettext
           update: true
       env:
         - CMAKE_DIST=Darwin

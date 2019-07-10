@@ -15,6 +15,7 @@ RUN apt-get --quiet update \
   autoconf \
   automake \
   build-essential \
+  gettext \
   git \
   libboost-filesystem-dev \
   libboost-log-dev \

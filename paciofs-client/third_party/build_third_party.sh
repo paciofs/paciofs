@@ -43,11 +43,11 @@ fi
 
 if [[ "${goal}" == "compile" ]]; then
   cd ${third_party_dir}/grpc
-  make prefix=${third_party_dir} HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false PROTOBUF_CONFIG_OPTS="--prefix=${third_party_dir} --disable-maintainer-mode" -j${parallelism} --silent static plugins
+  CXXFLAGS="-Wno-error" make prefix=${third_party_dir} HAS_SYSTEM_CARES=false HAS_SYSTEM_PROTOBUF=false PROTOBUF_CONFIG_OPTS="--prefix=${third_party_dir} --disable-maintainer-mode" -j${parallelism} --silent static plugins
 fi
 
 if [[ "${goal}" == "install" ]]; then
   cd ${third_party_dir}/grpc
-  make prefix=${third_party_dir} --silent install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs
+  CXXFLAGS="-Wno-error" make prefix=${third_party_dir} --silent install-headers_c install-static_c install-headers_cxx install-static_cxx install-plugins install-certs
   cd ./third_party/protobuf && make --silent install
 fi

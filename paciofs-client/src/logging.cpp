@@ -52,33 +52,43 @@ std::istream& operator>>(std::istream& in, Level& out) {
 }
 
 void Initialize(Level level, std::string const& path) {
-  namespace bl = boost::log;
-  namespace ble = bl::expressions;
+  namespace log = boost::log;
+  namespace attributes = log::attributes;
+  namespace expressions = log::expressions;
+  namespace keywords = log::keywords;
 
   // no path or stdout means cout
   // stderr means cerr
   bool out = path.length() == 0 || "stdout" == path;
   bool err = !out && "stderr" == path;
   if (out || err) {
-    bl::add_console_log(
-        out ? std::cout : std::cerr, bl::keywords::filter = severity >= level,
-        bl::keywords::format =
-            ble::stream << "[" << severity << "] ["
-                        << ble::format_date_time<boost::posix_time::ptime>(
-                               "TimeStamp", "%Y-%m-%d %H:%M:%S")
-                        << "]: " << ble::smessage);
+    log::add_console_log(
+        out ? std::cout : std::cerr, keywords::filter = severity >= level,
+        keywords::format =
+            expressions::stream
+            << "["
+            << expressions::attr<attributes::current_thread_id::value_type>(
+                   "ThreadID")
+            << "] [" << severity << "] ["
+            << expressions::format_date_time<boost::posix_time::ptime>(
+                   "TimeStamp", "%Y-%m-%d %H:%M:%S")
+            << "]: " << expressions::smessage);
   } else {
-    bl::add_file_log(
-        bl::keywords::file_name = path, bl::keywords::auto_flush = true,
-        bl::keywords::filter = severity >= level,
-        bl::keywords::format =
-            ble::stream << "[" << severity << "] ["
-                        << ble::format_date_time<boost::posix_time::ptime>(
-                               "TimeStamp", "%Y-%m-%d %H:%M:%S")
-                        << "]: " << ble::smessage);
+    log::add_file_log(
+        keywords::file_name = path, keywords::auto_flush = true,
+        keywords::filter = severity >= level,
+        keywords::format =
+            expressions::stream
+            << "["
+            << expressions::attr<attributes::current_thread_id::value_type>(
+                   "ThreadID")
+            << "] [" << severity << "] ["
+            << expressions::format_date_time<boost::posix_time::ptime>(
+                   "TimeStamp", "%Y-%m-%d %H:%M:%S")
+            << "]: " << expressions::smessage);
   }
 
-  bl::add_common_attributes();
+  log::add_common_attributes();
 }
 
 Logger::Logger() : logger_(boost::log::sources::severity_logger<Level>()) {}
@@ -99,12 +109,12 @@ void Logger::Fatal(std::function<void(std::ostream&)> l) { Log(FATAL, l); }
 
 // calls the specified lambda with an output stream
 void Logger::Log(Level level, std::function<void(std::ostream&)> l) {
-  namespace bl = boost::log;
+  namespace log = boost::log;
 
-  bl::record record = logger_.open_record(bl::keywords::severity = level);
+  log::record record = logger_.open_record(log::keywords::severity = level);
   if (record) {
     // if we get here, we passed the filter
-    bl::record_ostream out(record);
+    log::record_ostream out(record);
     l(out.stream());
     out.flush();
     logger_.push_record(boost::move(record));

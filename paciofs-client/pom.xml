@@ -97,13 +97,14 @@
                             <workingDirectory>${project.basedir}/test/cppcheck</workingDirectory>
                             <executable>cppcheck</executable>
                             <arguments>
-                                <argument>--enable=all</argument>
+                                <argument>--enable=style,information,warning</argument>
                                 <argument>--force</argument>
                                 <argument>-I${project.basedir}/include</argument>
                                 <argument>-I${project.build.directory}/generated-sources/grpc</argument>
                                 <argument>-I${project.build.directory}/generated-sources/protobuf</argument>
                                 <argument>--library=std,protobuf</argument>
                                 <argument>--quiet</argument>
+                                <argument>--std=c++14</argument>
                                 <argument>--suppress=missingIncludeSystem</argument>
                                 <argument>--suppress=*:${project.build.directory}/generated-sources/*</argument>
                                 <argument>--verbose</argument>

@@ -23,20 +23,11 @@ namespace grpc {
 
 PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
                                    std::string const &volume_name,
-                                   bool async_writes)
-    : paciofs::grpc::RpcClient<PosixIoService>(target),
-      async_writes_(async_writes),
-      volume_name_(volume_name),
-      logger_(paciofs::logging::Logger()) {}
-
-PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
-                                   std::string const &volume_name,
                                    bool async_writes,
                                    std::string const &cert_chain,
                                    std::string const &private_key,
                                    std::string const &root_certs)
-    : paciofs::grpc::RpcClient<PosixIoService>(target, cert_chain, private_key,
-                                               root_certs),
+    : RpcClient<PosixIoService>(target, cert_chain, private_key, root_certs),
       async_writes_(async_writes),
       volume_name_(volume_name),
       logger_(paciofs::logging::Logger()) {}

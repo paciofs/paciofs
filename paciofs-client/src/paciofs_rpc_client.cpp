@@ -17,9 +17,6 @@
 namespace paciofs {
 namespace grpc {
 
-PacioFsRpcClient::PacioFsRpcClient(std::string const &target)
-    : RpcClient<PacioFsService>(target), logger_(paciofs::logging::Logger()) {}
-
 PacioFsRpcClient::PacioFsRpcClient(std::string const &target,
                                    std::string const &cert_chain,
                                    std::string const &private_key,

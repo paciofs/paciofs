@@ -43,8 +43,6 @@ class Options {
 
   std::string const& PemRootCerts() const;
 
-  bool Tls() const;
-
   bool Version() const;
 
  protected:

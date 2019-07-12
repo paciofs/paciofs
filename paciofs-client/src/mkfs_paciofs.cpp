@@ -60,11 +60,9 @@ int main(int argc, char *argv[]) {
 
   // client to talk to PacioFS service
   std::string const &endpoint = options.Endpoint();
-  paciofs::grpc::PacioFsRpcClient rpc_client =
-      options.Tls() ? paciofs::grpc::PacioFsRpcClient(
-                          endpoint, options.PemCertChain(),
-                          options.PemPrivateKey(), options.PemRootCerts())
-                    : paciofs::grpc::PacioFsRpcClient(endpoint);
+  paciofs::grpc::PacioFsRpcClient rpc_client(endpoint, options.PemCertChain(),
+                                             options.PemPrivateKey(),
+                                             options.PemRootCerts());
 
   // make sure we can talk to the service
   if (!rpc_client.Ping()) {

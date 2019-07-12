@@ -108,16 +108,10 @@ int main(int argc, char *argv[]) {
   }
 
   // client to talk to I/O service
-  bool async_writes = options.AsyncWrites();
   std::string const &endpoint = options.Endpoint();
-  std::string const &volume_name = options.VolumeName();
-  paciofs::io::posix::grpc::PosixIoRpcClient rpc_client =
-      options.Tls()
-          ? paciofs::io::posix::grpc::PosixIoRpcClient(
-                endpoint, volume_name, async_writes, options.PemCertChain(),
-                options.PemPrivateKey(), options.PemRootCerts())
-          : paciofs::io::posix::grpc::PosixIoRpcClient(endpoint, volume_name,
-                                                       async_writes);
+  paciofs::io::posix::grpc::PosixIoRpcClient rpc_client(
+      endpoint, options.VolumeName(), options.AsyncWrites(),
+      options.PemCertChain(), options.PemPrivateKey(), options.PemRootCerts());
 
   // make sure we can talk to the service
   if (!rpc_client.Ping()) {

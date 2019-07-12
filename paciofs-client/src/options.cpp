@@ -137,11 +137,6 @@ std::string const& Options::PemPrivateKey() const { return pem_private_key_; }
 
 std::string const& Options::PemRootCerts() const { return pem_root_certs_; }
 
-bool Options::Tls() const {
-  return tls_ || pem_cert_chain_.length() > 0 ||
-         pem_private_key_.length() > 0 || pem_root_certs_.length() > 0;
-}
-
 bool Options::Version() const { return version_; }
 
 }  // namespace options

@@ -19,10 +19,6 @@ namespace grpc {
 
 class PacioFsRpcClient : public RpcClient<PacioFsService> {
  public:
-  // uses insecure channel credentials
-  explicit PacioFsRpcClient(std::string const& target);
-
-  // uses TLS
   explicit PacioFsRpcClient(std::string const& target,
                             std::string const& cert_chain,
                             std::string const& private_key,

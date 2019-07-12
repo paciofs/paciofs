@@ -17,17 +17,12 @@ namespace grpc {
 template <typename Service>
 class RpcClient {
  public:
-  // uses insecure channel credentials
-  explicit RpcClient(std::string const& target);
-
-  // uses TLS
+  // uses TLS if given paths, insecure credentials otherwise
   explicit RpcClient(std::string const& target, std::string const& cert_chain,
                      std::string const& private_key,
                      std::string const& root_certs);
 
  private:
-  explicit RpcClient(std::shared_ptr<::grpc::Channel> channel);
-
   std::string ReadPem(std::string const& path);
 
   void CreateMetadata();

@@ -21,37 +21,35 @@ namespace paciofs {
 namespace grpc {
 
 template <typename Service>
-RpcClient<Service>::RpcClient(std::string const &target)
-    : RpcClient(
-          ::grpc::CreateChannel(target, ::grpc::InsecureChannelCredentials())) {
-  CreateMetadata();
-}
-
-template <typename Service>
 RpcClient<Service>::RpcClient(std::string const &target,
                               std::string const &cert_chain,
                               std::string const &private_key,
                               std::string const &root_certs) {
   ::grpc::SslCredentialsOptions ssl;
+  bool use_ssl = false;
   if (cert_chain.length() > 0) {
     ssl.pem_cert_chain = ReadPem(cert_chain);
+    use_ssl = true;
   }
   if (private_key.length() > 0) {
     ssl.pem_private_key = ReadPem(private_key);
+    use_ssl = true;
   }
   if (root_certs.length() > 0) {
     ssl.pem_root_certs = ReadPem(root_certs);
+    use_ssl = true;
   }
 
   CreateMetadata();
 
-  stub_ = Service::NewStub(
-      ::grpc::CreateChannel(target, ::grpc::SslCredentials(ssl)));
+  if (use_ssl) {
+    stub_ = Service::NewStub(
+        ::grpc::CreateChannel(target, ::grpc::SslCredentials(ssl)));
+  } else {
+    stub_ = Service::NewStub(
+        ::grpc::CreateChannel(target, ::grpc::InsecureChannelCredentials()));
+  }
 }
-
-template <typename Service>
-RpcClient<Service>::RpcClient(std::shared_ptr<::grpc::Channel> channel)
-    : stub_(Service::NewStub(channel)) {}
 
 template <typename Service>
 std::string RpcClient<Service>::ReadPem(std::string const &path) {

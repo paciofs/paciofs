@@ -23,6 +23,8 @@ class MountOptions : public paciofs::options::Options {
 
   ~MountOptions();
 
+  bool AsyncWrites() const;
+
   std::vector<std::string> const& FuseOptions() const;
 
   std::string const& MountPoint() const;
@@ -30,6 +32,7 @@ class MountOptions : public paciofs::options::Options {
   std::string const& VolumeName() const;
 
  private:
+  bool async_writes_;
   std::vector<std::string> fuse_options_;
   std::string mount_point_;
   std::string volume_name_;

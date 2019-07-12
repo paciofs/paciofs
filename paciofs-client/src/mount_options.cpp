@@ -20,12 +20,17 @@ namespace options {
 
 MountOptions::MountOptions()
     : paciofs::options::Options(),
+      async_writes_(false),
       fuse_options_(std::vector<std::string>()),
       mount_point_(""),
       volume_name_("") {
   namespace bpo = boost::program_options;
 
   bpo::options_description mount_options("Mount Options");
+
+  mount_options.add_options()(
+      "async-writes", bpo::bool_switch(&async_writes_),
+      "whether to return immediately after a write operation");
 
   // default fuse options
   fuse_options_.push_back("allow_other");
@@ -69,6 +74,8 @@ MountOptions::MountOptions()
 }
 
 MountOptions::~MountOptions() {}
+
+bool MountOptions::AsyncWrites() const { return async_writes_; }
 
 std::vector<std::string> const& MountOptions::FuseOptions() const {
   return fuse_options_;

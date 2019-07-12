@@ -24,11 +24,11 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
  public:
   // uses insecure channel credentials
   explicit PosixIoRpcClient(std::string const& target,
-                            std::string const& volume_name);
+                            std::string const& volume_name, bool async_writes);
 
   // uses TLS
   explicit PosixIoRpcClient(std::string const& target,
-                            std::string const& volume_name,
+                            std::string const& volume_name, bool async_writes,
                             std::string const& cert_chain,
                             std::string const& private_key,
                             std::string const& root_certs);
@@ -76,6 +76,7 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
 
   std::string const PrefixVolumeName(std::string const& path) const;
 
+  bool async_writes_;
   std::string volume_name_;
   paciofs::logging::Logger logger_;
 };

@@ -41,7 +41,7 @@ bool PosixIoRpcClient::Ping() {
   PingResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->Ping(&context, request, &response);
+  ::grpc::Status status = Stub()->Ping(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -70,7 +70,7 @@ messages::Errno PosixIoRpcClient::Stat(std::string const &path,
   StatResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->Stat(&context, request, &response);
+  ::grpc::Status status = Stub()->Stat(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -110,7 +110,7 @@ messages::Errno PosixIoRpcClient::MkNod(std::string const &path,
   MkNodResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->MkNod(&context, request, &response);
+  ::grpc::Status status = Stub()->MkNod(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -142,7 +142,7 @@ messages::Errno PosixIoRpcClient::MkDir(std::string const &path,
   MkDirResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->MkDir(&context, request, &response);
+  ::grpc::Status status = Stub()->MkDir(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -174,7 +174,7 @@ messages::Errno PosixIoRpcClient::ChMod(std::string const &path,
   ChModResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->ChMod(&context, request, &response);
+  ::grpc::Status status = Stub()->ChMod(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -208,7 +208,7 @@ messages::Errno PosixIoRpcClient::ChOwn(std::string const &path,
   ChOwnResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->ChOwn(&context, request, &response);
+  ::grpc::Status status = Stub()->ChOwn(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -241,7 +241,7 @@ messages::Errno PosixIoRpcClient::Open(std::string const &path,
   OpenResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->Open(&context, request, &response);
+  ::grpc::Status status = Stub()->Open(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -285,7 +285,7 @@ messages::Errno PosixIoRpcClient::Read(std::string const &path, char *buf,
   ReadResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->Read(&context, request, &response);
+  ::grpc::Status status = Stub()->Read(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -335,7 +335,7 @@ messages::Errno PosixIoRpcClient::Write(std::string const &path,
   WriteResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->Write(&context, request, &response);
+  ::grpc::Status status = Stub()->Write(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -372,7 +372,7 @@ messages::Errno PosixIoRpcClient::ReadDir(std::string const &path,
   ReadDirResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->ReadDir(&context, request, &response);
+  ::grpc::Status status = Stub()->ReadDir(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {
@@ -416,7 +416,7 @@ messages::Errno PosixIoRpcClient::Create(std::string const &path,
   CreateResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
-  ::grpc::Status status = stub_->Create(&context, request, &response);
+  ::grpc::Status status = Stub()->Create(&context, request, &response);
 
   if (status.ok()) {
     logger_.Trace([request, response](auto &out) {

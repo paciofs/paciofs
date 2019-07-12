@@ -31,8 +31,10 @@ class RpcClient {
   std::string metadata_user_;
   std::string metadata_group_;
 
- protected:
   std::unique_ptr<typename Service::Stub> stub_;
+
+ protected:
+  std::unique_ptr<typename Service::Stub> const& Stub();
 
   void SetMetadata(::grpc::ClientContext& context);
 };

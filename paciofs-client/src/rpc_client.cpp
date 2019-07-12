@@ -68,6 +68,11 @@ void RpcClient<Service>::CreateMetadata() {
 }
 
 template <typename Service>
+std::unique_ptr<typename Service::Stub> const &RpcClient<Service>::Stub() {
+  return stub_;
+}
+
+template <typename Service>
 void RpcClient<Service>::SetMetadata(::grpc::ClientContext &context) {
   // We do not use call credentials because they get dropped automatically if
   // the channel is insecure for obvious reasons. So do not put any sensitive

@@ -29,8 +29,14 @@ PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
                                    std::string const &root_certs)
     : RpcClient<PosixIoService>(target, cert_chain, private_key, root_certs),
       async_writes_(async_writes),
+      async_write_completion_queue_(
+          std::make_unique<::grpc::CompletionQueue>()),
       volume_name_(volume_name),
       logger_(paciofs::logging::Logger()) {}
+
+PosixIoRpcClient::~PosixIoRpcClient() {
+  async_write_completion_queue_->Shutdown();
+}
 
 bool PosixIoRpcClient::Ping() {
   PingRequest request;

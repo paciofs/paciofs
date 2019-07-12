@@ -28,6 +28,8 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
                             std::string const& private_key,
                             std::string const& root_certs);
 
+  ~PosixIoRpcClient();
+
   bool Ping();
 
   messages::Errno Stat(std::string const& path, messages::Stat& stat);
@@ -72,6 +74,7 @@ class PosixIoRpcClient : public paciofs::grpc::RpcClient<PosixIoService> {
   std::string const PrefixVolumeName(std::string const& path) const;
 
   bool async_writes_;
+  std::unique_ptr<::grpc::CompletionQueue> async_write_completion_queue_;
   std::string volume_name_;
   paciofs::logging::Logger logger_;
 };

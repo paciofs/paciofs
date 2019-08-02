@@ -13,7 +13,7 @@
 
 #include <grpcpp/grpcpp.h>
 #include <sys/stat.h>
-#include <ctime>
+#include <future>
 #include <string>
 #include <vector>
 
@@ -33,10 +33,7 @@ PosixIoRpcClient::PosixIoRpcClient(std::string const &target,
       async_write_completion_queue_(
           std::make_unique<::grpc::CompletionQueue>()),
       volume_name_(volume_name),
-      logger_(paciofs::logging::Logger()) {
-  // needed for the creation of tags that identify asynchronous write requests
-  srand(time(nullptr));
-}
+      logger_(paciofs::logging::Logger()) {}
 
 PosixIoRpcClient::~PosixIoRpcClient() {
   async_write_completion_queue_->Shutdown();
@@ -330,73 +327,64 @@ messages::Errno PosixIoRpcClient::Write(std::string const &path,
                                         google::protobuf::int64 offset,
                                         google::protobuf::uint64 fh,
                                         google::protobuf::uint32 &n) {
-  // use a random tag to identify the request once it is done
-  void *request_tag = (void *)rand();
-
   WriteRequest request;
   request.set_path(PreparePath(path));
-  request.mutable_buf()->assign(buf, size);
   request.set_size(size);
   request.set_offset(offset);
   request.set_fh(fh);
-  logger_.Trace([request, request_tag](auto &out) {
-    WriteRequest printRequest(request);
-    printRequest.clear_buf();
-    out << "Write(" << printRequest.ShortDebugString() << ") (" << request_tag
-        << ")";
+
+  // printable request without the data buffer
+  WriteRequest printable_request(request);
+
+  request.mutable_buf()->assign(buf, size);
+  logger_.Trace([&printable_request](auto &out) {
+    out << "Write(" << printable_request.ShortDebugString() << ")";
   });
 
+  WriteResponse response;
   ::grpc::ClientContext context;
   SetMetadata(context);
 
-  // make all calls asynchronous
   std::unique_ptr<::grpc::ClientAsyncResponseReader<WriteResponse>> async_write(
       Stub()->PrepareAsyncWrite(&context, request,
                                 async_write_completion_queue_.get()));
   async_write->StartCall();
 
-  // notify request_tag once the call is done
-  WriteResponse response;
   ::grpc::Status status;
-  async_write->Finish(&response, &status, request_tag);
+  async_write->Finish(&response, &status, (void *)1);
 
   if (async_writes_) {
-    // TODO implement
-    return messages::ERRNO_EIO;
+    n = size;
+    return messages::ERRNO_ESUCCESS;
   } else {
-    // wait for the call
     void *tag;
     bool ok = false;
     bool got_event = async_write_completion_queue_->Next(&tag, &ok);
     if (got_event && ok) {
       // TODO check tag vs. request_tag
       if (status.ok()) {
-        logger_.Trace([request, tag, response](auto &out) {
-          WriteRequest printRequest(request);
-          printRequest.clear_buf();
-          out << "Write(" << printRequest.ShortDebugString() << ") (" << tag
-              << "): " << response.ShortDebugString();
+        logger_.Trace([&printable_request, tag, &response](auto &out) {
+          out << "Write(" << printable_request.ShortDebugString() << ") ("
+              << tag << "): " << response.ShortDebugString();
         });
 
         n = response.n();
 
         return messages::ERRNO_ESUCCESS;
       } else {
-        logger_.Warning([request, tag, status](auto &out) {
-          WriteRequest printRequest(request);
-          printRequest.clear_buf();
-          out << "Write(" << printRequest.ShortDebugString() << ") (" << tag
-              << "): " << status.error_message() << " (" << status.error_code()
-              << ")";
+        logger_.Warning([&printable_request, tag, &status](auto &out) {
+          out << "Write(" << printable_request.ShortDebugString() << ") ("
+              << tag << "): " << status.error_message() << " ("
+              << status.error_code() << ")";
         });
 
         return messages::ERRNO_EIO;
       }
     } else {
-      logger_.Warning([request_tag, got_event, ok](auto &out) {
-        out << "Could not get event from queue for request " << request_tag
-            << " (got " << (got_event ? "" : "no") << " event from queue / "
-            << (ok ? "" : "not") << " ok)";
+      logger_.Warning([&printable_request, got_event, ok](auto &out) {
+        out << "Write(" << printable_request.ShortDebugString() << "): got "
+            << (got_event ? "" : "no") << " event / " << (ok ? "" : "not")
+            << " ok";
       });
 
       return messages::ERRNO_EIO;

@@ -15,8 +15,10 @@ import de.zib.paciofs.multichain.internal.MultiChainRawTransactionDataHeader;
 import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
@@ -46,7 +48,7 @@ public class MultiChainUtil {
    */
   public MultiChainUtil(MultiChainRpcClient client, BigDecimal amount, Logger log) {
     this.client = client;
-    this.changeAddress = this.client.getNewAddress();
+    this.changeAddress = this.client.getRawChangeAddress();
     this.amount = amount;
     this.log = log;
   }
@@ -97,60 +99,70 @@ public class MultiChainUtil {
     // get this wallet's UTXOs with a certain number of confirmations
     final List<BitcoindRpcClient.Unspent> utxos = this.client.listUnspent(UTXO_MIN_CONFIRMATIONS);
 
-    // find a fitting UTXO and create input and output
-    List<BitcoindRpcClient.TxInput> input = null;
-    List<BitcoindRpcClient.TxOutput> output = null;
-    for (BitcoindRpcClient.Unspent utxo : utxos) {
-      if (utxo.amount().compareTo(this.amount) >= 0 && utxo.spendable()) {
-        // use this UTXO as spendable input
-        input = Collections.singletonList(
-            new BitcoindRpcClient.BasicTxInput(utxo.txid(), utxo.vout(), utxo.scriptPubKey()));
+    // for iterating randomly over UTXOs
+    final Random random = new Random();
 
-        // build the header so we know the size
-        final MultiChainRawTransactionDataHeader header =
-            MultiChainRawTransactionDataHeader.newBuilder()
-                .setMagic(HEADER_MAGIC)
-                .setCommand(command)
-                .build();
-
-        // build the data array
-        final byte[] dataArray = data.toByteArray();
-        final byte[] out = new byte[CodedOutputStream.computeMessageSizeNoTag(header)
-            + CodedOutputStream.computeByteArraySizeNoTag(dataArray)];
-        try {
-          final CodedOutputStream stream = CodedOutputStream.newInstance(out);
-
-          // both methods prepend lengths as uint32 fields
-          stream.writeMessageNoTag(header);
-          stream.writeByteArrayNoTag(dataArray);
-
-          stream.flush();
-        } catch (IOException e) {
-          throw new RuntimeException("Error writing raw transaction data", e);
-        }
-
-        // send to our change address
-        output = Collections.singletonList(new BitcoindRpcClient.BasicTxOutput(
-            this.changeAddress, utxo.amount().subtract(this.amount), out));
-
+    // find fitting UTXOs
+    final List<BitcoindRpcClient.TxInput> inputs = new ArrayList<>();
+    BigDecimal currentAmount = BigDecimal.ZERO;
+    for (int i = 0; i < utxos.size(); ++i) {
+      final BitcoindRpcClient.Unspent utxo = utxos.get(random.nextInt(utxos.size()));
+      if (currentAmount.compareTo(this.amount) >= 0) {
+        // we have accumulated enough UTXOs
         break;
+      }
+
+      if (utxo.spendable()) {
+        inputs.add(
+            new BitcoindRpcClient.BasicTxInput(utxo.txid(), utxo.vout(), utxo.scriptPubKey()));
+        currentAmount = currentAmount.add(utxo.amount());
       }
     }
 
-    // wallet did not contain any spendable unspent transaction output
-    if (input == null) {
-      throw new BitcoinRPCException("No spendable UTXO with amount >= " + this.amount);
+    if (currentAmount.compareTo(this.amount) < 0) {
+      throw new BitcoinRPCException("Not enough spendable UTXOs with sufficient value (got "
+          + inputs.size() + " of total value " + currentAmount + ")");
+    } else {
+      this.log.trace("Got {} UTXOs of value {}", inputs.size(), currentAmount);
     }
 
+    // build the header so we know the size
+    final MultiChainRawTransactionDataHeader header =
+        MultiChainRawTransactionDataHeader.newBuilder()
+            .setMagic(HEADER_MAGIC)
+            .setCommand(command)
+            .build();
+
+    // build the data array
+    final byte[] dataArray = data.toByteArray();
+    final byte[] out = new byte[CodedOutputStream.computeMessageSizeNoTag(header)
+        + CodedOutputStream.computeByteArraySizeNoTag(dataArray)];
+    try {
+      final CodedOutputStream stream = CodedOutputStream.newInstance(out);
+
+      // both methods prepend lengths as uint32 fields
+      stream.writeMessageNoTag(header);
+      stream.writeByteArrayNoTag(dataArray);
+
+      stream.flush();
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing raw transaction data", e);
+    }
+
+    // send to our change address
+    final List<BitcoindRpcClient.TxOutput> output =
+        Collections.singletonList(new BitcoindRpcClient.BasicTxOutput(
+            this.changeAddress, currentAmount.subtract(this.amount), out));
+
     // build the raw transaction
-    final String rawTransactionHex = this.client.createRawTransaction(input, output);
+    final String rawTransactionHex = this.client.createRawTransaction(inputs, output);
     if (this.log.isTraceEnabled()) {
       this.log.trace("Raw transaction: {}", this.client.decodeRawTransaction(rawTransactionHex));
     }
 
     // sign the raw transaction
     final String signedRawTransactionHex =
-        this.client.signRawTransaction(rawTransactionHex, input, null);
+        this.client.signRawTransaction(rawTransactionHex, inputs, null);
 
     // finally submit the transaction
     final String transactionId = this.client.sendRawTransaction(signedRawTransactionHex);

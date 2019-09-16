@@ -8,6 +8,7 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 # we only need filesystem, log, program_options
 # the others are static dependencies of these three
 set (Boost_USE_STATIC_LIBS "ON")
+set (Boost_NO_BOOST_CMAKE "ON")
 find_package (Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
   filesystem
   log

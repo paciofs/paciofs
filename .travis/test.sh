@@ -45,7 +45,7 @@ test "0" -eq "${diff_exit}"
 ${umount_cmd} ${umount_options} /tmp/mnt-volume1
 
 # wait for everyting to shut down
-kill ${mvn_pid}; wait ${mvn_pid}; mvn_exit=$?
+kill ${mvn_pid} && wait ${mvn_pid}; mvn_exit=$?
 
 # JVM return code when sent SIGTERM
 test "143" -eq "${mvn_exit}"

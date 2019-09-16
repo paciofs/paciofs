@@ -66,12 +66,12 @@ void Initialize(Level level, std::string const& path) {
         out ? std::cout : std::cerr, keywords::filter = severity >= level,
         keywords::format =
             expressions::stream
-            << "["
-            << expressions::attr<attributes::current_thread_id::value_type>(
-                   "ThreadID")
-            << "] [" << severity << "] ["
+            << "[" << severity << "] ["
             << expressions::format_date_time<boost::posix_time::ptime>(
                    "TimeStamp", "%Y-%m-%d %H:%M:%S")
+            << "] ["
+            << expressions::attr<attributes::current_thread_id::value_type>(
+                   "ThreadID")
             << "]: " << expressions::smessage);
   } else {
     log::add_file_log(
@@ -79,12 +79,12 @@ void Initialize(Level level, std::string const& path) {
         keywords::filter = severity >= level,
         keywords::format =
             expressions::stream
-            << "["
-            << expressions::attr<attributes::current_thread_id::value_type>(
-                   "ThreadID")
-            << "] [" << severity << "] ["
+            << "[" << severity << "] ["
             << expressions::format_date_time<boost::posix_time::ptime>(
                    "TimeStamp", "%Y-%m-%d %H:%M:%S")
+            << "] ["
+            << expressions::attr<attributes::current_thread_id::value_type>(
+                   "ThreadID")
             << "]: " << expressions::smessage);
   }
 

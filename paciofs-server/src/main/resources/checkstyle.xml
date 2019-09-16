@@ -27,6 +27,11 @@
         <property name="eachLine" value="true"/>
     </module>
 
+    <module name="LineLength">
+        <property name="max" value="100"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    </module>
+
     <module name="NewlineAtEndOfFile"/>
 
     <module name="TreeWalker">
@@ -123,6 +128,7 @@
         </module>
         <module name="InnerAssignment"/>
         <module name="InterfaceTypeParameterName"/>
+        <module name="JavadocBlockTagLocation"/>
         <module name="JavadocMethod">
             <property name="scope" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
@@ -137,10 +143,6 @@
         <module name="JavaNCSS"/>
         <module name="LambdaParameterName"/>
         <module name="LeftCurly"/>
-        <module name="LineLength">
-            <property name="max" value="100"/>
-            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
-        </module>
         <module name="LocalFinalVariableName"/>
         <module name="LocalVariableName"/>
         <module name="MagicNumber"/>
@@ -200,7 +202,7 @@
         <module name="ReturnCount"/>
         <module name="RightCurly">
             <property name="id" value="RightCurlyAlone"/>
-            <property name="option" value="alone"/>
+            <property name="option" value="alone_or_singleline"/>
             <property name="tokens"
                       value="CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT,
                     INSTANCE_INIT"/>
@@ -266,6 +268,9 @@
         </module>
         <module name="TypeName"/>
         <module name="UnnecessaryParentheses"/>
+        <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+        <module name="UnnecessarySemicolonInEnumeration"/>
+        <module name="UnnecessarySemicolonInTryWithResources"/>
         <module name="UnusedImports"/>
         <module name="UpperEll"/>
         <module name="VariableDeclarationUsageDistance"/>

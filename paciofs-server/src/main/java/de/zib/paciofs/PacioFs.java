@@ -34,7 +34,10 @@ import de.zib.paciofs.multichain.MultiChainClientFactory;
 import de.zib.paciofs.multichain.abstractions.MultiChainCluster;
 import de.zib.paciofs.multichain.abstractions.MultiChainFileSystem;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
-import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import de.zib.paciofs.multichain.rpc.MultiChainClient;
+import de.zib.paciofs.multichain.rpc.types.BlockChainInfo;
+import de.zib.paciofs.multichain.rpc.types.MultiChainException;
+import de.zib.paciofs.multichain.rpc.types.UnspentTransactionOutputList;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -44,8 +47,6 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public class PacioFs {
   private static Logger log;
@@ -102,7 +103,7 @@ public class PacioFs {
     log.info("Started [{}], cluster.selfAddress = {}", paciofs, cluster.selfAddress());
 
     // MultiChain client
-    final MultiChainRpcClient multiChainClient = initializeMultiChainClient(paciofs);
+    final MultiChainClient multiChainClient = initializeMultiChainClient(paciofs);
     waitForUtxos(multiChainClient);
 
     // cluster as seen by received transactions on MultiChain
@@ -194,22 +195,22 @@ public class PacioFs {
     log = LoggerFactory.getLogger(PacioFs.class);
   }
 
-  private static MultiChainRpcClient initializeMultiChainClient(ActorSystem system) {
-    final MultiChainRpcClient multiChainClient = new MultiChainClientFactory(
+  private static MultiChainClient initializeMultiChainClient(ActorSystem system) {
+    final MultiChainClient multiChainClient = new MultiChainClientFactory(
         system.settings().config().getConfig(PacioFsOptions.MULTICHAIN_CLIENT_KEY))
-                                                     .create();
+                                                  .create();
 
     // shut down MultiChain client before the actor system
     CoordinatedShutdown.get(system).addJvmShutdownHook(multiChainClient::stop);
 
     // warm up the client
-    final MultiChainRpcClient.Info info = multiChainClient.getInfo();
-    log.info("Connected to MultiChain: {}", info.toString());
+    final BlockChainInfo info = multiChainClient.getBlockChainInfo();
+    log.info("Connected to MultiChain: {}", info.chain());
 
     return multiChainClient;
   }
 
-  private static void waitForUtxos(MultiChainRpcClient multiChainClient) {
+  private static void waitForUtxos(MultiChainClient multiChainClient) {
     final long backoffMilliseconds = 50;
     final int maxAttempts = 10;
     final int utxoMinConfirmations = 0;
@@ -218,10 +219,10 @@ public class PacioFs {
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
       try {
         log.info("Waiting for UTXOs, attempt {} of {}", attempt + 1, maxAttempts);
-        final List<BitcoindRpcClient.Unspent> utxos =
+        final UnspentTransactionOutputList utxos =
             multiChainClient.listUnspent(utxoMinConfirmations);
         unspent = utxos.size();
-      } catch (BitcoinRPCException e) {
+      } catch (MultiChainException e) {
         // handle the same way as if zero UTXOs had been returned
       }
 

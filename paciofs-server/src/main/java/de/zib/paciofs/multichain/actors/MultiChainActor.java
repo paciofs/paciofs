@@ -10,24 +10,27 @@ package de.zib.paciofs.multichain.actors;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
-import java.io.PrintWriter;
+import de.zib.paciofs.multichain.rpc.MultiChainClient;
+import de.zib.paciofs.multichain.rpc.types.Block;
+import de.zib.paciofs.multichain.rpc.types.RawTransaction;
+import de.zib.paciofs.multichain.rpc.types.TransactionInput;
+import de.zib.paciofs.multichain.rpc.types.TransactionInputList;
+import de.zib.paciofs.multichain.rpc.types.TransactionOutput;
+import de.zib.paciofs.multichain.rpc.types.TransactionOutputList;
+import de.zib.paciofs.multichain.rpc.types.UnspentTransactionOutput;
+import de.zib.paciofs.multichain.rpc.types.UnspentTransactionOutputList;
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public class MultiChainActor extends AbstractActorWithTimers {
   public interface RawTransactionConsumer {
-    void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction);
+    void consumeRawTransaction(RawTransaction rawTransaction);
 
-    void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction);
+    void unconsumeRawTransaction(RawTransaction rawTransaction);
   }
 
   private static final class MultiChainEnsureUtxos {
@@ -52,10 +55,10 @@ public class MultiChainActor extends AbstractActorWithTimers {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainActor.class);
 
   // keep track of the most recent block in the best chain
-  private BitcoindRpcClient.Block multiChainBestBlock;
+  private Block multiChainBestBlock;
 
   // our primary MultiChain instance that we interact with
-  private final MultiChainRpcClient multiChainClient;
+  private final MultiChainClient multiChainClient;
 
   // key for timer we use to schedule the creation of sufficiently many UTXOs
   private final Object multiChainEnsureUtxosTimerKey;
@@ -74,8 +77,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
    * @param multiChainClient the MultiChain client to use
    * @param consumers the list of consumers to notify on new blocks
    */
-  public MultiChainActor(
-      MultiChainRpcClient multiChainClient, RawTransactionConsumer... consumers) {
+  public MultiChainActor(MultiChainClient multiChainClient, RawTransactionConsumer... consumers) {
     this.multiChainClient = multiChainClient;
     this.multiChainEnsureUtxosTimerKey = new Object();
     this.multiChainQueryTimerKey = new Object();
@@ -88,10 +90,11 @@ public class MultiChainActor extends AbstractActorWithTimers {
     }
 
     // best block at initialization is the genesis block
-    this.multiChainBestBlock = this.multiChainClient.getBlock(0);
+    this.multiChainBestBlock =
+        this.multiChainClient.getBlock(this.multiChainClient.getBlockHash(0));
   }
 
-  public static Props props(MultiChainRpcClient client, RawTransactionConsumer... consumers) {
+  public static Props props(MultiChainClient client, RawTransactionConsumer... consumers) {
     return Props.create(MultiChainActor.class, () -> new MultiChainActor(client, consumers));
   }
 
@@ -133,34 +136,35 @@ public class MultiChainActor extends AbstractActorWithTimers {
     final BigDecimal utxoDividend = new BigDecimal(UTXO_SPLIT_FACTOR);
     final BigDecimal fee = new BigDecimal(UTXO_SPLIT_FACTOR / 100_000_000.0);
 
-    final List<BitcoindRpcClient.Unspent> utxos = this.multiChainClient.listUnspent(0, 9999999);
+    final UnspentTransactionOutputList utxos = this.multiChainClient.listUnspent(0);
     LOG.trace("Got {} UTXOs", utxos.size());
     if (utxos.size() > 0 && utxos.size() < MIN_UTXOS) {
-      for (BitcoindRpcClient.Unspent utxo : utxos) {
+      for (UnspentTransactionOutput utxo : utxos) {
         if (utxo.spendable() && utxo.amount().compareTo(MIN_SPLITTABLE_AMOUNT) >= 0) {
-          final List<BitcoindRpcClient.TxInput> input = Collections.singletonList(
-              new BitcoindRpcClient.BasicTxInput(utxo.txid(), utxo.vout(), utxo.scriptPubKey()));
+          final TransactionInputList inputs = new TransactionInputList();
+          inputs.add(
+              new TransactionInput(utxo.txId(), utxo.vOut(), utxo.scriptPubKey(), utxo.amount()));
 
           BigDecimal remainingAmount = utxo.amount();
           final BigDecimal dividedAmount = remainingAmount.divide(utxoDividend);
 
-          final List<BitcoindRpcClient.TxOutput> outputs = new ArrayList<>();
+          final TransactionOutputList outputs = new TransactionOutputList();
           for (int i = 1; i < this.addresses.length; ++i) {
-            outputs.add(new BitcoindRpcClient.BasicTxOutput(this.addresses[i], dividedAmount));
+            outputs.add(new TransactionOutput(this.addresses[i], dividedAmount, null));
             remainingAmount = remainingAmount.subtract(dividedAmount);
           }
 
           // use the first address for remaining amount and fee
           remainingAmount = remainingAmount.subtract(fee);
-          outputs.add(new BitcoindRpcClient.BasicTxOutput(this.addresses[0], remainingAmount));
+          outputs.add(new TransactionOutput(this.addresses[0], remainingAmount, null));
 
-          LOG.trace("Splitting {}/{} ({}) into {} * {} and {}", utxo.txid(), utxo.vout(),
+          LOG.trace("Splitting {}/{} ({}) into {} * {} and {}", utxo.txId(), utxo.vOut(),
               utxo.amount(), UTXO_SPLIT_FACTOR - 1, dividedAmount, remainingAmount);
 
           final String rawTransactionHex =
-              this.multiChainClient.createRawTransaction(input, outputs);
+              this.multiChainClient.createRawTransaction(inputs, outputs);
           final String signedRawTransactionHex =
-              this.multiChainClient.signRawTransaction(rawTransactionHex, input, null);
+              this.multiChainClient.signRawTransactionWithWallet(rawTransactionHex, inputs);
           this.multiChainClient.sendRawTransaction(signedRawTransactionHex);
         }
       }
@@ -178,8 +182,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
     LOG.trace("Querying chain");
 
     // get the most recent block of the current best chain
-    BitcoindRpcClient.Block bestBlock =
-        this.multiChainClient.getBlock(this.multiChainClient.getBestBlockHash());
+    Block bestBlock = this.multiChainClient.getBlock(this.multiChainClient.getBestBlockHash());
 
     // sanity check
     if (bestBlock.height() < this.multiChainBestBlock.height()) {
@@ -194,33 +197,33 @@ public class MultiChainActor extends AbstractActorWithTimers {
           bestBlock.hash(), this.multiChainBestBlock.height(), bestBlock.height());
 
       // build the branch of the best chain down to the last block we processed
-      final Deque<BitcoindRpcClient.Block> branch = new LinkedList<>();
+      final Deque<Block> branch = new LinkedList<>();
 
       // the new best block must be processed anyway, successor or sibling
       branch.addFirst(bestBlock);
 
       // add all new blocks until they would be direct successors of the last best block
       while (branch.getFirst().height() > this.multiChainBestBlock.height() + 1) {
-        branch.addFirst(branch.getFirst().previous());
+        branch.addFirst(this.multiChainClient.getBlock(branch.getFirst().previousBlockHash()));
       }
 
       // it the best chain's first block's predecessor's hash is not the best block we have last
       // processed, then a fork happened
-      while (!branch.getFirst().previousHash().equals(this.multiChainBestBlock.hash())) {
+      while (!branch.getFirst().previousBlockHash().equals(this.multiChainBestBlock.hash())) {
         // remove previously processed blocks
         LOG.trace("Unprocessing block {}", this.multiChainBestBlock.hash());
 
         for (String tx : this.multiChainBestBlock.tx()) {
-          final BitcoindRpcClient.RawTransaction rawTransaction =
-              this.multiChainClient.getRawTransaction(tx);
+          final RawTransaction rawTransaction = this.multiChainClient.getRawTransaction(tx);
           for (RawTransactionConsumer consumer : this.rawTransactionConsumers) {
             consumer.unconsumeRawTransaction(rawTransaction);
           }
         }
 
         // keep adding to the best chain while going back
-        branch.addFirst(branch.getFirst().previous());
-        this.multiChainBestBlock = this.multiChainBestBlock.previous();
+        branch.addFirst(this.multiChainClient.getBlock(branch.getFirst().previousBlockHash()));
+        this.multiChainBestBlock =
+            this.multiChainClient.getBlock(this.multiChainBestBlock.previousBlockHash());
       }
 
       // now process all new blocks
@@ -230,8 +233,7 @@ public class MultiChainActor extends AbstractActorWithTimers {
             this.multiChainBestBlock.height(), this.multiChainBestBlock.tx().size());
 
         for (String txId : this.multiChainBestBlock.tx()) {
-          final BitcoindRpcClient.RawTransaction rawTransaction =
-              this.multiChainClient.getRawTransaction(txId);
+          final RawTransaction rawTransaction = this.multiChainClient.getRawTransaction(txId);
           for (RawTransactionConsumer consumer : this.rawTransactionConsumers) {
             consumer.consumeRawTransaction(rawTransaction);
           }

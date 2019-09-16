@@ -11,6 +11,10 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import de.zib.paciofs.logging.Markers;
 import de.zib.paciofs.multichain.rpc.MultiChainJsonRpcClient;
+import de.zib.paciofs.multichain.rpc.types.BlockChainInfo;
+import de.zib.paciofs.multichain.rpc.types.MultiChainError;
+import de.zib.paciofs.multichain.rpc.types.MultiChainException;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -18,14 +22,11 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCError;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCErrorCode;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
-import wf.bitcoin.javabitcoindrpcclient.GenericRpcException;
 
 public class MultiChainClientFactory {
   /**
@@ -76,28 +77,13 @@ public class MultiChainClientFactory {
     }
 
     @Override
-    public void addNode(String node, String command) throws GenericRpcException {
-      if (node.equals(this.localhostAddress) || node.equals(this.localhostName)) {
-        LOG.debug("Not {}'ing {} because it is this node", command, node);
-        return;
-      }
-
-      final String nodeWithPort = node + ":" + this.config.getInt(MultiChainOptions.PORT_KEY);
-
-      // https://www.multichain.com/developers/json-rpc-api/
-      // The command parameter should be one of add (to manually queue a node for the next
-      // available slot), remove (to remove a node), or onetry (to immediately connect to a node
-      // even if a slot is not available).
-      super.addNode(nodeWithPort, command);
-    }
-
-    @Override
-    public Object query(String method, Object... o) throws GenericRpcException {
+    protected <T> T query(String method, List<Object> params, Type resultType)
+        throws MultiChainException {
       this.ensureRunning();
 
       try {
-        return super.query(method, o);
-      } catch (GenericRpcException e) {
+        return super.query(method, params, resultType);
+      } catch (MultiChainException e) {
         // multichaind has died, switch to FAILED
         if (!this.multiChainDaemon.isRunning()) {
           synchronized (this.multiChainLifecyclePhaseTransition) {
@@ -130,7 +116,7 @@ public class MultiChainClientFactory {
           try {
             // gracefully terminate by sending the RPC command to stop
             super.stop();
-          } catch (BitcoinRPCException e) {
+          } catch (MultiChainException e) {
             LOG.debug("Expected exception during stop: {}", e.getMessage());
             LOG.debug(Markers.EXCEPTION, "Expected exception during stop", e);
           }
@@ -158,8 +144,9 @@ public class MultiChainClientFactory {
 
     // manages the transition from STOPPED -> STARTING -> RUNNING in a blocking fashion
     private void ensureRunning() {
-      if (this.multiChainLifecyclePhase == LifecyclePhase.RUNNING) {
-        // all is well
+      if (this.multiChainLifecyclePhase == LifecyclePhase.RUNNING
+          || this.multiChainLifecyclePhase == LifecyclePhase.STOPPING) {
+        // either we are running already, or we are not supposed to run anymore
         return;
       }
 
@@ -189,12 +176,12 @@ public class MultiChainClientFactory {
               // checkedLifecyclePhaseTransition to STARTING and therefore return early
               bci = this.getBlockChainInfo();
               break;
-            } catch (BitcoinRPCException rpcException) {
-              final BitcoinRPCError rpcError = rpcException.getRPCError();
-              if (rpcError != null && rpcError.getCode() == BitcoinRPCErrorCode.RPC_IN_WARMUP) {
+            } catch (MultiChainException rpcException) {
+              final MultiChainError rpcError = rpcException.getError();
+              if (rpcError != null && rpcError.code() == MultiChainError.RPC_IN_WARMUP) {
                 // keep waiting, multichaind is at work and will be with us soon
-                LOG.debug("Waiting {} ms, multichaind is warming up ({})", backoff,
-                    rpcError.getMessage());
+                LOG.debug(
+                    "Waiting {} ms, multichaind is warming up ({})", backoff, rpcError.message());
                 --failedRetries;
               } else if (!this.multiChainDaemon.isRunning()) {
                 // multichaind has crashed
@@ -202,8 +189,8 @@ public class MultiChainClientFactory {
                 throw new RuntimeException("multichaind stopped running");
               } else {
                 // we do not know yet what is wrong, multichaind does not react to RPC calls
-                LOG.debug("Waiting {} ms, multichaind has not started yet ({}: {})", backoff,
-                    rpcException.getResponseCode(), rpcException.getMessage());
+                LOG.debug("Waiting {} ms, multichaind has not started yet ({})", backoff,
+                    rpcException.getMessage());
                 LOG.debug(Markers.EXCEPTION, "multichaind has not started yet", rpcException);
               }
 

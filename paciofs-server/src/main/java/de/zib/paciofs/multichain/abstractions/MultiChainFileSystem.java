@@ -18,7 +18,8 @@ import de.zib.paciofs.multichain.MultiChainData;
 import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
-import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import de.zib.paciofs.multichain.rpc.MultiChainClient;
+import de.zib.paciofs.multichain.rpc.types.RawTransaction;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,7 +39,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainFileSystem.class);
@@ -61,8 +61,7 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
    * @param client the MultiChain client to use
    * @param cluster the MultiChainCluster view to use
    */
-  public MultiChainFileSystem(
-      MultiChainRpcClient client, MultiChainCluster cluster, String baseDir) {
+  public MultiChainFileSystem(MultiChainClient client, MultiChainCluster cluster, String baseDir) {
     this.clientUtil = new MultiChainUtil(client, FILE_SYSTEM_OP_RETURN_FEE, LOG);
     this.cluster = cluster;
     this.volumes = new ConcurrentHashMap<>();
@@ -374,15 +373,15 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   @Override
-  public void consumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
-    LOG.trace("Received raw tx: {}", rawTransaction.txId());
+  public void consumeRawTransaction(RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx: {}", rawTransaction.id());
 
     this.clientUtil.processRawTransaction(rawTransaction, (command, data) -> {
       try {
         switch (command) {
           case MCC_VOLUME_CREATE: {
             final Volume volume = Volume.newBuilder(Volume.parseFrom(data.readByteArray()))
-                                      .setCreationTxId(rawTransaction.txId())
+                                      .setCreationTxId(rawTransaction.id())
                                       .build();
             this.createVolume(volume);
 
@@ -425,8 +424,8 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   @Override
-  public void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
-    LOG.trace("Received raw tx for removal: {}", rawTransaction.txId());
+  public void unconsumeRawTransaction(RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx for removal: {}", rawTransaction.id());
   }
 
   private void checkClusterReadiness() {

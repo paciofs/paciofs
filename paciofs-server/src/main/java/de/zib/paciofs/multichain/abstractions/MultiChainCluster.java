@@ -14,7 +14,8 @@ import de.zib.paciofs.multichain.MultiChainData;
 import de.zib.paciofs.multichain.MultiChainUtil;
 import de.zib.paciofs.multichain.actors.MultiChainActor;
 import de.zib.paciofs.multichain.internal.MultiChainCommand;
-import de.zib.paciofs.multichain.rpc.MultiChainRpcClient;
+import de.zib.paciofs.multichain.rpc.MultiChainClient;
+import de.zib.paciofs.multichain.rpc.types.RawTransaction;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -22,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wf.bitcoin.javabitcoindrpcclient.BitcoindRpcClient;
 
 public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(MultiChainCluster.class);
@@ -40,7 +40,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
    * Create a cluster abstraction for this MultiChain.
    * @param client the MultiChain client to use
    */
-  public MultiChainCluster(MultiChainRpcClient client) {
+  public MultiChainCluster(MultiChainClient client) {
     this.clientUtil = new MultiChainUtil(client, CLUSTER_OP_RETURN_FEE, LOG);
     this.nodes = new ConcurrentHashMap<>();
   }
@@ -96,8 +96,8 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
   }
 
   @Override
-  public void consumeRawTransaction(final BitcoindRpcClient.RawTransaction rawTransaction) {
-    LOG.trace("Received raw tx: {}", rawTransaction.txId());
+  public void consumeRawTransaction(final RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx: {}", rawTransaction.id());
 
     // add ourselves to the cluster upon receiving the first transaction
     if (this.self == null) {
@@ -124,7 +124,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
         switch (command) {
           case MCC_NODE_ADD: {
             final Node node = Node.newBuilder(Node.parseFrom(data.readByteArray()))
-                                  .setCreationTxId(rawTransaction.txId())
+                                  .setCreationTxId(rawTransaction.id())
                                   .build();
             this.addNode(node);
 
@@ -153,7 +153,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
   }
 
   @Override
-  public void unconsumeRawTransaction(BitcoindRpcClient.RawTransaction rawTransaction) {
-    LOG.trace("Received raw tx for removal: {}", rawTransaction.txId());
+  public void unconsumeRawTransaction(RawTransaction rawTransaction) {
+    LOG.trace("Received raw tx for removal: {}", rawTransaction.id());
   }
 }

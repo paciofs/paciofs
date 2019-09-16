@@ -12,8 +12,8 @@
         <var>paciofs.multichain-client.multichain.log-level</var>
         <defaultValue>${paciofs.log-level}</defaultValue>
     </define>
-    <define name="paciofs.multichain-client.multichain.bitcoinrpc.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
-        <var>paciofs.multichain-client.multichain.bitcoinrpc.log-level</var>
+    <define name="paciofs.multichain-client.multichain.rpc.log-level" class="de.zib.paciofs.logging.LogbackPropertyDefiners$ConfigVarWithDefaultValue">
+        <var>paciofs.multichain-client.multichain.rpc.log-level</var>
         <defaultValue>${paciofs.multichain-client.multichain.log-level}</defaultValue>
     </define>
 
@@ -65,7 +65,7 @@
     </logger>
 
     <!-- special logger for BitCoin client -->
-    <logger name="wf.bitcoin.javabitcoindrpcclient.BitcoinJSONRPCClient" level="${paciofs.multichain-client.multichain.bitcoinrpc.log-level}" additivity="false">
+    <logger name="de.zib.paciofs.multichain.rpc" level="${paciofs.multichain-client.multichain.rpc.log-level}" additivity="false">
         <appender-ref ref="async-stdout" />
     </logger>
 

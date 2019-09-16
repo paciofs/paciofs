@@ -21,6 +21,8 @@ import akka.stream.TLSClientAuth;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.TextFormat;
 import de.zib.paciofs.multichain.MultiChainErrors;
+import de.zib.paciofs.multichain.rpc.types.MultiChainError;
+import de.zib.paciofs.multichain.rpc.types.MultiChainException;
 import io.grpc.Status;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -38,9 +40,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCError;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCErrorCode;
-import wf.bitcoin.javabitcoindrpcclient.BitcoinRPCException;
 
 public class PacioFsGrpcUtil {
   private static final Logger LOG = LoggerFactory.getLogger(PacioFsGrpcUtil.class);
@@ -134,43 +133,33 @@ public class PacioFsGrpcUtil {
   // disable some complexity checks because of the big switch statement
   // CHECKSTYLE:CyclomaticComplexity:OFF
   // CHECKSTYLE:JavaNCSS:OFF
-  public static GrpcServiceException toGrpcServiceException(BitcoinRPCException e) {
+  public static GrpcServiceException toGrpcServiceException(MultiChainException e) {
     if (e == null) {
       return null;
     }
 
     final GrpcServiceException serviceException;
-    final BitcoinRPCError error = e.getRPCError();
+    final MultiChainError error = e.getError();
     if (error != null) {
-      switch (error.getCode()) {
+      switch (error.code()) {
         case MultiChainErrors.RPC_CLIENT_NODE_ALREADY_ADDED:
           // fall-through
         case MultiChainErrors.RPC_DUPLICATE_NAME:
-          // fall-through
-        case BitcoinRPCErrorCode.RPC_VERIFY_ALREADY_IN_CHAIN:
           serviceException = new GrpcServiceException(
-              Status.ALREADY_EXISTS.withCause(e).augmentDescription(error.getMessage()));
+              Status.ALREADY_EXISTS.withCause(e).augmentDescription(error.message()));
           break;
 
-        case BitcoinRPCErrorCode.RPC_DESERIALIZATION_ERROR:
-          // fall-through
-        case BitcoinRPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY:
-          // fall-through
-        case BitcoinRPCErrorCode.RPC_INVALID_PARAMETER:
-          // fall-through
         case MultiChainErrors.RPC_INVALID_PARAMS:
           // fall-through
         case MultiChainErrors.RPC_INVALID_REQUEST:
           // fall-through
         case MultiChainErrors.RPC_PARSE_ERROR:
           // fall-through
-        case BitcoinRPCErrorCode.RPC_TYPE_ERROR:
-          // fall-through
         case MultiChainErrors.RPC_WALLET_INVALID_ACCOUNT_NAME:
           // fall-through
         case MultiChainErrors.RPC_WALLET_WRONG_ENC_STATE:
           serviceException = new GrpcServiceException(
-              Status.INVALID_ARGUMENT.withCause(e).augmentDescription(error.getMessage()));
+              Status.INVALID_ARGUMENT.withCause(e).augmentDescription(error.message()));
           break;
 
         case MultiChainErrors.RPC_BLOCK_NOT_FOUND:
@@ -185,45 +174,43 @@ public class PacioFsGrpcUtil {
           // fall-through
         case MultiChainErrors.RPC_WALLET_OUTPUT_NOT_FOUND:
           serviceException = new GrpcServiceException(
-              Status.NOT_FOUND.withCause(e).augmentDescription(error.getMessage()));
+              Status.NOT_FOUND.withCause(e).augmentDescription(error.message()));
           break;
 
-        case BitcoinRPCErrorCode.RPC_FORBIDDEN_BY_SAFE_MODE:
-          // fall-through
         case MultiChainErrors.RPC_INSUFFICIENT_PERMISSIONS:
           // fall-through
         case MultiChainErrors.RPC_NOT_ALLOWED:
           serviceException = new GrpcServiceException(
-              Status.PERMISSION_DENIED.withCause(e).augmentDescription(error.getMessage()));
+              Status.PERMISSION_DENIED.withCause(e).augmentDescription(error.message()));
           break;
 
         case MultiChainErrors.RPC_WALLET_PASSPHRASE_INCORRECT:
           // fall-through
         case MultiChainErrors.RPC_WALLET_UNLOCK_NEEDED:
           serviceException = new GrpcServiceException(
-              Status.UNAUTHENTICATED.withCause(e).augmentDescription(error.getMessage()));
+              Status.UNAUTHENTICATED.withCause(e).augmentDescription(error.message()));
           break;
 
         case MultiChainErrors.RPC_CLIENT_IN_INITIAL_DOWNLOAD:
           // fall-through
         case MultiChainErrors.RPC_CLIENT_NOT_CONNECTED:
           serviceException = new GrpcServiceException(
-              Status.UNAVAILABLE.withCause(e).augmentDescription(error.getMessage()));
+              Status.UNAVAILABLE.withCause(e).augmentDescription(error.message()));
           break;
 
         case MultiChainErrors.RPC_NOT_SUPPORTED:
           serviceException = new GrpcServiceException(
-              Status.UNIMPLEMENTED.withCause(e).augmentDescription(error.getMessage()));
+              Status.UNIMPLEMENTED.withCause(e).augmentDescription(error.message()));
           break;
 
         case MultiChainErrors.RPC_METHOD_NOT_FOUND:
           serviceException = new GrpcServiceException(
-              Status.UNKNOWN.withCause(e).augmentDescription(error.getMessage()));
+              Status.UNKNOWN.withCause(e).augmentDescription(error.message()));
           break;
 
         default:
           serviceException = new GrpcServiceException(
-              Status.INTERNAL.withCause(e).augmentDescription(error.getMessage()));
+              Status.INTERNAL.withCause(e).augmentDescription(error.message()));
           break;
       }
     } else {

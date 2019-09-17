@@ -104,4 +104,4 @@ install:
   - mvn install --define destdir=/tmp --define skipTests=true --define maven.javadoc.skip=true --batch-mode --show-version
 
 script:
-  - bash -e -x .travis/test.sh
+  - bash -x .travis/test.sh

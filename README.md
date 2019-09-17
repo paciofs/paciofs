@@ -20,5 +20,5 @@ $ kubectl port-forward --namespace=pacio service/paciofs 8080:8080
 ```bash
 $ ${DESTDIR}/usr/local/bin/mkfs.paciofs localhost:8080 volume1
 $ mkdir /tmp/volume1
-$ ${DESTDIR}/usr/local/binmount.paciofs localhost:8080 /tmp/volume1 volume1 -d TRACE
+$ ${DESTDIR}/usr/local/bin/mount.paciofs localhost:8080 /tmp/volume1 volume1 -d TRACE
 ```

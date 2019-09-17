@@ -15,7 +15,7 @@ cd ./paciofs-server/src/test/scripts && ./gen-certs.sh && cd ../../../../
 # run tests
 mvn test --batch-mode
 
-# start and stop PacioFS
+# start PacioFS server
 mvn --projects paciofs-server exec:java@run-server &
 mvn_pid=$!
 sleep 60s

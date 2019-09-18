@@ -7,7 +7,7 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
-      dist: xenial
+      dist: bionic
       jdk: openjdk11
       addons:
         apt:
@@ -51,7 +51,7 @@ matrix:
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-${MULTICHAIN_HASH}-osx.tar.gz
 
     - os: linux
-      dist: xenial
+      dist: bionic
       services:
         - docker
       before_install: true

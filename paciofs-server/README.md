@@ -2,7 +2,7 @@
 The entry point is [PacioFS.java](./src/main/java/de/zib/paciofs/PacioFs.java).
 - Load [application.conf](./src/main/resources/application.conf).
 - Set up logging from [logback.xml](./src/main/resources/logback.xml).
-- Start actor system and discovery, depending on whether this is a kubernetes environment or not.
+- Start actor system and discovery, depending on whether this is a kubernetes environment or not. See [paciofs-kubernetes](../paciofs-kubernetes/README.md) for kubernetes deployment, [test.sh](../.travis/test.sh) for local execution, and [README](../README.md) for `minikube` execution.
 - Start the MultiChain client. This starts a MultiChain locally and waits for enough UTXOs to be available. This is necessary because during mining, a single UTXO is generated, which we split into smaller pieces. This way we do not have to wait for the change from a previous transaction, but instead can use many different UTXOs in rapid succession for lower latency.
 - Set up the services listening for requests from the [client utilities](../paciofs-client/README.md).
 

@@ -8,7 +8,7 @@ Uses Git to figure out files under source control and puts them into a new direc
 Sets a `minikube` environment, builds the Docker image and puts it into the `minikube` registry.
 
 ## [docker-compose-push.sh](./docker-compose-push.sh)
-Pushes the local Docker image to [Docker Hub](https://cloud.docker.com/u/paciofs/repository/docker/paciofs/paciofs) where it is built.
+Pushes the local Docker image to [Docker Hub](https://cloud.docker.com/u/paciofs/repository/docker/paciofs/paciofs) where it is then built.
 
 ## [docker-compose-up.sh](./docker-compose-up.sh)
 Runs PacioFS locally on `minikube`.

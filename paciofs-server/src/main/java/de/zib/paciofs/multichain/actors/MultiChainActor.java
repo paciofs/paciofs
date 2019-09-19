@@ -30,6 +30,8 @@ public class MultiChainActor extends AbstractActorWithTimers {
   public interface RawTransactionConsumer {
     void consumeRawTransaction(RawTransaction rawTransaction);
 
+    void doneProcessingRawTransactions();
+
     void unconsumeRawTransaction(RawTransaction rawTransaction);
   }
 
@@ -244,9 +246,18 @@ public class MultiChainActor extends AbstractActorWithTimers {
     // get the best block again to see if it has changed in the meantime
     bestBlock = this.multiChainClient.getBlock(this.multiChainClient.getBestBlockHash());
 
-    // schedule the next invocation immediately if the best block has changed, otherwise wait a bit
-    this.timers().startSingleTimer(this.multiChainQueryTimerKey, query,
-        bestBlock.hash().equals(this.multiChainBestBlock.hash()) ? Duration.ofMillis(QUERY_INTERVAL)
-                                                                 : Duration.ZERO);
+    // schedule the next invocation after some time if the best block has not changed, otherwise
+    // immediately
+    if (bestBlock.hash().equals(this.multiChainBestBlock.hash())) {
+      this.timers().startSingleTimer(
+          this.multiChainQueryTimerKey, query, Duration.ofMillis(QUERY_INTERVAL));
+
+      // signal to the consumers that we are done for now
+      for (RawTransactionConsumer consumer : this.rawTransactionConsumers) {
+        consumer.doneProcessingRawTransactions();
+      }
+    } else {
+      this.timers().startSingleTimer(this.multiChainQueryTimerKey, query, Duration.ZERO);
+    }
   }
 }

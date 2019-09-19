@@ -84,29 +84,40 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
       throw new FileAlreadyExistsException(volume.getName());
     }
 
-    // optimistically create the directory and add an entry in the map
-    final File volumeRoot = new File(this.baseDir, volume.getName());
-    if (!volumeRoot.mkdirs()) {
-      throw new IOException(
-          "Could not create directory " + volumeRoot + " for volume " + volume.getName());
-    }
-
     final MultiChainData data = new MultiChainData();
     data.writeByteArray(volume.toByteArray());
 
     final String txId =
         this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_VOLUME_CREATE, data);
-    final Volume created = Volume.newBuilder(volume).setCreationTxId(txId).build();
+    volume = Volume.newBuilder(volume).setCreationTxId(txId).build();
+    this.createVolumeFromTransaction(volume);
+    return volume;
+  }
 
-    this.volumeRoots.put(created, volumeRoot);
-    this.volumes.put(volume.getName(), created);
+  private void createVolumeFromTransaction(Volume volume) throws IOException {
+    if (this.volumes.containsKey(volume.getName())) {
+      LOG.debug("Volume {} already exists", TextFormat.shortDebugString(volume));
+      return;
+    }
 
-    LOG.debug("Volume {} was created", TextFormat.shortDebugString(created));
+    final File volumeRoot = new File(this.baseDir, volume.getName());
+    if (!volumeRoot.exists() && !volumeRoot.mkdirs()) {
+      throw new IOException(
+          "Could not create directory " + volumeRoot + " for volume " + volume.getName());
+    }
 
-    return created;
+    this.volumeRoots.put(volume, volumeRoot);
+    this.volumes.put(volume.getName(), volume);
+
+    LOG.debug("Volume {} was created", TextFormat.shortDebugString(volume));
   }
 
   public Volume deleteVolume(Volume volume) {
+    // TODO implement
+    throw new UnsupportedOperationException();
+  }
+
+  private void deleteVolumeFromTransaction(Volume volume) {
     // TODO implement
     throw new UnsupportedOperationException();
   }
@@ -172,12 +183,10 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     final String cleanedPath = removeVolumeFromPath(path);
     final File file = new File(volumeRoot, cleanedPath);
 
+    // TODO use in-memory structure here like for volumes
     if (file.exists()) {
       throw new FileAlreadyExistsException(path);
     }
-
-    // touch the file
-    new RandomAccessFile(file, "rw").close();
 
     final MultiChainData data = new MultiChainData();
     data.writeString(path);
@@ -185,6 +194,23 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     data.writeInt(dev);
 
     final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKNOD, data);
+    this.mkNodFromTransaction(path, mode, dev, txId);
+  }
+
+  private void mkNodFromTransaction(String path, int mode, int dev, String txId)
+      throws IOException {
+    final File volumeRoot = this.getVolumeRootFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+    final File file = new File(volumeRoot, cleanedPath);
+
+    if (file.exists()) {
+      LOG.debug("Node {} already exists (transaction id: {})", path, txId);
+      return;
+    }
+
+    // touch the file
+    new RandomAccessFile(file, "rw").close();
+
     LOG.debug("Node {} was created (transaction id: {})", path, txId);
   }
 
@@ -201,16 +227,30 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
     final String cleanedPath = removeVolumeFromPath(path);
     final File directory = new File(volumeRoot, cleanedPath);
 
+    // TODO use in-memory structure here like for volumes
     if (directory.exists()) {
       throw new FileAlreadyExistsException(path);
     }
 
-    if (directory.mkdir()) {
-      final MultiChainData data = new MultiChainData();
-      data.writeString(path);
-      data.writeInt(mode);
+    final MultiChainData data = new MultiChainData();
+    data.writeString(path);
+    data.writeInt(mode);
 
-      final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKDIR, data);
+    final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_IO_MKDIR, data);
+    this.mkDirFromTransaction(path, mode, txId);
+  }
+
+  private void mkDirFromTransaction(String path, int mode, String txId) throws IOException {
+    final File volumeRoot = this.getVolumeRootFromPath(path);
+    final String cleanedPath = removeVolumeFromPath(path);
+    final File directory = new File(volumeRoot, cleanedPath);
+
+    if (directory.exists()) {
+      LOG.debug("Directory {} already exists (transaction id: {})", path, txId);
+      return;
+    }
+
+    if (directory.mkdir()) {
       LOG.debug("Directory {} was created (transaction id: {})", path, txId);
     } else {
       throw new IOException("Could not create directory " + path);
@@ -373,6 +413,9 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
   }
 
   @Override
+  public void doneProcessingRawTransactions() {}
+
+  @Override
   public void consumeRawTransaction(RawTransaction rawTransaction) {
     LOG.trace("Received raw tx: {}", rawTransaction.id());
 
@@ -383,26 +426,25 @@ public class MultiChainFileSystem implements MultiChainActor.RawTransactionConsu
             final Volume volume = Volume.newBuilder(Volume.parseFrom(data.readByteArray()))
                                       .setCreationTxId(rawTransaction.id())
                                       .build();
-            this.createVolume(volume);
-
+            this.createVolumeFromTransaction(volume);
             break;
           }
           case MCC_VOLUME_DELETE: {
             final Volume volume = Volume.parseFrom(data.readByteArray());
-            this.deleteVolume(volume);
+            this.deleteVolumeFromTransaction(volume);
             break;
           }
           case MCC_IO_MKNOD: {
             final String path = data.readString();
             final int mode = data.readInt();
             final int dev = data.readInt();
-            this.mkNod(path, mode, dev);
+            this.mkNodFromTransaction(path, mode, dev, rawTransaction.id());
             break;
           }
           case MCC_IO_MKDIR: {
             final String path = data.readString();
             final int mode = data.readInt();
-            this.mkDir(path, mode);
+            this.mkDirFromTransaction(path, mode, rawTransaction.id());
             break;
           }
           case MCC_IO_WRITE: {

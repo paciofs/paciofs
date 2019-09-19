@@ -34,7 +34,7 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
 
   private final Map<String, Node> nodes;
 
-  private volatile Node self;
+  private final InetAddress localhost;
 
   /**
    * Create a cluster abstraction for this MultiChain.
@@ -43,6 +43,12 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
   public MultiChainCluster(MultiChainClient client) {
     this.clientUtil = new MultiChainUtil(client, CLUSTER_OP_RETURN_FEE, LOG);
     this.nodes = new ConcurrentHashMap<>();
+
+    try {
+      this.localhost = InetAddress.getLocalHost();
+    } catch (UnknownHostException e) {
+      throw new RuntimeException("Could not get localhost", e);
+    }
   }
 
   /**
@@ -51,33 +57,28 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
    * @param node the node to add
    */
   public Node addNode(Node node) {
-    Node added = this.nodes.merge(node.getAddress(), node, (old, toAdd) -> {
-      if ("".equals(old.getCreationTxId()) && !"".equals(toAdd.getCreationTxId())) {
-        // if the new node has a creation transaction ID and the old one does not, then update
-        return toAdd;
-      }
-
-      // nodes are either the same, or the new one does not have a creation transaction ID
-      return old;
-    });
-
-    if (added == node) {
-      LOG.info("Node {} was added to cluster", TextFormat.shortDebugString(node));
-
-      // send the node to the chain as we have not seen it before
-      if ("".equals(node.getCreationTxId())) {
-        final MultiChainData data = new MultiChainData();
-        data.writeByteArray(node.toByteArray());
-
-        final String txId =
-            this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_NODE_ADD, data);
-        added = Node.newBuilder(added).setCreationTxId(txId).build();
-      }
-    } else {
-      LOG.warn("Node {} is already present in cluster", TextFormat.shortDebugString(node));
+    if (this.nodes.containsKey(node.getAddress())) {
+      throw new IllegalArgumentException(
+          "Node " + TextFormat.shortDebugString(node) + " is already present in cluster");
     }
 
-    return added;
+    final MultiChainData data = new MultiChainData();
+    data.writeByteArray(node.toByteArray());
+
+    final String txId = this.clientUtil.sendRawTransaction(MultiChainCommand.MCC_NODE_ADD, data);
+    node = Node.newBuilder(node).setCreationTxId(txId).build();
+    this.addNodeFromTransaction(node);
+    return node;
+  }
+
+  private void addNodeFromTransaction(Node node) {
+    if (this.nodes.containsKey(node.getAddress())) {
+      LOG.debug("Node {} is already present in cluster", TextFormat.shortDebugString(node));
+      return;
+    }
+
+    this.nodes.put(node.getAddress(), node);
+    LOG.debug("Node {} was added to cluster", TextFormat.shortDebugString(node));
   }
 
   /**
@@ -90,34 +91,22 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
     throw new UnsupportedOperationException();
   }
 
+  private void removeNodeFromTransaction(Node node) {
+    // TODO implement
+    throw new UnsupportedOperationException();
+  }
+
   public boolean ready() {
-    // we are ready if our node has a creation transaction ID
-    return !"".equals(this.self.getCreationTxId());
+    return this.clusterContainsSelf();
+  }
+
+  private boolean clusterContainsSelf() {
+    return this.nodes.containsKey(this.localhost.getHostAddress());
   }
 
   @Override
   public void consumeRawTransaction(final RawTransaction rawTransaction) {
     LOG.trace("Received raw tx: {}", rawTransaction.id());
-
-    // add ourselves to the cluster upon receiving the first transaction
-    if (this.self == null) {
-      synchronized (this) {
-        if (this.self == null) {
-          final InetAddress localhost;
-          try {
-            localhost = InetAddress.getLocalHost();
-          } catch (UnknownHostException e) {
-            throw new RuntimeException("Could not get localhost", e);
-          }
-          final Node node = Node.newBuilder().setAddress(localhost.getHostAddress()).build();
-          LOG.info("Adding self ({}) to cluster", TextFormat.shortDebugString(node));
-
-          // this will send a transaction which we will receive later on
-          this.addNode(node);
-          this.self = node;
-        }
-      }
-    }
 
     this.clientUtil.processRawTransaction(rawTransaction, (command, data) -> {
       try {
@@ -126,19 +115,12 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
             final Node node = Node.newBuilder(Node.parseFrom(data.readByteArray()))
                                   .setCreationTxId(rawTransaction.id())
                                   .build();
-            this.addNode(node);
-
-            // once we have added ourselves to the cluster, we are ready to operate
-            if (node.getAddress().equals(this.self.getAddress())) {
-              this.self = node;
-              LOG.info("Self ({}) added to cluster", TextFormat.shortDebugString(this.self));
-            }
-
+            this.addNodeFromTransaction(node);
             break;
           }
           case MCC_NODE_REMOVE: {
             final Node node = Node.parseFrom(data.readByteArray());
-            this.removeNode(node);
+            this.removeNodeFromTransaction(node);
             break;
           }
           default:
@@ -150,6 +132,19 @@ public class MultiChainCluster implements MultiChainActor.RawTransactionConsumer
         MultiChainCluster.LOG.error("Error parsing data", e);
       }
     });
+  }
+
+  @Override
+  public void doneProcessingRawTransactions() {
+    if (this.clusterContainsSelf()) {
+      return;
+    }
+
+    final Node self = Node.newBuilder().setAddress(this.localhost.getHostAddress()).build();
+    LOG.debug("Adding self ({}) to cluster", TextFormat.shortDebugString(self));
+
+    // this will send a transaction which we will receive later on
+    this.addNode(self);
   }
 
   @Override

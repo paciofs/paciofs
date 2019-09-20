@@ -31,13 +31,14 @@ matrix:
       addons:
         homebrew:
           casks:
-            - oracle-jdk
             - osxfuse
+            - java11
           packages:
             - boost
             - clang-format
             - cppcheck
             - gettext
+          taps: homebrew/cask-versions
           update: true
       env:
         - CMAKE_DIST=Darwin

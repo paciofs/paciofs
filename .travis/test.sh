@@ -69,7 +69,6 @@ test -f /tmp/mnt-volume1/dir/file.empty
 
 # write file
 dd if=/dev/urandom of=/tmp/file.rnd bs=1048576 count=10
-# dd if=/dev/urandom of=/tmp/file.rnd bs=1024 count=32
 time cp /tmp/file.rnd /tmp/mnt-volume1/file.rnd
 sync
 

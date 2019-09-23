@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.org/paciofs/paciofs.svg?branch=master)](https://travis-ci.org/paciofs/paciofs)
 
+## Contact
+Contact the developers at paciofs-dev@googlegroups.com for any questions or use the GitHub issues on this project if you find a bug.
+Feel free to fork and generate PRs.
+
 ## Building and running locally on minikube
 ```bash
 $ git clone https://github.com/paciofs/paciofs.git && cd ./paciofs

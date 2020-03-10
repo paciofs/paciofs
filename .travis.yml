@@ -61,7 +61,7 @@ before_install:
   - sudo ${LOAD_FUSE_CMD}
 
   # install booost using travis_wait
-  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait brew install clang-format; travis_wait brew install boost; travis_wait brew install cppcheck; travis_wait brew install gettext; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait 30 brew install clang-format; travis_wait 30 brew install boost; travis_wait 30 brew install cppcheck; travis_wait 30 brew install gettext; fi
 
   # include gettext in PATH for envsubst on macOS
   - export PATH="/usr/local/opt/gettext/bin:${PATH}"
@@ -94,6 +94,7 @@ before_install:
   - export MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
   # for cppcheck-htmlreport
+  - pip install --upgrade pip
   - pip install --user pygments
 
 install:

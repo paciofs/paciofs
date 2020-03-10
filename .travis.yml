@@ -33,10 +33,6 @@ matrix:
           casks:
             - osxfuse
             - java11
-          packages:
-            - clang-format
-            - cppcheck
-            - gettext
           taps: homebrew/cask-versions
           update: true
       env:
@@ -65,7 +61,7 @@ before_install:
   - sudo ${LOAD_FUSE_CMD}
 
   # install booost using travis_wait
-  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait brew install boost; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait brew install clang-format; travis_wait brew install boost; travis_wait brew install cppcheck; travis_wait brew install gettext; fi
 
   # include gettext in PATH for envsubst on macOS
   - export PATH="/usr/local/opt/gettext/bin:${PATH}"

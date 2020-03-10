@@ -34,7 +34,6 @@ matrix:
             - osxfuse
             - java11
           packages:
-            - boost
             - clang-format
             - cppcheck
             - gettext
@@ -64,6 +63,9 @@ matrix:
 before_install:
   # load kernel extension on macOS, do nothing otherwise
   - sudo ${LOAD_FUSE_CMD}
+
+  # install booost using travis_wait
+  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait brew install boost; fi
 
   # include gettext in PATH for envsubst on macOS
   - export PATH="/usr/local/opt/gettext/bin:${PATH}"

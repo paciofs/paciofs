@@ -62,6 +62,7 @@ before_install:
 
   # for cppcheck-htmlreport
   - sudo easy_install pip
+  - pip install --uppgrade pip
   - pip install --user pygments
 
   # install brew packages using travis_wait

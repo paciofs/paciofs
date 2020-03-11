@@ -6,28 +6,28 @@ if: tag IS blank
 
 matrix:
   include:
-    - os: linux
-      dist: bionic
-      jdk: openjdk11
-      addons:
-        apt:
-          packages:
-            - clang-format
-            - cppcheck
-            - gettext
-            - libboost-all-dev
-            - libfuse-dev
-      env:
-        - CMAKE_DIST=Linux
-        # cmake-<VERSION>-Linux-x86_64/
-        - CMAKE_STRIP_COMPONENTS=1
-        - GO_DIST=linux
-        - LOAD_FUSE_CMD="true"
-        - MULTICHAIN_VERSION=2.0.2
-        - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
+    # - os: linux
+    #   dist: bionic
+    #   jdk: openjdk11
+    #   addons:
+    #     apt:
+    #       packages:
+    #         - clang-format
+    #         - cppcheck
+    #         - gettext
+    #         - libboost-all-dev
+    #         - libfuse-dev
+    #   env:
+    #     - CMAKE_DIST=Linux
+    #     # cmake-<VERSION>-Linux-x86_64/
+    #     - CMAKE_STRIP_COMPONENTS=1
+    #     - GO_DIST=linux
+    #     - LOAD_FUSE_CMD="true"
+    #     - MULTICHAIN_VERSION=2.0.2
+    #     - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
 
     - os: osx
-      osx_image: xcode9.2
+      osx_image: xcode11.3
       addons:
         homebrew:
           casks:
@@ -46,22 +46,22 @@ matrix:
         - MULTICHAIN_HASH=2bff381
         - MULTICHAIN_URL=https://github.com/paciofs/multichain/releases/download/${MULTICHAIN_VERSION}-${MULTICHAIN_TAG}/multichain-${MULTICHAIN_VERSION}-${MULTICHAIN_HASH}-osx.tar.gz
 
-    - os: linux
-      dist: bionic
-      services:
-        - docker
-      before_install: true
-      install: true
-      script:
-        - ./paciofs-docker/create_clean_source_distribution.sh ./paciofs-docker/dist
-        - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
+    # - os: linux
+    #   dist: bionic
+    #   services:
+    #     - docker
+    #   before_install: true
+    #   install: true
+    #   script:
+    #     - ./paciofs-docker/create_clean_source_distribution.sh ./paciofs-docker/dist
+    #     - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:
   # load kernel extension on macOS, do nothing otherwise
   - sudo ${LOAD_FUSE_CMD}
 
   # install brew packages using travis_wait
-  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait 20 brew install clang-format; travis_wait 20 brew install boost; travis_wait 20 brew install cppcheck; travis_wait 20 brew install gettext; travis_wait 20 brew reinstall python; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait 20 brew install clang-format; travis_wait 20 brew install boost; travis_wait 20 brew install cppcheck; travis_wait 20 brew install gettext; fi
 
   # include gettext in PATH for envsubst on macOS
   - export PATH="/usr/local/opt/gettext/bin:${PATH}"

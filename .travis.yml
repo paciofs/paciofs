@@ -60,8 +60,8 @@ before_install:
   # load kernel extension on macOS, do nothing otherwise
   - sudo ${LOAD_FUSE_CMD}
 
-  # install booost using travis_wait
-  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait 20 brew install clang-format; travis_wait 20 brew install boost; travis_wait 20 brew install cppcheck; travis_wait 20 brew install gettext; fi
+  # install brew packages using travis_wait
+  - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait 20 brew install clang-format; travis_wait 20 brew install boost; travis_wait 20 brew install cppcheck; travis_wait 20 brew install gettext; travis_wait 20 brew reinstall python; fi
 
   # include gettext in PATH for envsubst on macOS
   - export PATH="/usr/local/opt/gettext/bin:${PATH}"
@@ -94,7 +94,7 @@ before_install:
   - export MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
   # for cppcheck-htmlreport
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install pygments; else pip install --user pygments; fi;
+  - pip install --user pygments
 
 install:
   # install parent pom only first

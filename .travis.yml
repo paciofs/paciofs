@@ -27,12 +27,12 @@ matrix:
     #     - MULTICHAIN_URL=https://www.multichain.com/download/multichain-${MULTICHAIN_VERSION}.tar.gz
 
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode9.2
       addons:
         homebrew:
           casks:
-            - osxfuse
-            - java11
+            # - osxfuse
+            # - java11
           taps: homebrew/cask-versions
           update: true
       env:
@@ -61,6 +61,7 @@ before_install:
   - sudo ${LOAD_FUSE_CMD}
 
   # for cppcheck-htmlreport
+  - sudo easy_install pip
   - pip install --user pygments
 
   # install brew packages using travis_wait

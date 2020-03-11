@@ -60,6 +60,9 @@ before_install:
   # load kernel extension on macOS, do nothing otherwise
   - sudo ${LOAD_FUSE_CMD}
 
+  # for cppcheck-htmlreport
+  - pip install --user pygments
+
   # install brew packages using travis_wait
   - if [ $TRAVIS_OS_NAME = osx ]; then travis_wait 20 brew install clang-format; travis_wait 20 brew install boost; travis_wait 20 brew install cppcheck; travis_wait 20 brew install gettext; fi
 
@@ -93,8 +96,6 @@ before_install:
   - rm multichain.tar.gz
   - export MULTICHAIN_HOME="/usr/local/multichain-${MULTICHAIN_VERSION}"
 
-  # for cppcheck-htmlreport
-  - pip install --user pygments
 
 install:
   # install parent pom only first

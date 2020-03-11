@@ -28,13 +28,13 @@ matrix:
 
     - os: osx
       osx_image: xcode9.2
-      addons:
-        homebrew:
-          casks:
-            # - osxfuse
-            # - java11
-          taps: homebrew/cask-versions
-          update: true
+      # addons:
+      #   homebrew:
+      #     casks:
+      #       # - osxfuse
+      #       # - java11
+      #     taps: homebrew/cask-versions
+      #     update: true
       env:
         - CMAKE_DIST=Darwin
         # cmake-<VERSION>-Darwin-x86_64/CMake.app/Contents/
@@ -57,8 +57,8 @@ matrix:
     #     - docker-compose --log-level INFO --file ./paciofs-docker/docker-compose.yaml build
 
 before_install:
-  # load kernel extension on macOS, do nothing otherwise
-  - sudo ${LOAD_FUSE_CMD}
+  # # load kernel extension on macOS, do nothing otherwise
+  # - sudo ${LOAD_FUSE_CMD}
 
   # for cppcheck-htmlreport
   - sudo easy_install pip
